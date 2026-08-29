@@ -1,0 +1,18 @@
+# Go Binaries & Local Data
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+snake-server
+server
+users.json
+*.db
+*.db-journal
+
+# Environment Variables (保护真实密钥，仅开放 example 范本)
+.env
+.env*.local
+.env.development
+.env.production
+!.env.example
