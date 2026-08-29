@@ -298,30 +298,30 @@ export default function GameBoard({
         )}
       </div>
 
-      {/* 移动端极简半透明虚拟十字键 */}
-      <div className="mt-4 flex flex-col items-center gap-1 sm:hidden">
+      {/* 移动端极简半透明虚拟十字键 (touch-manipulation 防缩放延迟) */}
+      <div className="mt-4 flex flex-col items-center gap-1 sm:hidden touch-manipulation select-none">
         <button
           onClick={() => onDirection('UP')}
-          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
+          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
         >
           <ChevronUp size={20} />
         </button>
         <div className="flex gap-4">
           <button
             onClick={() => onDirection('LEFT')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
+            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={() => onDirection('DOWN')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
+            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronDown size={20} />
           </button>
           <button
             onClick={() => onDirection('RIGHT')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
+            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronRight size={20} />
           </button>

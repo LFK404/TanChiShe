@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -229,6 +233,30 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	fmt.Println("[INFO] Backend API running on port " + port)
-	_ = r.Run(":" + port)
+
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+
+	go func() {
+		fmt.Println("[INFO] Backend API running on port " + port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			fmt.Printf("[FATAL] Listen error: %s\n", err)
+		}
+	}()
+
+	// 监听系统停机信号 (SIGINT / SIGTERM)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	fmt.Println("[INFO] Shutting down server gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		fmt.Println("[WARN] Server forced to shutdown:", err)
+	}
+
+	fmt.Println("[INFO] Server exited successfully.")
 }

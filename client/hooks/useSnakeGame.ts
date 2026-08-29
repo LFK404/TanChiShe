@@ -68,6 +68,14 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     }
   }, []);
 
+  const vibrate = (pattern: number | number[]) => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(pattern);
+      } catch {}
+    }
+  };
+
   const gameOver = useCallback(() => {
     stateRef.current.over = true;
     stateRef.current.playing = false;
@@ -75,6 +83,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     setIsPlaying(false);
     clearBonus();
     sound.playGameOver();
+    vibrate(40);
     const dur = Math.floor((Date.now() - stateRef.current.start) / 1000);
     onGameOver?.(stateRef.current.score, dur);
   }, [onGameOver, clearBonus]);
@@ -95,6 +104,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     setIsPlaying(true);
     clearBonus();
     sound.playToggle();
+    vibrate(10);
     spawnFood();
   }, [spawnFood, clearBonus]);
 
@@ -112,6 +122,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       stateRef.current.paused = !stateRef.current.paused;
       setIsPaused(stateRef.current.paused);
       sound.playToggle();
+      vibrate(10);
     }
   }, []);
 
@@ -158,6 +169,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       setScore(stateRef.current.score);
       setLength(nextSnake.length);
       sound.playEat();
+      vibrate(12);
 
       // 吃到苹果，瞬间清除所有残留栅栏！
       fenceRef.current.clear();
@@ -182,6 +194,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       stateRef.current.score += 30;
       setScore(stateRef.current.score);
       sound.playBonus();
+      vibrate([15, 30, 15]);
       clearBonus();
     }
 

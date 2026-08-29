@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js Build & Outputs
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# Go Binaries & Local Data
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+snake-server
+server/server
+server/snake-server
+server/users.json
+server/*.db
+server/*.db-journal
+
+# Environment Variables (保护真实密钥，仅开放 example 范本)
+.env
+.env*.local
+.env.development
+.env.production
+!.env.example
+client/.env*.local
+client/.env.production
+server/.env*.local
+server/.env.production
+
+# IDE & OS Files
+.DS_Store
+*.pem
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
