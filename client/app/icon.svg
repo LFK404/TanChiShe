@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- 纯白底色带浅灰圆角边框 -->
+  <rect width="32" height="32" rx="7" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+  
+  <!-- 蛇身（经典 2 节翡翠绿方块） -->
+  <rect x="6" y="18" width="6" height="6" rx="1.5" fill="#10b981" />
+  <rect x="6" y="10" width="6" height="6" rx="1.5" fill="#10b981" />
+  
+  <!-- 蛇头（深翠绿方块） -->
+  <rect x="14" y="10" width="6" height="6" rx="1.5" fill="#047857" />
+  
+  <!-- 蛇眼（白底黑瞳） -->
+  <circle cx="17.5" cy="12" r="0.9" fill="#ffffff" />
+  <circle cx="17.5" cy="12" r="0.5" fill="#0f172a" />
+  
+  <!-- 鲜红小苹果 -->
+  <circle cx="22" cy="20" r="3.5" fill="#ef4444" />
+  <!-- 苹果叶子 -->
+  <circle cx="21" cy="16" r="1" fill="#15803d" />
+</svg>
