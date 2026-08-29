@@ -1,128 +1,93 @@
 # TanChiShe 2026 (贪吃蛇前后端分离系统)
 
-> 南昌大学《程序设计课程实践》—— 题目 31《贪食蛇游戏》课程设计工程项目。
+> 南昌大学《程序设计课程设计》—— 题目 31《贪吃蛇游戏》课程设计工程项目。
+
+[![Live Demo](https://img.shields.io/badge/Online%20Demo-zhixu.online-059669?style=flat-square)](https://zhixu.online)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Go Gin](https://img.shields.io/badge/Go-Gin-00ADD8?style=flat-square&logo=go)](https://gin-gonic.com/)
+[![Azure App Service](https://img.shields.io/badge/Deployed%20on-Azure-0078D4?style=flat-square&logo=microsoftazure)](https://azure.microsoft.com/)
+[![EdgeOne Pages](https://img.shields.io/badge/CDN-Tencent%20EdgeOne-0052D9?style=flat-square)](https://edgeone.ai/)
+
+---
+
+## 🌐 线上永久运行地址
+
+- 🎮 **游戏前台**：[https://zhixu.online](https://zhixu.online)（支持电脑端与手机触控操作）
+- 🚀 **后端 API**：[https://tanchishe-epd8b5h0gwf9fcd0.eastasia-01.azurewebsites.net](https://tanchishe-epd8b5h0gwf9fcd0.eastasia-01.azurewebsites.net)
 
 ---
 
 ## 📖 项目简介
 
-本项目采用现代**前后端分离架构**开发，前端基于 **Next.js 16 (App Router) + TypeScript + HTML5 Canvas 2D + Tailwind CSS**，后端基于 **Go 语言 + Gin 高性能 Web 框架**。
+本项目采用现代前后端分离架构开发，前端基于 **Next.js 15 (App Router) + TypeScript + HTML5 Canvas 2D + Tailwind CSS**，后端基于 **Go 语言 + Gin 高性能 Web 框架**。
 
 系统严格贯彻面向对象与分层解耦设计，界面采用**清爽浅色系（Light Mode）**极简风格，兼顾现代感与规范性。
 
 ---
 
-## 🎮 核心机制与规则
+## 🏗️ 系统架构图
 
-1. **登录门禁流程**：
-   - 未登录时展示居中登录/注册卡片，游戏区域与排行榜默认隐藏；
-   - 登录成功后平滑进入游戏主界面并展示玩家信息与历史最高战绩；
-   - 支持 `localStorage` 自动记忆登录状态，刷新页面无需重复登录。
-2. **“所经之处砌起围栏”与波次重置机制（题目专属核心特性）**：
-   - 地图规格为 $24 \times 24$ 栅格；
-   - 蛇爬行推进时，若未吃到果实，蛇尾出队的坐标**不会重置为空地**，而是固化生成**深灰色砖墙围栏障碍物（Fence）**；
-   - 围栏具有不可穿越的物理实体属性，后续碰撞将判定 Game Over；
-   - **波次重置机制**：每次成功吃到果实后，场上已生成的全部砖墙障碍物将**立即清空重置**，开启新一轮的避障挑战，极大提升对局可玩性与节奏感。
-3. **90 度转弯与按键缓冲锁（Input Lock）**：
-   - 仅支持 90 度方向切换；
-   - 内置方向缓冲队列与逆向拦截算法，彻底杜绝单帧内 180 度即时掉头引发的自吞误死。
-4. **同分比耗时排行榜（Top 10）**：
-   - 战绩更新仲裁：仅当“本次得分 > 历史最高分”或“本次得分 == 历史最高分且耗时更短”时覆盖个人最佳纪录；
-   - 排行榜双权重排序：第一关键字按得分（`highScore`）降序，第二关键字按耗时（`bestDuration`）升序，截取全局 Top 10 展示。
+```mermaid
+graph LR
+    subgraph Client ["前端客户端 (Next.js 15 / EdgeOne Pages)"]
+        UI["游戏界面 & Top10 榜单 (Light Mode)"]
+        Canvas["HTML5 Canvas 2D 渲染引擎"]
+        Audio["Web Audio API 原生 8-bit 音效"]
+        Touch["移动端触控滑屏 & 虚拟十字键"]
+    end
 
----
+    subgraph CDN ["腾讯云 EdgeOne 全球边缘网络"]
+        SSL["HTTPS 加密 & OCSP 装订"]
+        Cache["Anycast 边缘多级缓存 (Brotli)"]
+    end
 
-## 🏗️ 系统架构设计
+    subgraph Backend ["后端服务 (Go Gin / Azure App Service)"]
+        Router["Gin 高性能 RESTful 路由"]
+        Auth["玩家认证 & 自动注册"]
+        Settle["战绩结算 & 物理防作弊校验"]
+        Store["数据持久化 JSON Store"]
+    end
 
-系统严格遵循标准的四层架构模型：
-
-```
-┌──────────────────────────────────────────────────────────┐
-│ 1. 表现层 (Presentation Layer)                            │
-│    • HTML5 Canvas 2D 绘图引擎 + Tailwind 浅色系 HUD 响应式布局│
-├──────────────────────────────────────────────────────────┤
-│ 2. 控制调度层 (Controller Layer)                         │
-│    • 键盘事件监听队列、防反向状态机、Go Gin RESTful 路由调度 │
-├──────────────────────────────────────────────────────────┤
-│ 3. 领域模型层 (Domain Model Layer)                       │
-│    • 24×24 栅格状态矩阵、围栏生长引擎、同分比耗时仲裁算法    │
-├──────────────────────────────────────────────────────────┤
-│ 4. 数据持久层 (Data Persistence Layer)                   │
-│    • Go JSON 文件存储驱动与 sync.RWMutex 读写互斥并发控制     │
-└──────────────────────────────────────────────────────────┘
+    UI --> CDN --> Router
+    Canvas --> Touch
 ```
 
 ---
 
-## 📂 项目目录结构
+## 🎮 核心机制与特色功能
 
-```
-TanChiShe/
-├── client/                     # 前端工程 (Next.js + TypeScript + Canvas)
-│   ├── app/
-│   │   ├── globals.css         # 全局样式
-│   │   ├── layout.tsx          # 根布局
-│   │   └── page.tsx            # 主页面入口 (浅色背景容器)
-│   ├── components/
-│   │   └── TanChiShe.tsx       # 核心游戏组件 (登录门禁、Canvas 渲染、游戏主循环)
-│   ├── types/
-│   │   └── index.ts            # TypeScript 接口与类型定义
-│   ├── next.config.ts          # Next.js 静态导出配置 (output: export)
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── server/                     # 后端工程 (Go + Gin)
-│   ├── main.go                 # Gin API 路由、CORS、RWMutex 并发持久化与切片排序
-│   ├── go.mod
-│   ├── go.sum
-│   └── users.json              # 本地数据持久化文件
-│
-├── .gitignore                  # Git 忽略规则
-└── README.md                   # 工程交付总结文档
-```
+1. **📱 移动端与电脑端双端自适应**：
+   - 电脑端：支持键盘 `方向键` / `WASD` 移动，`空格` 开始/重来，`P` 键暂停；
+   - 移动端：支持全屏 **Touch 滑动转向** 与底部 **极简微型触控十字方向键**。
+2. **⚡ 双指令转向缓冲队列**：
+   - 彻底杜绝快速连续按键时的原地折返碰撞与自杀误判。
+3. **🍎 动态难度与金色幸运果**：
+   - 贪吃蛇速度随得分增长平滑微调提升；
+   - 随机刷出限时 8 秒金色幸运果（+30 分）。
+4. **🎵 原生 Web Audio API 8-bit 音效**：
+   - 纯正弦波数学合成清脆吃果、碰撞死亡与暂停音效，0 资源体积，支持一键静音。
+5. **🏆 Top 10 全球实时榜单**：
+   - 高亮当前玩家记录，自动计算全服战绩超越百分比。
+6. **🛡️ 后端物理防作弊校验**：
+   - 上报战绩时服务端自动校验得分/耗时比，拦截恶意刷分请求。
+7. **📲 PWA 原生应用体验**：
+   - 支持手机浏览器“添加到主屏幕”，全屏沉浸式无地址栏游玩。
 
 ---
 
-## 🔌 API 接口契约说明
+## 🛠️ 本地运行与开发
 
-| 接口路径 | 请求方式 | 功能描述 | 请求参数 / 载荷 | 返回说明 |
-| :--- | :---: | :--- | :--- | :--- |
-| `/api/auth` | `POST` | 玩家登录与免注册自动建档 | `{"username": "...", "password": "..."}` | 个人档案与最高分记录 |
-| `/api/settle` | `POST` | 对局结算与同分比耗时仲裁 | `{"username": "...", "password": "...", "score": 10, "duration": 8}` | 结算状态与是否刷新纪录 |
-| `/api/leaderboard` | `GET` | 获取全局 Top 10 风云榜 | 无 | Top 10 玩家得分与耗时列表 |
-
----
-
-## 🚀 本地快速启动指南
-
-### 1. 启动后端服务 (Go Gin)
-
+### 1. 后端 (Go Gin)
 ```bash
 cd server
 go run main.go
-# 后端将监听 http://localhost:8080
+# 服务运行于 http://localhost:8080
 ```
 
-### 2. 启动前端服务 (Next.js)
-
+### 2. 前端 (Next.js)
 ```bash
 cd client
-npm install     # 安装依赖
-npm run dev     # 启动开发服务器
-# 前端将运行在 http://localhost:3000
+npm install
+npm run dev
+# 访问 http://localhost:3000
 ```
-
-### 3. 构建与静态导出
-
-```bash
-cd client
-npm run build   # 静态导出至 client/out/ 目录，可直接托管部署
-```
-
----
-
-## ⌨️ 游戏操作快捷键
-
-- **移动方向**：`↑` `↓` `←` `→` 或 `W` `A` `S` `D`（仅支持 90 度转弯）
-- **开始 / 重新开始**：`空格键 (Space)`
-- **暂停 / 继续**：`P 键`
