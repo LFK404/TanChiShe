@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -98,9 +99,9 @@ func main() {
 
 	// 配置跨域中间件，方便本地与 EdgeOne 代理访问
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowOriginFunc:  func(origin string) bool { return true },
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -119,7 +120,7 @@ func main() {
 		api.GET("/leaderboard", handleLeaderboard)
 	}
 
-	fmt.Println("🚀 CyberSnake Backend API running on http://localhost:8080")
+	fmt.Println("🚀 TanChiShe Backend API running on http://localhost:8080")
 	_ = r.Run(":8080")
 }
 
@@ -134,20 +135,27 @@ func handleAuth(c *gin.Context) {
 		return
 	}
 
+	username := strings.TrimSpace(req.Username)
+	password := strings.TrimSpace(req.Password)
+	if username == "" || password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "用户名或密码不能为空白字符"})
+		return
+	}
+
 	store.Lock()
 	defer store.Unlock()
 
-	user, exists := store.Users[req.Username]
+	user, exists := store.Users[username]
 	if !exists {
 		// 用户不存在：直接自动注册建档
 		newUser := &UserRecord{
-			Username:     req.Username,
-			Password:     req.Password,
+			Username:     username,
+			Password:     password,
 			HighScore:    0,
 			BestDuration: 0,
 			UpdatedAt:    time.Now().Format("2006-01-02 15:04:05"),
 		}
-		store.Users[req.Username] = newUser
+		store.Users[username] = newUser
 		store.persist()
 
 		c.JSON(http.StatusOK, gin.H{
@@ -159,7 +167,7 @@ func handleAuth(c *gin.Context) {
 	}
 
 	// 用户已存在：校验密码
-	if user.Password != req.Password {
+	if user.Password != password {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误，请核对后重试"})
 		return
 	}
@@ -178,11 +186,18 @@ func handleSettle(c *gin.Context) {
 		return
 	}
 
+	username := strings.TrimSpace(req.Username)
+	password := strings.TrimSpace(req.Password)
+	if username == "" || req.Score < 0 || req.Duration < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "非法的结算数据"})
+		return
+	}
+
 	store.Lock()
 	defer store.Unlock()
 
-	user, exists := store.Users[req.Username]
-	if !exists || user.Password != req.Password {
+	user, exists := store.Users[username]
+	if !exists || user.Password != password {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户认证失效"})
 		return
 	}

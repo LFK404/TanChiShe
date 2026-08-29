@@ -1,0 +1,25 @@
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server/server
+server/snake-server.exe
+
+# Database / runtime data
+server/users.json
+
+# Node & Next.js
+client/node_modules/
+client/.next/
+client/out/
+client/build/
+client/*.tsbuildinfo
+client/next-env.d.ts
