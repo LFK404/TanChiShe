@@ -5,7 +5,7 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Go Binaries & Data
+# Go Binaries & Local Data
 *.exe
 *.exe~
 *.dll
@@ -14,6 +14,8 @@ Thumbs.db
 server/snake-server
 server/server
 server/users.json
+server/*.db
+server/*.db-journal
 
 # Node & Next.js
 node_modules/
@@ -24,9 +26,17 @@ client/build/
 client/*.tsbuildinfo
 client/next-env.d.ts
 
-# Misc & Logs
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-.env*
 .vercel
+
+# Environment Variables (保护敏感配置与密码，仅开放 example 范本)
+.env
+.env*.local
+.env.development
+.env.production
+!.env.example
+!client/.env.example
+!server/.env.example
