@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>此间 · 南大指南 - 南大家园</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    :root {
+      /* 核心品牌色 (纯色无渐变) */
+      --primary-cyan: #66CCFF;          /* 经典天蓝主色 */
+      --primary-dark: #0099FF;          /* 深天蓝交互强调 */
+      --primary-light: #EBF8FF;         /* 浅天蓝底色 */
+      --primary-subtle: #F6FBFF;        /* 极浅天蓝悬停 */
+      
+      /* 南大家园原生板块多色系统 (等宽单字数字徽标 1~6) */
+      --badge-1-bg: #E0F2FE; --badge-1-text: #0284C7; /* 1 写在前面 - 天青蓝 */
+      --badge-2-bg: #FFE4E6; --badge-2-text: #E11D48; /* 2 黄页电话 - 珊瑚红 */
+      --badge-3-bg: #DCFCE7; --badge-3-text: #16A34A; /* 3 课程学业 - 翡翠绿 */
+      --badge-4-bg: #EDE9FE; --badge-4-text: #7C3AED; /* 4 学习发展 - 活力紫 */
+      --badge-5-bg: #FEF3C7; --badge-5-text: #D97706; /* 5 校园生活 - 暖琥珀 */
+      --badge-6-bg: #EEF2FF; --badge-6-text: #4F46E5; /* 6 经验锦囊 - 靛蓝色 */
+
+      /* 警示色系 */
+      --color-danger-bg: #FEE2E2;
+      --color-danger-text: #DC2626;
+
+      /* 文字层级 */
+      --text-main: #0F172A;             /* 标题深黑 */
+      --text-body: #334155;             /* 正文沉稳灰 */
+      --text-muted: #94A3B8;            /* 辅助说明灰 */
+      
+      /* 页面背景 - 纯白基调 */
+      --bg-workspace: #E6E9EE;          /* 外部展示工作台底色 */
+      --bg-page: #FFFFFF;               /* 手机内页纯白 */
+      
+      /* 边框与分割 */
+      --border-color: #EDF2F7;
+      --border-line: #E2E8F0;
+      
+      /* 几何圆角与阴影 */
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-pill: 9999px;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
+      --shadow-float: 0 4px 16px rgba(0, 153, 255, 0.18), 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-drawer: 0 12px 36px rgba(15, 23, 42, 0.16);
+    }
+
+    body {
+      background: var(--bg-workspace);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 10px 48px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 矢量线性图标全局规范 */
+    svg.icon {
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    
+    a { color: var(--primary-dark); text-decoration: none; cursor: pointer; }
+    button { font-family: inherit; cursor: pointer; border: 0; background: none; }
+    input { font-family: inherit; }
+
+    /* 外层展示提示 */
+    .mock-header {
+      width: 390px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px 12px;
+    }
+    .mock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFFFFF;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-sm);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .mock-badge-dot { width: 8px; height: 8px; border-radius: 50%; background: #66CCFF; }
+    .mock-sub { font-size: 11.5px; color: var(--text-muted); }
+
+    /* 390px 标准移动机身模型 - 纯白页面底色 */
+    .phone-box {
+      width: 390px;
+      height: 844px;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-page);
+      border-radius: 32px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12), 0 0 0 8px #FFFFFF, 0 0 0 9px #E2E8F0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scroll-body {
+      flex: 1;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      position: relative;
+      background: var(--bg-page);
+    }
+    .scroll-body::-webkit-scrollbar { display: none; }
+
+    /* 顶部仿真状态栏 */
+    .status-bar-sim {
+      height: 24px;
+      padding: 4px 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      background: #FFFFFF;
+      z-index: 25;
+      user-select: none;
+    }
+
+    /* 顶栏 (独立网址直接访问：无返回箭头) */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      display: flex;
+      height: 48px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px 0 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .brand-logo-wrap {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-pill);
+      background: var(--primary-light);
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+    }
+    .brand-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+
+    .nav-actions { display: flex; align-items: center; gap: 4px; }
+    .nav-btn {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--text-main);
+      border-radius: var(--radius-pill);
+      transition: background 0.15s ease;
+    }
+    .nav-btn:active { background: #F1F5F9; }
+
+    /* 首页主体 - 纯白大字号人文排版（单行不换行，大空行呼吸感） */
+    .home-hero-wrap {
+      padding: 24px 20px 8px;
+    }
+    .hero-title {
+      font-size: 24px;
+      line-height: 1.25;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      margin: 0 0 20px 0; /* 增大与下方引言的空隙 */
+      white-space: nowrap;
+    }
+    .hero-quote {
+      margin: 0;
+      padding: 0 0 0 10px;
+      border-left: 3px solid var(--primary-cyan);
+    }
+    .hero-quote p {
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: var(--text-body);
+      margin: 0;
+    }
+
+    /* 搜索与小家园复合栏 (胶囊形，浅灰细线分隔，白底蓝字，问问小家园+右侧图标) */
+    .search-composite-wrap {
+      padding: 16px 20px 0;
+    }
+    .search-composite-box {
+      width: 100%;
+      height: 46px;
+      background: #FFFFFF;
+      border: 1.5px solid var(--border-line);
+      border-radius: var(--radius-pill);
+      display: flex;
+      align-items: center;
+      padding: 0 10px 0 16px;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-composite-box:hover {
+      border-color: var(--primary-cyan);
+      box-shadow: 0 2px 10px rgba(102, 204, 255, 0.15);
+    }
+    .search-input-text {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* 浅灰细线分隔条 */
+    .search-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border-line);
+      margin: 0 8px;
+    }
+
+    /* 白底蓝字，图标在右侧的问问小家园按钮 */
+    .search-mascot-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      color: var(--primary-dark);
+      padding: 4px 6px;
+      height: 34px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: var(--radius-pill);
+      transition: opacity 0.15s;
+    }
+    .search-mascot-btn:active { opacity: 0.7; }
+
+    /* 手册公告栏 */
+    .notice-card {
+      margin: 14px 20px 0;
+      background: var(--primary-light);
+      border-radius: var(--radius-md);
+      border-left: 3.5px solid var(--primary-cyan);
+      padding: 12px 14px;
+    }
+    .notice-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .notice-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .notice-date { font-size: 11px; color: var(--text-muted); }
+    .notice-body { font-size: 12.5px; line-height: 1.65; color: #0369A1; }
+    .notice-body a { font-weight: 700; text-decoration: underline; color: var(--primary-dark); }
+
+    /* 6 大知识分类目录列表 (浅灰细顶线 + 均匀对称上下空隙 + 双列中间断开底线 + 最后一行无底线) */
+    .dir-section {
+      padding: 24px 20px 0;
+    }
+    .dir-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 0;
+    }
+    .dir-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 0;
+    }
+    .dir-count { font-size: 12px; color: var(--text-muted); }
+    
+    /* 目录下的浅灰细线，增大上方空隙，使上下间距完全一致 */
+    .dir-header-line {
+      height: 1px;
+      background: var(--border-line);
+      margin: 12px 0 0;
+    }
+    
+    .dir-open-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 24px;
+    }
+    
+    /* 每一项底部浅灰细线，由于存在 column-gap，左右中间自然断开不相连 */
+    .dir-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border-line);
+      cursor: pointer;
+      transition: opacity 0.12s;
+    }
+    .dir-item-row:hover .dir-name { color: var(--primary-dark); }
+    .dir-item-row:active { opacity: 0.7; }
+    
+    /* 文章列表最后一行的模块，底部不带灰线 */
+    .dir-item-row-last {
+      border-bottom: none !important;
+    }
+    
+    /* 笔画等宽、无前导零、圆角弧度与卡片一致的现代粗体几何数字徽标 (1~6) */
+    .dir-badge-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px; /* 圆角弧度与卡片一致 */
+      font-family: -apple-system, BlinkMacSystemFont, "DIN Alternate", "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    
+    .dir-name { font-size: 14px; font-weight: 700; color: var(--text-main); transition: color 0.12s; }
+    .dir-doc-count { margin-left: auto; font-family: -apple-system, BlinkMacSystemFont, "DIN Alternate", "SF Pro Text", monospace; font-size: 12px; font-weight: 500; color: var(--text-muted); }
+
+    /* 纯白紧凑页脚 */
+    .compact-footer {
+      margin: 28px 20px 96px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-line);
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .footer-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+      margin-top: 8px;
+      font-size: 11.5px;
+    }
+
+    /* 悬浮圆形「小家园」吉祥物按钮 (无文字 Tip，纯净悬浮) */
+    .fab-mascot {
+      position: absolute;
+      right: 18px;
+      bottom: 22px;
+      width: 50px;
+      height: 50px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-pill);
+      background: #FFFFFF;
+      box-shadow: var(--shadow-float);
+      border: 1.5px solid var(--border-line);
+      cursor: pointer;
+      z-index: 28;
+      transition: transform 0.2s;
+    }
+    .fab-mascot:active { transform: scale(0.92); }
+
+    /* 文章阅读页排版 */
+    .doc-page { padding: 16px 18px 96px; background: #FFFFFF; min-height: 100%; }
+    .doc-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--primary-dark);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .doc-page h1 { font-size: 21px; font-weight: 800; line-height: 1.35; color: var(--text-main); margin: 0; }
+    .doc-meta { margin: 6px 0 16px; font-size: 12px; color: var(--text-muted); }
+    
+    .doc-body h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 24px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .doc-body h2::before {
+      content: "";
+      width: 4px;
+      height: 15px;
+      background: var(--primary-cyan);
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .doc-body h3 { font-size: 14.5px; font-weight: 600; color: var(--text-main); margin: 18px 0 8px; }
+    .doc-body p { font-size: 13.5px; line-height: 1.75; color: var(--text-body); margin: 8px 0; }
+    .doc-body ul, .doc-body ol { padding-left: 20px; margin: 8px 0; font-size: 13.5px; line-height: 1.75; color: var(--text-body); }
+    .doc-body li { margin-bottom: 4px; }
+    
+    /* 警示与信息卡片 */
+    .alert-card {
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin: 14px 0;
+      font-size: 13px;
+      line-height: 1.65;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert-card-danger {
+      background: var(--color-danger-bg);
+      border-left: 3.5px solid var(--color-danger-text);
+      color: #991B1B;
+    }
+    .alert-card-info {
+      background: var(--primary-light);
+      border-left: 3.5px solid var(--primary-cyan);
+      color: #0369A1;
+    }
+
+    /* 对比表格 */
+    .doc-table-wrap {
+      border: 1px solid var(--border-line);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin: 14px 0;
+    }
+    .doc-table-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border-line);
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .doc-table-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border-line);
+      padding: 9px 12px;
+      font-size: 12.5px;
+      color: var(--text-body);
+    }
+    .doc-table-row:last-child { border-bottom: none; }
+
+    /* 下一篇卡片 */
+    .next-doc-card {
+      margin-top: 26px;
+      border: 1px solid var(--border-line);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      background: #FFFFFF;
+      transition: all 0.15s;
+    }
+    .next-doc-card:hover { border-color: var(--primary-cyan); background: var(--primary-light); }
+
+    /* 抽屉与浮层 */
+    .drawer-mask {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .drawer-mask.active { opacity: 1; pointer-events: auto; }
+
+    .side-drawer-pane {
+      position: absolute;
+      inset: 0 auto 0 0;
+      z-index: 50;
+      width: 84%;
+      max-width: 328px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-drawer);
+      transform: translateX(-100%);
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .side-drawer-pane.active { transform: translateX(0); }
+
+    .bottom-sheet-pane {
+      position: absolute;
+      inset: auto 0 0 0;
+      z-index: 60;
+      max-height: 82%;
+      background: #FFFFFF;
+      border-radius: 20px 20px 0 0;
+      box-shadow: var(--shadow-drawer);
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bottom-sheet-pane.active { transform: translateY(0); }
+
+    .progress-bar {
+      height: 2.5px;
+      background: var(--primary-cyan);
+      width: 0%;
+      position: sticky;
+      top: 48px;
+      z-index: 22;
+      transition: width 0.08s ease;
+    }
+
+    /* 全屏搜索视图 */
+    .search-fullscreen-view {
+      position: absolute;
+      inset: 0;
+      background: #FFFFFF;
+      z-index: 38;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.22s ease;
+    }
+    .search-fullscreen-view.active { transform: translateX(0); }
+
+    .search-chips-bar {
+      display: flex;
+      gap: 6px;
+      padding: 10px 16px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border-line);
+      background: #F8FAFC;
+    }
+    .search-chips-bar::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: #FFFFFF;
+      border: 1px solid var(--border-line);
+      color: var(--text-body);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .filter-chip.active {
+      background: var(--primary-dark);
+      color: #FFFFFF;
+      border-color: var(--primary-dark);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 外层评审提示栏 -->
+  <div class="mock-header">
+    <div class="mock-badge">
+      <span class="mock-badge-dot"></span>
+      <span>index_v3.html（南大家园 · 极简精修版）</span>
+    </div>
+    <span class="mock-sub">对称呼吸间距 · 最后一行无底线</span>
+  </div>
+
+  <!-- 390px 手机机身 -->
+  <div class="phone-box">
+    
+    <!-- 顶部状态栏 -->
+    <div class="status-bar-sim">
+      <span>09:41</span>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <span style="font-size:10px;">5G</span>
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="2"></rect><line x1="22" x2="22" y1="11" y2="13"></line></svg>
+      </div>
+    </div>
+
+    <!-- 顶部滑动进度细线 -->
+    <div id="readProgress" class="progress-bar"></div>
+
+    <!-- 主滑动内容容器 (纯白) -->
+    <div id="scroller" class="scroll-body">
+      
+      <!-- ================= 首页视图 ================= -->
+      <div id="viewHome">
+        
+        <!-- 首页顶栏 (独立网址直接访问：无返回箭头) -->
+        <div class="top-nav">
+          <div class="brand-group" onclick="goHome()">
+            <div class="brand-logo-wrap">
+              <!-- 小家园吉祥物矢量 Logo -->
+              <svg width="20" height="20" viewBox="490 0 47 47" fill="none" style="stroke:none; display:block;">
+                <g clip-path="url(#hl-logo-clip-v3)">
+                  <mask id="hl-logo-mask-v3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="490" y="0" width="47" height="47">
+                    <path d="M537 23.5C537 10.5213 526.479 0 513.5 0C500.521 0 490 10.5213 490 23.5C490 36.4787 500.521 47 513.5 47C526.479 47 537 36.4787 537 23.5Z" fill="white"></path>
+                  </mask>
+                  <g mask="url(#hl-logo-mask-v3)">
+                    <path d="M537 23.5C537 10.5213 526.479 0 513.5 0C500.521 0 490 10.5213 490 23.5C490 36.4787 500.521 47 513.5 47C526.479 47 537 36.4787 537 23.5Z" fill="#FFD200"></path>
+                    <path d="M509.679 16.2404C508.496 12.498 511.573 10.5429 513.259 10.0332C512.161 11.5425 513.506 12.838 514.315 13.2971C517.167 14.7104 518.3 16.6587 518.51 17.4562C519.1 19.5443 517.9 21.1757 517.226 21.7304L510.532 17.9836C509.976 17.0675 509.732 16.4397 509.679 16.2404Z" fill="#3FC366"></path>
+                    <path d="M505.609 17.9884C497.239 18.949 491.944 25.593 490.343 28.795V53.3242L512.471 60.5285L529.624 40.8023C530.173 35.5877 527.794 29.8242 526.536 27.5942C521.185 18.4001 510.355 17.3594 505.609 17.9884Z" fill="white"></path>
+                    <path d="M500.292 22.6779C493.431 25.0107 491.487 30.7399 491.372 33.3129L490.343 44.4625L520.19 50.8092L525.507 43.7764C527.977 38.8362 526.079 33.5988 524.821 31.5976C518.646 20.0706 505.895 20.8482 500.292 22.6779Z" fill="#FFEB99"></path>
+                    <path d="M505.233 25.0197C503.762 24.654 502.087 26.2953 501.493 28.6856C501.306 29.53 501.035 31.4247 501.446 32.248C502.19 32.3624 503.985 32.7283 505.22 33.2772C505.601 32.986 506.453 31.9247 506.82 30.01C507.414 27.6197 506.704 25.3854 505.233 25.0197Z" fill="#4C4519"></path>
+                    <path d="M519.513 30.1194C518.093 29.5896 516.244 31.0309 515.383 33.3386C515.101 34.1564 514.617 36.0084 514.933 36.8729C515.659 37.0705 517.401 37.6373 518.566 38.3224C518.977 38.076 519.945 37.1182 520.526 35.2574C521.387 32.9495 520.933 30.6492 519.513 30.1194Z" fill="#4C4519"></path>
+                    <path d="M498.101 35.4207C500.111 35.9994 501.989 35.6091 502.294 34.5489C502.599 33.4886 501.216 32.1599 499.206 31.5811C497.195 31.0024 495.318 31.3927 495.012 32.453C494.707 33.5132 496.09 34.8419 498.101 35.4207Z" fill="#FFA4A4"></path>
+                    <path d="M518.427 43.0097C520.295 43.9518 522.212 43.917 522.709 42.9318C523.206 41.9467 522.094 40.3844 520.226 39.4422C518.357 38.5001 516.44 38.5349 515.943 39.5201C515.446 40.5052 516.558 42.0676 518.427 43.0097Z" fill="#FFA4A4"></path>
+                  </g>
+                </g>
+                <defs><clipPath id="hl-logo-clip-v3"><rect width="47" height="47" fill="white" transform="translate(490)"></rect></clipPath></defs>
+              </svg>
+            </div>
+            <strong class="brand-title">此间 · 南大指南</strong>
+            <span class="brand-tag">南大家园</span>
+          </div>
+          <div class="nav-actions">
+            <button class="nav-btn" onclick="openSearch()" aria-label="搜索">
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"></circle><path d="m20.5 20.5-4-4"></path></svg>
+            </button>
+            <button class="nav-btn" onclick="openDrawer()" aria-label="目录">
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24"><line x1="4" x2="20" y1="7" y2="7"></line><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="17" y2="17"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 纯白大字号人文排版（单行不换行，大空行呼吸感） -->
+        <div class="home-hero-wrap">
+          <h1 class="hero-title">校园里的事，在此问明白。</h1>
+          <blockquote class="hero-quote">
+            <p>是什么曾经拯救过你，你最好就用它来更好地拯救这个世界。</p>
+          </blockquote>
+        </div>
+
+        <!-- 搜索与小家园复合栏 (胶囊形，浅灰细线分隔，白底蓝字，问问小家园+右侧图标) -->
+        <div class="search-composite-wrap">
+          <div class="search-composite-box" onclick="openSearch()">
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="color:var(--text-muted); margin-right:8px;"><circle cx="11" cy="11" r="7.5"></circle><path d="m20.5 20.5-4-4"></path></svg>
+            <span class="search-input-text">搜索手册词条，或向小助手提问...</span>
+            
+            <!-- 垂直浅灰细线分隔 -->
+            <div class="search-divider"></div>
+
+            <button class="search-mascot-btn" onclick="event.stopPropagation(); openAskModal('环游车怎么收费？');" title="问问小家园">
+              <span>问问小家园</span>
+              <!-- 小家园微型图标放在右侧 -->
+              <svg width="18" height="18" viewBox="490 0 47 47" fill="none" style="stroke:none; display:block;">
+                <g clip-path="url(#hl-btn-clip-v3)">
+                  <mask id="hl-btn-mask-v3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="490" y="0" width="47" height="47">
+                    <path d="M537 23.5C537 10.5213 526.479 0 513.5 0C500.521 0 490 10.5213 490 23.5C490 36.4787 500.521 47 513.5 47C526.479 47 537 36.4787 537 23.5Z" fill="white"></path>
+                  </mask>
+                  <g mask="url(#hl-btn-mask-v3)">
+                    <path d="M537 23.5C537 10.5213 526.479 0 513.5 0C500.521 0 490 10.5213 490 23.5C490 36.4787 500.521 47 513.5 47C526.479 47 537 36.4787 537 23.5Z" fill="#FFD200"></path>
+                    <path d="M509.679 16.2404C508.496 12.498 511.573 10.5429 513.259 10.0332C512.161 11.5425 513.506 12.838 514.315 13.2971C517.167 14.7104 518.3 16.6587 518.51 17.4562C519.1 19.5443 517.9 21.1757 517.226 21.7304L510.532 17.9836C509.976 17.0675 509.732 16.4397 509.679 16.2404Z" fill="#3FC366"></path>
+                    <path d="M505.609 17.9884C497.239 18.949 491.944 25.593 490.343 28.795V53.3242L512.471 60.5285L529.624 40.8023C530.173 35.5877 527.794 29.8242 526.536 27.5942C521.185 18.4001 510.355 17.3594 505.609 17.9884Z" fill="white"></path>
+                    <path d="M500.292 22.6779C493.431 25.0107 491.487 30.7399 491.372 33.3129L490.343 44.4625L520.19 50.8092L525.507 43.7764C527.977 38.8362 526.079 33.5988 524.821 31.5976C518.646 20.0706 505.895 20.8482 500.292 22.6779Z" fill="#FFEB99"></path>
+                  </g>
+                </g>
+                <defs><clipPath id="hl-btn-clip-v3"><rect width="47" height="47" fill="white" transform="translate(490)"></rect></clipPath></defs>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 手册公告栏 (纯矢量图标，无 Emoji) -->
+        <div class="notice-card">
+          <div class="notice-head">
+            <div class="notice-tag-badge">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span>手册公告</span>
+            </div>
+            <span class="notice-date">2026 年 8 月</span>
+          </div>
+          <p class="notice-body">
+            1. 欢迎 2026 级新同学！请入学前优先查阅 <a onclick="openDoc('study', 0)">《新生必看》</a> 防诈与报到指南。<br>
+            2. 本手册各篇已同步核对 2026 秋季教学安排，若发现信息变动欢迎随时向编写组反馈（QQ群：930991836）。
+          </p>
+        </div>
+
+        <!-- 6 大知识分类目录列表 (浅灰细顶线 + 均匀对称上下空隙 + 双列中间断开底线 + 最后一行无底线) -->
+        <div class="dir-section">
+          <div class="dir-header">
+            <h2 class="dir-title">目录</h2>
+            <span class="dir-count">6 个板块 · 31 篇指南</span>
+          </div>
+          
+          <div class="dir-header-line"></div>
+          
+          <div class="dir-open-grid">
+            
+            <!-- Row 1 -->
+            <div class="dir-item-row" onclick="openDoc('intro', 0)">
+              <span class="dir-badge-num" style="background:var(--badge-1-bg); color:var(--badge-1-text);">1</span>
+              <span class="dir-name">写在前面</span>
+              <span class="dir-doc-count">1</span>
+            </div>
+
+            <div class="dir-item-row" onclick="openDoc('yellow', 0)">
+              <span class="dir-badge-num" style="background:var(--badge-2-bg); color:var(--badge-2-text);">2</span>
+              <span class="dir-name">黄页电话</span>
+              <span class="dir-doc-count">2</span>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="dir-item-row" onclick="openDoc('course', 0)">
+              <span class="dir-badge-num" style="background:var(--badge-3-bg); color:var(--badge-3-text);">3</span>
+              <span class="dir-name">课程学业</span>
+              <span class="dir-doc-count">2</span>
+            </div>
+
+            <div class="dir-item-row" onclick="openDoc('study', 0)">
+              <span class="dir-badge-num" style="background:var(--badge-4-bg); color:var(--badge-4-text);">4</span>
+              <span class="dir-name">学习发展</span>
+              <span class="dir-doc-count">11</span>
+            </div>
+
+            <!-- Row 3 (最后一行，无底部灰线) -->
+            <div class="dir-item-row dir-item-row-last" onclick="openDoc('life', 8)">
+              <span class="dir-badge-num" style="background:var(--badge-5-bg); color:var(--badge-5-text);">5</span>
+              <span class="dir-name">校园生活</span>
+              <span class="dir-doc-count">14</span>
+            </div>
+
+            <div class="dir-item-row dir-item-row-last" onclick="openDoc('exp', 0)">
+              <span class="dir-badge-num" style="background:var(--badge-6-bg); color:var(--badge-6-text);">6</span>
+              <span class="dir-name">经验锦囊</span>
+              <span class="dir-doc-count">1</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 纯白紧凑页脚 -->
+        <div class="compact-footer">
+          <p>本手册由南昌大学家园工作室（NCUHOME）成员整理维护，非官方商业机构，内容仅供交流学习。若发现信息有误或认为侵犯了您的权益，请通过下方方式联系我们。</p>
+          <div class="footer-line">
+            <span>邮箱：book@ncuhome.club</span>
+            <span>·</span>
+            <span>QQ群：930991836</span>
+            <span>·</span>
+            <a href="javascript:;">南大家园工作室</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 文章详情视图 ================= -->
+      <div id="viewDoc" style="display: none;">
+        
+        <!-- 文章页顶栏 (返回箭头 + 面包屑) -->
+        <div class="top-nav">
+          <button class="nav-btn" onclick="goHome()" aria-label="返回首页">
+            <svg class="icon" width="20" height="20" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+          </button>
+          <div style="flex:1; min-width:0; padding:0 8px;">
+            <div id="docHeaderSec" style="font-size:11px; color:var(--text-muted);">学习发展 · 1 / 11</div>
+            <div id="docHeaderTitle" style="font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main);">新生必看</div>
+          </div>
+          <div class="nav-actions">
+            <button class="nav-btn" onclick="openSearch()" aria-label="搜索">
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"></circle><path d="m20.5 20.5-4-4"></path></svg>
+            </button>
+            <button class="nav-btn" onclick="openDrawer()" aria-label="目录">
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24"><line x1="4" x2="20" y1="7" y2="7"></line><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="17" y2="17"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <article class="doc-page">
+          <div id="docBreadcrumb" class="doc-breadcrumb">学习发展 › 新生专栏</div>
+          <h1 id="artTitle">新生必看</h1>
+          <p id="artMeta" class="doc-meta">学习发展 · 更新于 2026 年 8 月 · 约 15 分钟阅读</p>
+          
+          <div id="artBody" class="doc-body">
+            <!-- 动态注入 -->
+          </div>
+
+          <!-- 下一篇导航卡片 -->
+          <div id="nextCard" class="next-doc-card" onclick="goToNext()">
+            <div style="flex:1;">
+              <div id="nextSub" style="font-size:11.5px; color:var(--text-muted);">下一篇 · 2 / 11</div>
+              <div id="nextTitle" style="font-size:14px; font-weight:700; color:var(--text-main); margin-top:2px;">专业分流与转专业政策</div>
+            </div>
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="color:var(--primary-dark);"><path d="m9 18 6-6-6-6"></path></svg>
+          </div>
+
+          <!-- 反馈栏 -->
+          <div style="margin-top:24px; padding-top:14px; border-top:1px solid var(--border-line); font-size:12.5px; color:var(--text-muted);">
+            <div id="docFbAction" style="display:flex; align-items:center; gap:8px;">
+              <span>本篇内容对你有帮助吗？</span>
+              <button class="nav-btn" style="width:auto; height:28px; padding:0 12px; border:1px solid var(--border-line); border-radius:var(--radius-sm); font-size:12px; color:var(--text-body); background:#FFFFFF; display:inline-flex; align-items:center; gap:4px;" onclick="submitDocFeedback(true)">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3"></path></svg>
+                <span>有用</span>
+              </button>
+              <button class="nav-btn" style="width:auto; height:28px; padding:0 12px; border:1px solid var(--border-line); border-radius:var(--radius-sm); font-size:12px; color:var(--text-body); background:#FFFFFF; display:inline-flex; align-items:center; gap:4px;" onclick="submitDocFeedback(false)">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24"><path d="M17 14V2"></path><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3"></path></svg>
+                <span>没帮上</span>
+              </button>
+            </div>
+            <div id="docFbDone" style="display:none; color:var(--text-body); line-height:1.5;">
+              感谢反馈！如有具体补充或勘误，欢迎点击「<a href="javascript:alert('已跳转家园飞书反馈文档');" style="font-weight:600;">飞书文档提交详情</a>」。
+            </div>
+          </div>
+        </article>
+      </div>
+
+    </div>
+
+    <!-- 悬浮圆形「小家园」吉祥物按钮 (无文字 Tip，纯净悬浮) -->
+    <button class="fab-mascot" onclick="handleFabClick()" aria-label="问问小家园" title="问问小家园">
+      <svg width="34" height="34" viewBox="490 0 47 47" fill="none" style="stroke:none; display:block;">
+        <g clip-path="url(#hl-fab-clip-v3)">
+          <mask id="hl-fab-mask-v3" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="490" y="0" width="47" height="47">
+            <path d="M537 23.5C537 10.5213 526.479 0 513.5 0C500.521 0 490 10.5213 490 23.5C490 36.4787 500.521 47 513.5 47C526.479 47 537 36.4787 537 23.5Z" fill="white"></path>
+          </mask>
+          <g mask="url(#hl-fab-mask-v3)">
+            <path d="M537 23.5C537 10.5213 526.479 0 513.5 0C500.521 0 490 10.5213 490 23.5C490 36.4787 500.521 47 513.5 47C526.479 47 537 36.4787 537 23.5Z" fill="#FFD200"></path>
+            <path d="M509.679 16.2404C508.496 12.498 511.573 10.5429 513.259 10.0332C512.161 11.5425 513.506 12.838 514.315 13.2971C517.167 14.7104 518.3 16.6587 518.51 17.4562C519.1 19.5443 517.9 21.1757 517.226 21.7304L510.532 17.9836C509.976 17.0675 509.732 16.4397 509.679 16.2404Z" fill="#3FC366"></path>
+            <path d="M505.609 17.9884C497.239 18.949 491.944 25.593 490.343 28.795V53.3242L512.471 60.5285L529.624 40.8023C530.173 35.5877 527.794 29.8242 526.536 27.5942C521.185 18.4001 510.355 17.3594 505.609 17.9884Z" fill="white"></path>
+            <path d="M500.292 22.6779C493.431 25.0107 491.487 30.7399 491.372 33.3129L490.343 44.4625L520.19 50.8092L525.507 43.7764C527.977 38.8362 526.079 33.5988 524.821 31.5976C518.646 20.0706 505.895 20.8482 500.292 22.6779Z" fill="#FFEB99"></path>
+            <path d="M505.233 25.0197C503.762 24.654 502.087 26.2953 501.493 28.6856C501.306 29.53 501.035 31.4247 501.446 32.248C502.19 32.3624 503.985 32.7283 505.22 33.2772C505.601 32.986 506.453 31.9247 506.82 30.01C507.414 27.6197 506.704 25.3854 505.233 25.0197Z" fill="#4C4519"></path>
+            <path d="M519.513 30.1194C518.093 29.5896 516.244 31.0309 515.383 33.3386C515.101 34.1564 514.617 36.0084 514.933 36.8729C515.659 37.0705 517.401 37.6373 518.566 38.3224C518.977 38.076 519.945 37.1182 520.526 35.2574C521.387 32.9495 520.933 30.6492 519.513 30.1194Z" fill="#4C4519"></path>
+            <path d="M498.101 35.4207C500.111 35.9994 501.989 35.6091 502.294 34.5489C502.599 33.4886 501.216 32.1599 499.206 31.5811C497.195 31.0024 495.318 31.3927 495.012 32.453C494.707 33.5132 496.09 34.8419 498.101 35.4207Z" fill="#FFA4A4"></path>
+            <path d="M518.427 43.0097C520.295 43.9518 522.212 43.917 522.709 42.9318C523.206 41.9467 522.094 40.3844 520.226 39.4422C518.357 38.5001 516.44 38.5349 515.943 39.5201C515.446 40.5052 516.558 42.0676 518.427 43.0097Z" fill="#FFA4A4"></path>
+          </g>
+        </g>
+        <defs><clipPath id="hl-fab-clip-v3"><rect width="47" height="47" fill="white" transform="translate(490)"></rect></clipPath></defs>
+      </svg>
+    </button>
+
+    <!-- 遮罩 -->
+    <div id="drawerOverlay" class="drawer-mask" onclick="closeAllDrawers()"></div>
+
+    <!-- ================= 目录抽屉 ================= -->
+    <div id="sideDrawer" class="side-drawer-pane">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 14px 14px 18px; border-bottom:1px solid var(--border-line);">
+        <div>
+          <strong style="font-size:16px; color:var(--text-main);">知识库目录</strong>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">6 个板块 · 31 篇全量指南</div>
+        </div>
+        <button class="nav-btn" onclick="closeAllDrawers()"><svg class="icon" width="18" height="18" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div id="drawerList" style="flex:1; overflow-y:auto; padding:10px 12px 24px;"></div>
+    </div>
+
+    <!-- ================= 底部小家园知识问答浮层 ================= -->
+    <div id="askBottomSheet" class="bottom-sheet-pane">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px; border-bottom:1px solid var(--border-line);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:26px; height:26px; border-radius:50%; background:var(--primary-light); display:grid; place-items:center;">
+            <svg width="18" height="18" viewBox="490 0 47 47" fill="none" style="stroke:none;"><use href="#hl-logo-svg-v3"></use></svg>
+          </div>
+          <div>
+            <div id="askSheetTitle" style="font-size:14.5px; font-weight:700; color:var(--text-main);">小家园 · 知识助手</div>
+            <div id="askSheetSub" style="font-size:11px; color:var(--text-muted);">仅依据《南大指南》官方手册生成可溯源解答</div>
+          </div>
+        </div>
+        <button class="nav-btn" onclick="closeAllDrawers()"><svg class="icon" width="18" height="18" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div id="askBodyArea" style="flex:1; overflow-y:auto; padding:14px 16px;">
+        <div id="askDefaultPrompts"></div>
+      </div>
+      <div style="padding:10px 14px 16px; border-top:1px solid var(--border-line); display:flex; gap:8px; background:#FFFFFF;">
+        <input id="askInput" onkeydown="if(event.key==='Enter') submitAskText(this.value);" style="flex:1; border:1.5px solid var(--border-line); border-radius:var(--radius-pill); padding:0 14px; height:40px; font-size:13px; outline:none; background:#F8FAFC;" placeholder="输入您想了解的问题...">
+        <button onclick="submitAskText(document.getElementById('askInput').value)" style="width:40px; height:40px; border-radius:var(--radius-pill); background:var(--primary-dark); color:#fff; display:grid; place-items:center; box-shadow:var(--shadow-sm);">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="stroke-width:2.2;"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 全屏搜索视图 ================= -->
+    <div id="searchView" class="search-fullscreen-view">
+      <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border-line);">
+        <button class="nav-btn" onclick="closeSearch()"><svg class="icon" width="20" height="20" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <input id="searchInput" oninput="runSearch(this.value)" style="flex:1; border:1.5px solid var(--border-line); background:#F8FAFC; height:38px; border-radius:var(--radius-pill); padding:0 14px; font-size:13.5px; outline:none;" placeholder="搜索手册词条（如：环游车、绩点、报修...）">
+      </div>
+      
+      <!-- 快速过滤 Chip -->
+      <div class="search-chips-bar">
+        <span class="filter-chip active" onclick="setSearchFilter('all', this)">全部</span>
+        <span class="filter-chip" onclick="setSearchFilter('study', this)">学习发展</span>
+        <span class="filter-chip" onclick="setSearchFilter('life', this)">校园生活</span>
+        <span class="filter-chip" onclick="setSearchFilter('course', this)">课程学业</span>
+        <span class="filter-chip" onclick="setSearchFilter('yellow', this)">黄页电话</span>
+      </div>
+
+      <div id="searchResults" style="flex:1; overflow-y:auto; padding:12px 18px;">
+        <p style="font-size:12.5px; color:var(--text-muted); padding-top:8px;">输入关键词实时检索 31 篇校园指南内容...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 31 篇指南真实数据体系 (纯矢量无 Emoji)
+    const HANDBOOK_DATA = [
+      {
+        id: 'intro', name: '写在前面', num: '1', colorBg: 'var(--badge-1-bg)', colorText: 'var(--badge-1-text)',
+        docs: [
+          {
+            id: 'why', title: '为什么会去做这个手册', meta: '写在前面 · 缘起',
+            breadcrumb: '写在前面 › 缘起',
+            content: `
+              <div class="alert-card alert-card-info">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+                <div><strong>“是什么曾经拯救过你，你最好就用它来更好地拯救这个世界。”</strong></div>
+              </div>
+              <p>高考毕业后的暑假与初入南大的前几个月，我们往往面对着前所未有的信息壁垒：学分、绩点、综测、选课、保研、后勤设施……完全陌生的名词扑面而来。</p>
+              <p>为了降低南昌大学在读同学与新生的信息差，家园工作室编写了这份手册，希望帮助每位同学更从容、清晰地规划大学四年。</p>
+              <h2>优秀参考生存手册</h2>
+              <ul>
+                <li><strong>上海交通大学生存手册</strong>：国内高校生存指南先驱。</li>
+                <li><strong>复旦生存手册 (Fudan Manual)</strong>：注重人文关怀与学术进阶。</li>
+                <li><strong>sustech.online</strong>：南方科技大学飞书知识库式实践。</li>
+              </ul>
+            `
+          }
+        ]
+      },
+      {
+        id: 'yellow', name: '黄页电话', num: '2', colorBg: 'var(--badge-2-bg)', colorText: 'var(--badge-2-text)',
+        docs: [
+          {
+            id: 'phones', title: '保卫处与应急咨询投诉电话', meta: '黄页 · 24小时应急',
+            breadcrumb: '黄页电话 › 应急保卫',
+            content: `
+              <div class="alert-card alert-card-danger">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+                <div><strong>遇到紧急安全突发事件，请第一时间拨打校内 24 小时报警值班热线！</strong></div>
+              </div>
+              <h2>保卫处 24 小时值班报警</h2>
+              <ul>
+                <li><strong>前湖主校区治安报警：</strong>0791-83969110</li>
+                <li><strong>前湖主校区消防火警：</strong>0791-83969119</li>
+                <li><strong>青山湖校区北区值班：</strong>0791-88304110</li>
+                <li><strong>东湖校区（医学院老校区）：</strong>0791-86360110</li>
+              </ul>
+              <h2>宿管与门禁应急</h2>
+              <p>前湖校区 24 小时应急开门与宿管求助电话：<strong>18070031613</strong>。</p>
+            `
+          },
+          {
+            id: 'jiayuan', title: '南大家园账号注册与绑定', meta: '黄页 · 账号指南',
+            breadcrumb: '黄页电话 › 家园系统',
+            content: `
+              <h2>南大家园 App 账号体系</h2>
+              <p>下载安装「南大家园 App」后，使用学号与初始密码（身份证后 6 位）完成统一身份认证激活。</p>
+              <p>激活后可实时同步课表、查询考试成绩、查询宿舍电费以及参与校园圈子讨论。</p>
+            `
+          }
+        ]
+      },
+      {
+        id: 'course', name: '课程学业', num: '3', colorBg: 'var(--badge-3-bg)', colorText: 'var(--badge-3-text)',
+        docs: [
+          {
+            id: 'major', title: '专业课培养方案与学分修读', meta: '课程 · 培养方案',
+            breadcrumb: '课程学业 › 培养方案',
+            content: `
+              <h2>培养方案核对</h2>
+              <p>每学期初登录南昌大学教务管理系统（综合教务在线），进入「培养方案查询」，核对当前年级的必修与限选学分要求。</p>
+              <p>若存在重修、补考或免修课程，需在选课开放阶段按时提交选课申请。</p>
+            `
+          },
+          {
+            id: 'general', title: '通识课选课全攻略', meta: '课程 · 选课避坑',
+            breadcrumb: '课程学业 › 通识选课',
+            content: `
+              <h2>通识选修课模块分布</h2>
+              <p>通识选修课通常涵盖三大核心模块：<strong>人文社科类、自然科学类、艺术素养类</strong>。毕业前每位同学必须在各模块修满最低规定学分（通常各为 2~4 学分）。</p>
+              <div class="alert-card alert-card-info">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+                <div><strong>选课技巧：</strong>第一轮选课为意愿抽签制，不分先后顺序；第二轮为即时抢课补退选，需提前规划备选课程。</div>
+              </div>
+            `
+          }
+        ]
+      },
+      {
+        id: 'study', name: '学习发展', num: '4', colorBg: 'var(--badge-4-bg)', colorText: 'var(--badge-4-text)',
+        docs: [
+          {
+            id: 'xinsheng', title: '新生必看（防诈与报到）', meta: '学习发展 · 2026 迎新专栏',
+            breadcrumb: '学习发展 › 新生专栏',
+            content: `
+              <div class="alert-card alert-card-danger">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="margin-top:2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+                <div><strong>防诈核心提醒：任何在新生 QQ/微信群主动添加好友、推销生活用品、宽带电话卡或声称“代缴定金锁名额”的“学长学姐”均存在极高诈骗风险，切勿转账！</strong></div>
+              </div>
+
+              <h2>一、 常见推销套路与实际真相</h2>
+              <div class="doc-table-wrap">
+                <div class="doc-table-head">
+                  <div>推销常见话术</div><div>真实情况</div>
+                </div>
+                <div class="doc-table-row">
+                  <div>“提前预交 100 定金，送宽带电话卡”</div><div>开学后校内营业厅资费统一透明，随时可办。</div>
+                </div>
+                <div class="doc-table-row">
+                  <div>“只有在校内专属驾校报名才能加综测”</div><div>任意正规合规驾校拿到驾驶证均可认证二课分。</div>
+                </div>
+                <div class="doc-table-row">
+                  <div>“上门推销高价专业英语词典/四级资料”</div><div>多为劣质盗版，图书馆与学院均提供免费正版资源。</div>
+                </div>
+              </div>
+
+              <h2>二、 重要报到时间节点</h2>
+              <ul>
+                <li><strong>8 月上旬：</strong>招生信息网查询学号与专业班级。</li>
+                <li><strong>8.10 - 8.30：</strong>绑定企业微信与南大家园，完成线上预报到信息核对。</li>
+                <li><strong>8.10 - 8.25：</strong>登录公寓服务系统选择宿舍空调租赁方案。</li>
+              </ul>
+
+              <h2>三、 保持学业自律</h2>
+              <p>各学院保研与推免名额均以平时必修课绩点（GPA）排名为基石。建议从大一起保持规律作息与自习习惯。</p>
+            `
+          },
+          { id: 'zhuanye', title: '专业分流与转专业政策', meta: '学习 · 政策', breadcrumb: '学习发展 › 学业政策', content: '<p>转专业考核通常在第一学年第一学期末及第二学期末进行，以教务处官方发文为准，考核包含笔试与综合面试。</p>' },
+          { id: 'english', title: '大学英语与学位英语摸底', meta: '学习 · 考试', breadcrumb: '学习发展 › 语言考试', content: '<p>入学初摸底考试主要用于大学英语分级（A/B班）教学，根据水平放平心态应考即可。</p>' },
+          {
+            id: 'jidian', title: '学分绩点（GPA）与综测体系', meta: '学习 · 规则',
+            breadcrumb: '学习发展 › 考评规则',
+            content: `
+              <h2>GPA 计算标准</h2>
+              <p>南昌大学采用标准 4.0 / 5.0 绩点换算体系。成绩 90 分以上对应 4.0 绩点，85-89 分对应 3.5~3.9 绩点。</p>
+              <h2>综合测评（综测）构成</h2>
+              <ul>
+                <li><strong>智育成绩（GPA）：</strong>通常占总综测分值的 70%~80%。</li>
+                <li><strong>德育与行为规范：</strong>占 10%~15%。</li>
+                <li><strong>第二课堂科技文体加分：</strong>学科竞赛、志愿服务、文体比赛等加分项。</li>
+              </ul>
+            `
+          },
+          { id: 'fuxiu', title: '辅修与双学士学位', meta: '学习 · 培养', breadcrumb: '学习发展 › 辅修双学位', content: '<p>大二上学期可根据教务处选课通知申请跨学科辅修专业，修满规定学分可获辅修证书或双学位。</p>' },
+          { id: 'ticao', title: '晨跑打卡与体质健康测试', meta: '学习 · 体育', breadcrumb: '学习发展 › 体育达标', content: '<p>每学期需通过「闪动校园」完成规定里程的晨跑打卡；秋季学期进行体能测试达标。</p>' },
+          { id: 'zaowan', title: '早点到与晚自习制度', meta: '学习 · 习惯', breadcrumb: '学习发展 › 日常制度', content: '<p>大一上学期各学院通常统一组织晚自习与早点到，养成良好的大学作息。</p>' },
+          { id: 'baoyan', title: '推免（保研）综合考核办法', meta: '学习 · 升学', breadcrumb: '学习发展 › 保研推免', content: '<p>前三年必修课学分绩点排名占绝大部分比重，结合学术论文与国家级竞赛奖励加分综合评定。</p>' },
+          { id: 'bangan', title: '班级骨干与学生组织职责', meta: '学习 · 实践', breadcrumb: '学习发展 › 学生工作', content: '<p>班团干部协助辅导员处理事务，校级组织与社团在秋季学期初统一开展招新。</p>' },
+          { id: 'pingjiang', title: '奖学金评定与表彰办法', meta: '学习 · 荣誉', breadcrumb: '学习发展 › 奖学金', content: '<p>包含国家奖学金（8000元）、特等/一等/二等优秀学生奖学金，学年末按综测排名评定。</p>' },
+          { id: 'dachuang', title: '大创与科研训练项目申报', meta: '学习 · 科研', breadcrumb: '学习发展 › 创新创业', content: '<p>每年春季由本科生院组织国家级、省级与校级大学生创新创业训练计划申报。</p>' }
+        ]
+      },
+      {
+        id: 'life', name: '校园生活', num: '5', colorBg: 'var(--badge-5-bg)', colorText: 'var(--badge-5-text)',
+        docs: [
+          { id: 'bibei', title: '开学必备物品清册', meta: '生活 · 入学', breadcrumb: '校园生活 › 入学准备', content: '<p>录取通知书、身份证原件、一寸证件照、团员档案、个人常备药品与生活洗漱用品。</p>' },
+          { id: 'wangluo', title: '校园网认证与宽带接入', meta: '生活 · 网络', breadcrumb: '校园生活 › 校园网络', content: '<p>教学区与宿舍区覆盖 NCU-WLAN，使用学号认证登录即可访问校内资源与公网。</p>' },
+          { id: 'ncucard', title: '校园卡实体卡使用说明', meta: '生活 · 消费', breadcrumb: '校园生活 › 校园一卡通', content: '<p>实体卡可用于食堂就餐、图书馆借阅以及宿舍门禁通道，支持在支付宝线上充值。</p>' },
+          { id: 'shiwu', title: '失物招领与寻物服务', meta: '生活 · 便民', breadcrumb: '校园生活 › 便民服务', content: '<p>可通过南大家园圈子「失物招领」模块发布信息，或至保卫处值班室登记招领。</p>' },
+          { id: 'xiaoyi', title: '校医院挂号与医保报销', meta: '生活 · 医疗', breadcrumb: '校园生活 › 医疗健康', content: '<p>校医院位于天健区附近，支持出示医保电子凭证挂号就诊，符合目录费用直接统筹报销。</p>' },
+          { id: 'xuezheng', title: '学生证充磁与火车优惠卡', meta: '生活 · 证件', breadcrumb: '校园生活 › 学生证件', content: '<p>每学年秋季开学初由各班班长统一收齐学生证，前往教学秘书办公室进行优惠卡充磁。</p>' },
+          { id: 'baoxiu', title: '宿舍公共设施报修流程', meta: '生活 · 后勤', breadcrumb: '校园生活 › 后勤报修', content: '<p>在企业微信工作台搜索「后勤报修」微应用，拍照上传损坏部位并填写宿舍房号即可。</p>' },
+          { id: 'qinshi', title: '寝室用电与电费充值', meta: '生活 · 宿舍', breadcrumb: '校园生活 › 宿舍用电', content: '<p>南大家园 App 绑定宿舍号可实时查看剩余电量，支持在支付宝微信线上即时充值。</p>' },
+          {
+            id: 'chuxing', title: '校内出行与环游车指南', meta: '生活 · 交通指南',
+            breadcrumb: '校园生活 › 校内交通',
+            content: `
+              <h2>一、 校园环游车运营规则</h2>
+              <p>前湖校区主干道配备大巴与新能源摆渡车。沿线<strong>「招手即停」</strong>，到站前可向司机示意<strong>「随叫随停」</strong>。</p>
+              
+              <div class="alert-card alert-card-info">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+                <div>
+                  <p><strong>票价资费：</strong>单次 <strong>0.9 元</strong>。支持支付宝乘车码（洪城一卡通）或微信扫码支付。</p>
+                  <p><strong>运营时间：</strong>07:00 - 21:30（上下课高峰期班次间隔约 5-8 分钟）。</p>
+                </div>
+              </div>
+
+              <h2>二、 主要运行线路</h2>
+              <ul>
+                <li><strong>蓝色标牌（天健 ⇄ 医学院）：</strong>长线干线，横贯北区教学楼、白帆运动场、五四大道至南区医学院。</li>
+                <li><strong>红色标牌（天健 ⇄ 白帆）：</strong>短线区间车，专用于主要教学区与生活区快速摆渡。</li>
+              </ul>
+
+              <h2>三、 青桔共享单车规范</h2>
+              <p>校内骑行共享单车必须在指定白线停放框内还车，禁止骑出校门或占用主干道消防通道。</p>
+            `
+          },
+          { id: 'xiaowai', title: '校外公共交通与地铁换乘', meta: '生活 · 出行', breadcrumb: '校园生活 › 市区交通', content: '<p>前湖校区正门（东门）紧邻南昌地铁 2 号线「学府大道东站」，可直达南昌西站与市区核心商圈。</p>' },
+          { id: 'shetuan', title: '学生社团与百团大战招新', meta: '生活 · 社团', breadcrumb: '校园生活 › 课外活动', content: '<p>每年 9 月下旬在白帆运动场举行全校学生社团统一联合招新路演。</p>' },
+          { id: 'yundong', title: '体育场馆与场地预约借用', meta: '生活 · 运动', breadcrumb: '校园生活 › 场馆设施', content: '<p>室内羽毛球馆、游泳馆与乒乓球馆可通过家园微应用提前预约场地。</p>' },
+          { id: 'chifan', title: '校内餐饮与食堂档口分布', meta: '生活 · 餐饮', breadcrumb: '校园生活 › 美食就餐', content: '<p>一食堂、二食堂、三食堂与天健商业街提供多样化风味餐饮，均支持微信/支付宝快捷支付。</p>' },
+          { id: 'youwan', title: '南昌市区出行与周末游玩', meta: '生活 · 周边', breadcrumb: '校园生活 › 周末生活', content: '<p>地铁 2 号线可一站式直达红谷滩万象城、秋水广场灯光秀、滕王阁与八一广场。</p>' }
+        ]
+      },
+      {
+        id: 'exp', name: '经验锦囊', num: '6', colorBg: 'var(--badge-6-bg)', colorText: 'var(--badge-6-text)',
+        docs: [
+          {
+            id: 'exp0', title: '学科竞赛与创新训练指南', meta: '经验 · 竞赛汇总',
+            breadcrumb: '经验锦囊 › 竞赛实战',
+            content: `
+              <h2>核心学科竞赛盘点</h2>
+              <p>中国国际大学生创新大赛（原互联网+）、“挑战杯”全国大学生课外学术科技作品竞赛、全国大学生数学建模竞赛为保研综测重点认定赛事。</p>
+              <div class="alert-card alert-card-info">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" style="margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+                <div><strong>组队建议：</strong>跨学院跨专业组队（技术+商业策划+答辩展示），大一期间多向指导老师与高年级队员学习经验。</div>
+              </div>
+            `
+          }
+        ]
+      }
+    ];
+
+    let curSecIdx = 3;
+    let curDocIdx = 0;
+    let currentSearchFilter = 'all';
+
+    function goHome() {
+      document.getElementById('viewHome').style.display = 'block';
+      document.getElementById('viewDoc').style.display = 'none';
+      document.getElementById('readProgress').style.width = '0%';
+      document.getElementById('scroller').scrollTop = 0;
+      closeAllDrawers();
+    }
+
+    function openDoc(secId, dIdx) {
+      const sIdx = HANDBOOK_DATA.findIndex(s => s.id === secId);
+      if (sIdx < 0) return;
+      curSecIdx = sIdx;
+      curDocIdx = dIdx;
+
+      const sec = HANDBOOK_DATA[sIdx];
+      const doc = sec.docs[dIdx];
+
+      document.getElementById('viewHome').style.display = 'none';
+      document.getElementById('viewDoc').style.display = 'block';
+
+      document.getElementById('docHeaderSec').innerText = `${sec.name} · ${dIdx + 1} / ${sec.docs.length}`;
+      document.getElementById('docHeaderTitle').innerText = doc.title;
+      document.getElementById('docBreadcrumb').innerText = doc.breadcrumb || `${sec.name} › ${doc.title}`;
+      document.getElementById('artTitle').innerText = doc.title;
+      document.getElementById('artMeta').innerText = doc.meta || `${sec.name} · 2026 年 8 月`;
+      document.getElementById('artBody').innerHTML = doc.content;
+
+      document.getElementById('docFbAction').style.display = 'flex';
+      document.getElementById('docFbDone').style.display = 'none';
+
+      const nextCard = document.getElementById('nextCard');
+      if (dIdx + 1 < sec.docs.length) {
+        nextCard.style.display = 'flex';
+        document.getElementById('nextSub').innerText = `下一篇 · ${dIdx + 2} / ${sec.docs.length}`;
+        document.getElementById('nextTitle').innerText = sec.docs[dIdx + 1].title;
+      } else {
+        nextCard.style.display = 'none';
+      }
+
+      document.getElementById('scroller').scrollTop = 0;
+      closeAllDrawers();
+    }
+
+    function goToNext() {
+      openDoc(HANDBOOK_DATA[curSecIdx].id, curDocIdx + 1);
+    }
+
+    function submitDocFeedback(isPositive) {
+      document.getElementById('docFbAction').style.display = 'none';
+      document.getElementById('docFbDone').style.display = 'block';
+    }
+
+    document.getElementById('scroller').addEventListener('scroll', function(e) {
+      if (document.getElementById('viewDoc').style.display === 'block') {
+        const el = e.target;
+        const max = el.scrollHeight - el.clientHeight;
+        const pct = max > 0 ? (el.scrollTop / max) * 100 : 0;
+        document.getElementById('readProgress').style.width = Math.min(100, Math.max(0, pct)) + '%';
+      }
+    });
+
+    function openDrawer() {
+      const listEl = document.getElementById('drawerList');
+      listEl.innerHTML = '';
+
+      HANDBOOK_DATA.forEach((sec, sIdx) => {
+        const wrap = document.createElement('div');
+        wrap.style.marginBottom = '6px';
+        const isCurrentSec = (sIdx === curSecIdx);
+        
+        wrap.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:var(--radius-md); font-weight:700; font-size:14px; color:${isCurrentSec ? 'var(--primary-dark)' : 'var(--text-main)'}; background:${isCurrentSec ? 'var(--primary-light)' : '#F8FAFC'}; cursor:pointer;" onclick="toggleDrawerTree('${sec.id}')">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="dir-badge-num" style="background:${sec.colorBg}; color:${sec.colorText};">${sec.num}</span>
+              <span>${sec.name}</span>
+            </div>
+            <span style="font-size:11.5px; font-weight:normal; color:var(--text-muted);">${sec.docs.length} 篇</span>
+          </div>
+          <div id="tree-${sec.id}" style="padding-left:12px; margin-top:3px; display:${isCurrentSec ? 'block' : 'none'};">
+            ${sec.docs.map((d, dIdx) => `
+              <div style="padding:8px 12px; font-size:13px; color:${(sIdx === curSecIdx && dIdx === curDocIdx) ? 'var(--primary-dark)' : 'var(--text-body)'}; font-weight:${(sIdx === curSecIdx && dIdx === curDocIdx) ? '700' : '400'}; border-left:2px solid ${(sIdx === curSecIdx && dIdx === curDocIdx) ? 'var(--primary-cyan)' : 'var(--border-line)'}; margin-left:4px; cursor:pointer;" onclick="openDoc('${sec.id}', ${dIdx})">
+                ${d.title}
+              </div>
+            `).join('')}
+          </div>
+        `;
+        listEl.appendChild(wrap);
+      });
+
+      document.getElementById('drawerOverlay').classList.add('active');
+      document.getElementById('sideDrawer').classList.add('active');
+    }
+
+    function toggleDrawerTree(secId) {
+      const el = document.getElementById(`tree-${secId}`);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function openSearch() {
+      document.getElementById('searchView').classList.add('active');
+      document.getElementById('searchInput').focus();
+    }
+    function closeSearch() {
+      document.getElementById('searchView').classList.remove('active');
+    }
+    function setSearchFilter(catId, btn) {
+      currentSearchFilter = catId;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      runSearch(document.getElementById('searchInput').value);
+    }
+    function runSearch(q) {
+      const val = (q || '').trim().toLowerCase();
+      const res = document.getElementById('searchResults');
+      if (!val) {
+        res.innerHTML = `
+          <div style="padding:10px 0;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">热门速查词条</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <span class="filter-chip" onclick="document.getElementById('searchInput').value='环游车'; runSearch('环游车');">校内环游车</span>
+              <span class="filter-chip" onclick="document.getElementById('searchInput').value='防诈'; runSearch('防诈');">新生防诈指南</span>
+              <span class="filter-chip" onclick="document.getElementById('searchInput').value='绩点'; runSearch('绩点');">GPA 绩点计算</span>
+              <span class="filter-chip" onclick="document.getElementById('searchInput').value='电费'; runSearch('电费');">宿舍电费充值</span>
+              <span class="filter-chip" onclick="document.getElementById('searchInput').value='保卫'; runSearch('保卫');">保卫处值班电话</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      let matches = [];
+      HANDBOOK_DATA.forEach(sec => {
+        if (currentSearchFilter !== 'all' && sec.id !== currentSearchFilter) return;
+        sec.docs.forEach((d, idx) => {
+          if (d.title.toLowerCase().includes(val) || d.content.toLowerCase().includes(val)) {
+            matches.push({ sec, d, idx });
+          }
+        });
+      });
+
+      if (matches.length === 0) {
+        res.innerHTML = `<p style="font-size:13px; color:var(--text-muted); padding:30px 0; text-align:center;">未找到与「${q}」相关的指南内容</p>`;
+      } else {
+        res.innerHTML = matches.map(m => `
+          <div style="padding:12px 0; border-bottom:1px solid var(--border-color); cursor:pointer;" onclick="closeSearch(); openDoc('${m.sec.id}', ${m.idx})">
+            <div style="font-size:14.5px; font-weight:700; color:var(--text-main);">${m.d.title}</div>
+            <div style="font-size:11.5px; color:var(--primary-dark); margin-top:3px;">${m.sec.name} · 点击阅读完整指南</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function handleFabClick() {
+      if (document.getElementById('viewDoc').style.display === 'block') {
+        const curDoc = HANDBOOK_DATA[curSecIdx].docs[curDocIdx];
+        openAskModal(null, curDoc);
+      } else {
+        openAskModal(null, null);
+      }
+    }
+
+    function openAskModal(preQuery, docContext) {
+      document.getElementById('drawerOverlay').classList.add('active');
+      document.getElementById('askBottomSheet').classList.add('active');
+
+      const titleEl = document.getElementById('askSheetTitle');
+      const subEl = document.getElementById('askSheetSub');
+      const promptsEl = document.getElementById('askDefaultPrompts');
+
+      if (docContext) {
+        titleEl.innerText = `基于《${docContext.title}》解答`;
+        subEl.innerText = `已自动感知当前篇章上下文，优先从本篇解答`;
+        promptsEl.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 4px;">本篇常见核心问题：</p>
+            <button style="text-align:left; border:1px solid var(--border-line); border-radius:var(--radius-md); padding:9px 12px; font-size:13px; background:#F8FAFC; color:var(--text-main); display:flex; align-items:center; gap:6px;" onclick="submitAskText('本篇最核心的注意事项是什么？')">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="color:var(--primary-dark);"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+              <span>本篇最核心的注意事项是什么？</span>
+            </button>
+            <button style="text-align:left; border:1px solid var(--border-line); border-radius:var(--radius-md); padding:9px 12px; font-size:13px; background:#F8FAFC; color:var(--text-main); display:flex; align-items:center; gap:6px;" onclick="submitAskText('请帮我总结本篇的关键节点与流程')">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="color:var(--primary-dark);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span>总结本篇的关键节点与流程</span>
+            </button>
+          </div>
+        `;
+      } else {
+        titleEl.innerText = `小家园 · 知识助手`;
+        subEl.innerText = `仅依据《南大指南》官方手册生成可溯源解答`;
+        promptsEl.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 4px;">你可以直接点击以下常见问题：</p>
+            <button style="text-align:left; border:1px solid var(--border-line); border-radius:var(--radius-md); padding:9px 12px; font-size:13px; background:#F8FAFC; color:var(--text-main); display:flex; align-items:center; gap:6px;" onclick="submitAskText('环游车怎么收费？在哪里坐？')">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="color:var(--primary-dark);"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2 11 2 11.2 2 11.5V16c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>
+              <span>环游车怎么收费？在哪里坐？</span>
+            </button>
+            <button style="text-align:left; border:1px solid var(--border-line); border-radius:var(--radius-md); padding:9px 12px; font-size:13px; background:#F8FAFC; color:var(--text-main); display:flex; align-items:center; gap:6px;" onclick="submitAskText('新生怎么防范推销诈骗？')">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="color:var(--primary-dark);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>新生怎么防范推销诈骗？</span>
+            </button>
+            <button style="text-align:left; border:1px solid var(--border-line); border-radius:var(--radius-md); padding:9px 12px; font-size:13px; background:#F8FAFC; color:var(--text-main); display:flex; align-items:center; gap:6px;" onclick="submitAskText('学校保卫处紧急电话是多少？')">
+              <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="color:var(--primary-dark);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              <span>学校保卫处紧急电话是多少？</span>
+            </button>
+          </div>
+        `;
+      }
+
+      if (preQuery) submitAskText(preQuery);
+    }
+
+    function submitAskText(q) {
+      const text = (q || '').trim();
+      if (!text) return;
+      document.getElementById('askInput').value = '';
+      const area = document.getElementById('askBodyArea');
+
+      let reply = '';
+      let sourceTag = '';
+
+      if (text.includes('环游') || text.includes('车') || text.includes('收费')) {
+        reply = '<strong>校园环游车单次票价为 0.9 元。</strong><br>可在支付宝「出行」开通洪城一卡通乘车码，或直接扫描车内二维码付款。沿线招手即停、随叫随停。运营时间为 07:00 至 21:30。';
+        sourceTag = `<div style="margin-top:10px;"><span style="background:var(--primary-light); color:var(--primary-dark); padding:3px 8px; border-radius:var(--radius-sm); font-size:11.5px; font-weight:700; cursor:pointer;" onclick="closeAllDrawers(); openDoc('life', 8);">出处：校园生活 › 校内出行与环游车指南 ↗</span></div>`;
+      } else if (text.includes('诈骗') || text.includes('推销') || text.includes('新生')) {
+        reply = '<strong>新生防诈核心原则：任何在新生群主动加好友推销商品、电话卡或要求交定金锁名额的“学长学姐”均不可信！</strong><br>宽带与驾校开学后随时按需办理，遇到纠缠可直接联系保卫处（0791-83969110）。';
+        sourceTag = `<div style="margin-top:10px;"><span style="background:var(--primary-light); color:var(--primary-dark); padding:3px 8px; border-radius:var(--radius-sm); font-size:11.5px; font-weight:700; cursor:pointer;" onclick="closeAllDrawers(); openDoc('study', 0);">出处：学习发展 › 新生必看（防诈与报到） ↗</span></div>`;
+      } else if (text.includes('电话') || text.includes('保卫') || text.includes('报警')) {
+        reply = '<strong>保卫处 24 小时治安报警电话：0791-83969110。</strong><br>消防火警：83969119；宿舍门禁应急电话：18070031613。';
+        sourceTag = `<div style="margin-top:10px;"><span style="background:var(--primary-light); color:var(--primary-dark); padding:3px 8px; border-radius:var(--radius-sm); font-size:11.5px; font-weight:700; cursor:pointer;" onclick="closeAllDrawers(); openDoc('yellow', 0);">出处：黄页电话 › 保卫处与应急电话 ↗</span></div>`;
+      } else {
+        reply = '已检索《南大指南》知识库：为您定位到相关篇章，建议点击出处查看详细条款。';
+        sourceTag = `<div style="margin-top:10px;"><span style="background:var(--primary-light); color:var(--primary-dark); padding:3px 8px; border-radius:var(--radius-sm); font-size:11.5px; font-weight:700; cursor:pointer;" onclick="closeAllDrawers(); openDoc('study', 0);">出处：学习发展 › 新生必看 ↗</span></div>`;
+      }
+
+      area.innerHTML = `
+        <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+          <span style="background:var(--primary-dark); color:#FFFFFF; border-radius:14px 14px 2px 14px; padding:8px 14px; font-size:13.5px; font-weight:500; max-width:85%; line-height:1.5;">${text}</span>
+        </div>
+        <div style="background:#F8FAFC; border:1px solid var(--border-line); border-radius:14px 14px 14px 2px; padding:12px 14px; font-size:13.5px; line-height:1.65; color:var(--text-main); box-shadow:var(--shadow-sm);">
+          ${reply}
+          ${sourceTag}
+          <div style="margin-top:12px; padding-top:8px; border-top:1px solid var(--border-line); display:flex; align-items:center; justify-content:space-between; font-size:11.5px; color:var(--text-muted);">
+            <span>回答有帮助吗？ <a href="javascript:;" onclick="this.parentElement.innerHTML='感谢支持！'">有用</a> · <a href="javascript:;" onclick="this.parentElement.innerHTML='已记录您的反馈！'">没帮上</a></span>
+          </div>
+        </div>
+      `;
+    }
+
+    function closeAllDrawers() {
+      document.getElementById('drawerOverlay').classList.remove('active');
+      document.getElementById('sideDrawer').classList.remove('active');
+      document.getElementById('askBottomSheet').classList.remove('active');
+    }
+  </script>
+</body>
+</html>
