@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { User } from '@/types';
-import { LogOut, Volume2, VolumeX, Trophy, Gamepad2 } from 'lucide-react';
+import { LogOut, Volume2, VolumeX, Trophy, Gamepad2, HelpCircle } from 'lucide-react';
 import { sound } from '@/utils/audio';
 
 interface Props {
   user: User;
   onLogout: () => void;
+  onOpenTutorial: () => void;
 }
 
-export default function Header({ user, onLogout }: Props) {
+export default function Header({ user, onLogout, onOpenTutorial }: Props) {
   const [isMuted, setIsMuted] = useState(sound.muted);
 
   const toggleSound = () => {
@@ -40,8 +41,18 @@ export default function Header({ user, onLogout }: Props) {
         </div>
       </div>
 
-      {/* 右侧音效与退出 */}
-      <div className="flex items-center gap-2">
+      {/* 右侧教程、音效与退出 */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* 游戏指南教程按钮 (声音按钮旁边) */}
+        <button
+          onClick={onOpenTutorial}
+          title="游戏规则与新手指南"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
+        >
+          <HelpCircle size={16} />
+        </button>
+
+        {/* 8-bit 音效开关 */}
         <button
           onClick={toggleSound}
           title={isMuted ? '开启 8-bit 音效' : '静音'}
@@ -49,6 +60,8 @@ export default function Header({ user, onLogout }: Props) {
         >
           {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
+
+        {/* 退出登录 */}
         <button
           onClick={onLogout}
           className="px-2.5 py-1 text-[#64748B] hover:text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1 transition-all cursor-pointer text-xs"

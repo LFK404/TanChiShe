@@ -9,11 +9,13 @@ import Header from '@/components/Header';
 import GameBoard from '@/components/GameBoard';
 import Leaderboard from '@/components/Leaderboard';
 import LoginCard from '@/components/LoginCard';
+import TutorialModal from '@/components/TutorialModal';
 
 export default function Home() {
   const isClient = useIsClient();
   const { user, form, error, setForm, login, logout, updateUser } = useAuth();
   const [board, setBoard] = useState<User[]>([]);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const refreshBoard = useCallback(async () => {
     setBoard(await apiLeaderboard());
@@ -31,6 +33,24 @@ export default function Home() {
 
   const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
     useSnakeGame(handleGameOver);
+
+  // 首次登录自动弹出新手教程
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const seen = localStorage.getItem('snake_tutorial_seen');
+      if (!seen) {
+        setShowTutorial(true);
+      }
+    } catch {}
+  }, [user]);
+
+  const handleCloseTutorial = useCallback(() => {
+    setShowTutorial(false);
+    try {
+      localStorage.setItem('snake_tutorial_seen', 'true');
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -51,8 +71,12 @@ export default function Home() {
         <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
       ) : (
         <div className="w-full max-w-4xl flex flex-col gap-4">
-          {/* 导航顶栏 */}
-          <Header user={user} onLogout={logout} />
+          {/* 导航顶栏 (包含教程入口与声音开关) */}
+          <Header
+            user={user}
+            onLogout={logout}
+            onOpenTutorial={() => setShowTutorial(true)}
+          />
 
           {/* 人文标语与留白区 */}
           <div className="px-2 pt-1 pb-1">
@@ -96,6 +120,12 @@ export default function Home() {
             <span>·</span>
             <span>天青蓝视觉精修版</span>
           </footer>
+
+          {/* 极简新手指南模态框 */}
+          <TutorialModal
+            isOpen={showTutorial}
+            onClose={handleCloseTutorial}
+          />
         </div>
       )}
     </main>
