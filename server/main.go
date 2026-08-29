@@ -107,12 +107,25 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": user})
 		})
 
-		// 对局战绩结算
+		// 对局战绩结算（集成物理防作弊校验）
 		api.POST("/settle", func(c *gin.Context) {
 			var req SettleReq
 			if err := c.ShouldBindJSON(&req); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数异常"})
 				return
+			}
+
+			// 防刷作弊校验：每吃到 1 个果子理论最少需要 0.3 秒，拒绝物理不可能的虚假分数
+			if req.Score > 0 {
+				maxPossibleScore := int((req.Duration+2)*4) * 10
+				if req.Duration < 3 && req.Score > 40 {
+					c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "战绩数据异常，已被安全机制拦截"})
+					return
+				}
+				if req.Score > maxPossibleScore && req.Duration < 10 {
+					c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "战绩数据异常，已被安全机制拦截"})
+					return
+				}
 			}
 
 			storeMu.Lock()
