@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 🌟 **在线即玩**：[https://zhixu.online](https://zhixu.online)  
-> 📖 **设计理念**：传承经典街机像素，融入极简留白美学、天青蓝 (`#66CCFF`) 核心主色、等宽几何徽标体系与全栈云原生架构。
+> 📖 **设计理念**：传承经典街机像素，融入南大家园纯白极简留白美学、天青蓝 (`#66CCFF` / `#0099FF`) 核心主色、多巴胺四色彩底胶囊与等宽几何徽标体系。
 
 ---
 
@@ -28,12 +28,12 @@ flowchart LR
 
 ## 🌟 核心特性
 
-- 🎨 **天青蓝极简美学**：纯白底板 (`#FFFFFF`) + 天青蓝 (`#66CCFF`) 主色，单行人文大标题与留白排版。
+- 🎨 **南大家园天青蓝美学**：纯白底板 (`#FFFFFF`) + 天青蓝 (`#66CCFF`) 主色 + 极薄浅灰细边线 (`#E2E8F0`)，辅以红、绿、金、紫四色轻量微点缀。
 - 📱 **移动端双触控**：支持全屏手指滑屏转向与自适应半透明虚拟十字键。
 - ⚡ **双指令缓冲队列**：单步物理位移严格消费排队方向，彻底杜绝快速连续转向自杀误判。
 - 🎵 **原生 8-bit 音效**：Web Audio API 纯数学合成吃果、碰撞与暂停音效，0 外部资源开销。
 - 🍎 **动态难度与幸运果**：平滑速度梯度；吃果概率触发 8 秒限时金色幸运果 (+30 分)。
-- 🏆 **几何数字排行榜**：22px 等宽几何徽标（冠军金、亚军天青蓝、季军翡翠绿），高亮当前玩家并呈现超越百分比。
+- 🏆 **几何数字排行榜**：22px 等宽几何徽标（冠军金、亚军红、季军绿、罗兰紫、天青蓝、活力青），高亮当前玩家并呈现超越百分比。
 - 🛡️ **物理防作弊**：后端严格校验单局得分/耗时物理极限，拦截恶意脚本。
 - 🗄️ **Supabase 持久化**：GORM 自动建表，双表存储账户与每局战绩流水。
 - 📲 **PWA 应用化**：支持“添加到手机主屏幕”全屏独立运行。
@@ -43,22 +43,23 @@ flowchart LR
 ## 📂 目录结构
 
 ```text
-├── client/                     # 📱 前端应用 (Next.js)
+├── client/                     # 📱 前端应用 (Next.js 15 App Router)
 │   ├── app/                    # 页面、路由与全局样式
-│   ├── components/             # Header, GameBoard, Leaderboard, LoginCard
+│   ├── components/             # Header, GameBoard, Leaderboard, LoginCard, TutorialModal
 │   ├── hooks/                  # 游戏引擎 useSnakeGame 与认证钩子
 │   ├── utils/                  # Web Audio API 8-bit 音效
-│   ├── .env.example            # 前端环境变量范本
-│   └── .gitignore              # 前端忽略规则
+│   └── .env.example            # 前端环境变量范本
 │
-├── server/                     # ⚙️ 后端服务 (Go Gin)
-│   ├── main.go                 # API 接口、防刷分校验与数据库连接
-│   ├── .env.example            # 后端环境变量范本
-│   └── .gitignore              # 后端忽略规则
+├── server/                     # ⚙️ 后端服务 (Go 1.22+ Gin)
+│   ├── main.go                 # API 接口、健康检查与防刷分校验
+│   ├── Dockerfile              # 多阶段容器化构建镜像配置
+│   └── .env.example            # 后端环境变量范本
 │
+├── .github/workflows/          # 🤖 GitHub Actions CI/CD 流水线
 ├── supabase/migrations/        # 🗄️ 数据库 SQL 迁移文件
+├── .gitignore                  # 🔒 统一权威根目录忽略文件
 ├── AGENTS.md                   # 📜 仓库开发宪法与技术规范
-└── README.md                   # 📖 全局文档
+└── README.md                   # 📖 全局说明文档
 ```
 
 ---
