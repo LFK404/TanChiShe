@@ -6,7 +6,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o snake-server .
 
-# 2. 运行阶段 (仅 15MB 极简镜像)
+# 2. 运行阶段
 FROM alpine:latest
 WORKDIR /app
 RUN apk --no-cache add ca-certificates tzdata

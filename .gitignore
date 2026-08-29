@@ -3,23 +3,30 @@
 Thumbs.db
 .idea/
 .vscode/
+*.swp
 
-# Build binaries
+# Go Binaries & Data
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+server/snake-server
 server/server
-server/snake-server.exe
-
-# Database / runtime data
 server/users.json
 
 # Node & Next.js
+node_modules/
 client/node_modules/
 client/.next/
 client/out/
 client/build/
 client/*.tsbuildinfo
 client/next-env.d.ts
+
+# Misc & Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+.env*
+.vercel
