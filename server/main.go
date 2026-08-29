@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// User 玩家实体 (Password 通过 json:"-" 自动在响应中安全隐藏)
+// User 玩家实体
 type User struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Username     string    `gorm:"uniqueIndex;size:50;not null" json:"username"`
@@ -25,7 +25,7 @@ type User struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
-// GameRecord 对局战绩流水实体 (支持历史战绩追踪与数据分析)
+// GameRecord 对局战绩流水实体
 type GameRecord struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Username  string    `gorm:"index;size:50;not null" json:"username"`
@@ -51,7 +51,7 @@ var db *gorm.DB
 func initDB() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgresql://postgres:15880993898lfk@db.itouogbtujieqovjuuew.supabase.co:5432/postgres"
+		dsn = "postgresql://postgres.itouogbtujieqovjuuew:15880993898lfk@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require"
 	}
 
 	var err error
@@ -59,19 +59,15 @@ func initDB() {
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		fmt.Println("[WARN] PostgreSQL connect failed, retrying with sslmode=disable...")
-		db, err = gorm.Open(postgres.Open(dsn+"?sslmode=disable"), &gorm.Config{})
-		if err != nil {
-			panic(fmt.Sprintf("[ERROR] Fatal: Failed to connect to Supabase PostgreSQL: %v", err))
-		}
+		fmt.Println("[WARN] Supabase PostgreSQL connect failed:", err)
+		return
 	}
 
-	// 自动同步与迁移数据表结构 (AutoMigrate)
-	err = db.AutoMigrate(&User{}, &GameRecord{})
-	if err != nil {
+	// 自动同步与迁移数据表结构
+	if err = db.AutoMigrate(&User{}, &GameRecord{}); err != nil {
 		fmt.Println("[WARN] AutoMigrate warning:", err)
 	} else {
-		fmt.Println("[INFO] Supabase PostgreSQL schema connected and auto-migrated successfully!")
+		fmt.Println("[INFO] Supabase PostgreSQL schema connected and migrated successfully!")
 	}
 
 	sqlDB, err := db.DB()
@@ -87,12 +83,16 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	// 根路径健康检查与服务就绪探针 (支持 Azure / Kubernetes / 浏览器探测)
+	// 根路径健康检查
 	r.GET("/", func(c *gin.Context) {
+		dbStatus := "connected"
+		if db == nil {
+			dbStatus = "disconnected"
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":   "ok",
 			"service":  "Snake Go API Server",
-			"database": "Supabase PostgreSQL",
+			"database": dbStatus,
 		})
 	})
 
@@ -107,6 +107,11 @@ func main() {
 	{
 		// 玩家登录/自动注册
 		api.POST("/auth", func(c *gin.Context) {
+			if db == nil {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库连接初始化中，请稍后重试"})
+				return
+			}
+
 			var req AuthReq
 			if err := c.ShouldBindJSON(&req); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数不完整"})
@@ -122,7 +127,6 @@ func main() {
 			result := db.Where("username = ?", u).First(&user)
 			if result.Error != nil {
 				if result.Error == gorm.ErrRecordNotFound {
-					// 自动注册新用户
 					user = User{
 						Username: u,
 						Password: p,
@@ -136,7 +140,6 @@ func main() {
 					return
 				}
 			} else {
-				// 用户已存在，校验密码
 				if user.Password != p {
 					c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误"})
 					return
@@ -146,8 +149,13 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": user})
 		})
 
-		// 对局战绩结算（集成物理防作弊校验 + 历史流水归档）
+		// 对局战绩结算
 		api.POST("/settle", func(c *gin.Context) {
+			if db == nil {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库连接初始化中，请稍后重试"})
+				return
+			}
+
 			var req SettleReq
 			if err := c.ShouldBindJSON(&req); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数异常"})
@@ -156,7 +164,7 @@ func main() {
 
 			u, p := strings.TrimSpace(req.Username), strings.TrimSpace(req.Password)
 
-			// 防刷作弊校验：每吃到 1 个果子理论最少需要 0.3 秒，拒绝物理不可能的虚假分数
+			// 防刷分物理校验
 			if req.Score > 0 {
 				maxPossibleScore := int((req.Duration+2)*4) * 10
 				if req.Duration < 3 && req.Score > 40 {
@@ -179,14 +187,12 @@ func main() {
 				return
 			}
 
-			// 归档单局战绩流水到 Supabase
 			db.Create(&GameRecord{
 				Username: u,
 				Score:    req.Score,
 				Duration: req.Duration,
 			})
 
-			// 检查并更新历史最高纪录
 			isNewRecord := req.Score > user.HighScore || (req.Score == user.HighScore && req.Score > 0 && (user.BestDuration == 0 || req.Duration < user.BestDuration))
 			if isNewRecord {
 				user.HighScore = req.Score
@@ -197,8 +203,13 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "isNewRecord": isNewRecord, "data": user})
 		})
 
-		// Top 10 排行榜 (从 Supabase 实时索引查询)
+		// Top 10 排行榜
 		api.GET("/leaderboard", func(c *gin.Context) {
+			if db == nil {
+				c.JSON(http.StatusOK, gin.H{"code": 200, "data": []User{}})
+				return
+			}
+
 			var list []User
 			err := db.Where("high_score > 0 OR best_duration > 0").
 				Order("high_score DESC, best_duration ASC").
