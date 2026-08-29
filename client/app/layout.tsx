@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '贪吃蛇 - 南大家园',
+  title: '贪吃蛇',
   description: '方寸之间，重温经典。极简现代全栈贪吃蛇游戏。',
   manifest: '/manifest.json',
   appleWebApp: {

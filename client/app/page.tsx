@@ -91,7 +91,7 @@ export default function Home() {
 
           {/* 纯白紧凑页脚 */}
           <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2">
-            <span>南大家园工作室（NCUHOME）</span>
+            <span>极简全栈贪吃蛇</span>
             <span>·</span>
             <span>天青蓝视觉精修版</span>
           </footer>

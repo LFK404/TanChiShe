@@ -26,7 +26,7 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
           <User size={16} className="absolute left-3.5 top-3 text-[#94A3B8]" />
           <input
             type="text"
-            placeholder="用户名 / 学号"
+            placeholder="用户名"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:border-[#66CCFF] focus:bg-white transition-all text-[#0F172A] placeholder-[#94A3B8]"

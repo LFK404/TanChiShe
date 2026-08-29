@@ -104,7 +104,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
       {currentUser && currentUser.highScore > 0 && (
         <div className="mt-3 pt-3 border-t border-[#E2E8F0] text-[11.5px] text-[#0369A1] bg-[#EBF8FF] px-3 py-2 rounded-xl flex items-center justify-between">
           <span>当前最高分：<strong>{currentUser.highScore}分</strong></span>
-          <span className="font-bold text-[#0099FF]">超越 {beatPercent}% 学子</span>
+          <span className="font-bold text-[#0099FF]">超越 {beatPercent}% 玩家</span>
         </div>
       )}
     </div>
