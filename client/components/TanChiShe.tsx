@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { Direction, Point, UserProfile, LeaderboardItem } from '@/types';
 import { Trophy, Play, Pause, RotateCcw, User, Lock, LogOut } from 'lucide-react';
 
@@ -17,10 +17,15 @@ const isOpposite = (d1: Direction, d2: Direction) =>
   (d1 === 'LEFT' && d2 === 'RIGHT') ||
   (d1 === 'RIGHT' && d2 === 'LEFT');
 
+// React 官方推荐的 SSR 水合安全 Hook
+const emptySubscribe = () => () => {};
+const useIsClient = () => useSyncExternalStore(emptySubscribe, () => true, () => false);
+
 export default function TanChiShe() {
+  const isClient = useIsClient();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 1. 用户鉴权状态（惰性初始化保证首帧读取，避免 Effect 内 setState 级联渲染）
+  // 1. 用户鉴权状态
   const [user, setUser] = useState<UserProfile | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -53,7 +58,7 @@ export default function TanChiShe() {
     authFormRef.current = authForm;
   }, [authForm]);
 
-  // 2. 游戏对局核心状态（Ref 保证定时器主循环闭包数据最新）
+  // 2. 游戏对局核心状态（Ref 保证主循环定时器最新）
   const snakeRef = useRef<Point[]>([
     { x: 10, y: 12 },
     { x: 9, y: 12 },
@@ -69,7 +74,7 @@ export default function TanChiShe() {
   const scoreRef = useRef(0);
   const startTimeRef = useRef(0);
 
-  // 3. UI 交互状态
+  // 3. UI 状态
   const [score, setScore] = useState(0);
   const [duration, setDuration] = useState(0);
   const [snakeLength, setSnakeLength] = useState(3);
@@ -180,7 +185,7 @@ export default function TanChiShe() {
     ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 绘制浅色细网格
+    // 绘制细网格线
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1;
     for (let i = 0; i <= GRID_SIZE; i++) {
@@ -204,7 +209,7 @@ export default function TanChiShe() {
       ctx.fill();
     });
 
-    // 2. 绘制果实 (鲜亮红色圆点)
+    // 2. 绘制果实 (红色圆点)
     const fx = foodRef.current.x * CELL_SIZE + CELL_SIZE / 2;
     const fy = foodRef.current.y * CELL_SIZE + CELL_SIZE / 2;
     ctx.fillStyle = '#ef4444';
@@ -255,7 +260,7 @@ export default function TanChiShe() {
   }, []);
 
   // -------------------------------------------------------------
-  // 游戏逻辑与主循环
+  // 游戏逻辑
   // -------------------------------------------------------------
 
   const spawnFood = useCallback(() => {
@@ -341,7 +346,7 @@ export default function TanChiShe() {
       return;
     }
 
-    // 4. 撞围栏与撞自身判定
+    // 4. 撞围栏与自身
     const nextKey = toKey(nextHead.x, nextHead.y);
     if (fenceSetRef.current.has(nextKey)) {
       gameOver();
@@ -354,7 +359,7 @@ export default function TanChiShe() {
       }
     }
 
-    // 5. 移动推进
+    // 5. 推进
     const newSnake = [nextHead, ...snakeRef.current];
     const ate = nextHead.x === foodRef.current.x && nextHead.y === foodRef.current.y;
 
@@ -424,6 +429,7 @@ export default function TanChiShe() {
   }, [updateTick, renderCanvas]);
 
   useEffect(() => {
+    if (!user) return;
     let isMounted = true;
     const load = async () => {
       try {
@@ -438,7 +444,15 @@ export default function TanChiShe() {
     };
     load();
     return () => { isMounted = false; };
-  }, []);
+  }, [user]);
+
+  if (!isClient) {
+    return (
+      <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center text-xs text-slate-400">
+        加载中...
+      </div>
+    );
+  }
 
   // -------------------------------------------------------------
   // 1. 未登录视图：仅展示居中登录卡片
