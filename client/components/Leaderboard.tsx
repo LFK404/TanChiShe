@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from '@/types';
-import { Trophy } from 'lucide-react';
+import { Trophy, RefreshCw } from 'lucide-react';
 
 interface Props {
   items: User[];
@@ -9,53 +9,104 @@ interface Props {
 }
 
 export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
+  // 计算当前玩家超越百分比
+  let beatPercent = 0;
+  if (currentUser && currentUser.highScore > 0 && items.length > 0) {
+    const beaten = items.filter(it => currentUser.highScore > it.highScore).length;
+    beatPercent = Math.min(99, Math.max(50, Math.round(((beaten + 1) / (items.length + 1)) * 100)));
+  }
+
+  // 1~6 专属多色徽标配置 (来自 better.html)
+  const getBadgeStyle = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'bg-[#FEF3C7] text-[#D97706]'; // 暖琥珀金 (冠军)
+      case 2:
+        return 'bg-[#E0F2FE] text-[#0284C7]'; // 天青蓝 (亚军)
+      case 3:
+        return 'bg-[#DCFCE7] text-[#16A34A]'; // 翡翠绿 (季军)
+      case 4:
+        return 'bg-[#EDE9FE] text-[#7C3AED]'; // 活力紫
+      case 5:
+        return 'bg-[#EEF2FF] text-[#4F46E5]'; // 靛蓝
+      default:
+        return 'bg-[#F1F5F9] text-[#64748B]'; // 极简灰
+    }
+  };
+
   return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col select-none">
-      <div className="flex justify-between items-center mb-3">
-        <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-          <Trophy size={15} className="text-amber-500" /> 排行榜 Top 10
-        </h2>
-        <button onClick={onRefresh} className="text-[11px] text-slate-400 hover:text-slate-700 cursor-pointer">
-          刷新
+    <div className="bg-white border border-[#E2E8F0] p-5 rounded-3xl shadow-sm flex flex-col select-none">
+      {/* 标题与刷新 */}
+      <div className="flex justify-between items-center pb-3 border-b border-[#E2E8F0]">
+        <div className="flex items-center gap-2">
+          <Trophy size={16} className="text-[#D97706]" />
+          <h2 className="text-sm font-extrabold text-[#0F172A]">Top 10 风云榜</h2>
+        </div>
+        <button
+          onClick={onRefresh}
+          className="text-[11px] text-[#94A3B8] hover:text-[#0099FF] flex items-center gap-1 transition-colors cursor-pointer"
+        >
+          <RefreshCw size={11} /> 刷新
         </button>
       </div>
 
-      <div className="flex flex-col gap-1.5 max-h-[380px] overflow-y-auto">
+      {/* 榜单列表 */}
+      <div className="flex flex-col mt-2 max-h-[380px] overflow-y-auto">
         {items.length === 0 ? (
-          <div className="text-center py-10 text-xs text-slate-400">暂无记录</div>
+          <div className="text-center py-12 text-xs text-[#94A3B8]">暂无挑战记录，快来占领榜首！</div>
         ) : (
           items.map((item, idx) => {
+            const rank = idx + 1;
             const isMe = currentUser && item.username === currentUser.username;
+            const isLast = idx === items.length - 1;
+
             return (
               <div
                 key={item.username}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors ${
-                  isMe
-                    ? 'bg-emerald-50 border border-emerald-200 ring-1 ring-emerald-300'
-                    : 'bg-slate-50 border border-slate-100'
+                className={`flex items-center justify-between py-2.5 px-2 transition-colors rounded-xl ${
+                  !isLast ? 'border-b border-[#F1F5F9]' : ''
+                } ${
+                  isMe ? 'bg-[#F6FBFF] border border-[#66CCFF]/40 text-[#0099FF]' : 'hover:bg-[#F8FAFC]'
                 }`}
               >
-                <div className="flex items-center gap-2">
+                {/* 排名 + 用户名 */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* 22px 等宽粗体几何数字徽标 */}
                   <span
-                    className={`w-4 font-bold text-center ${
-                      idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-500' : idx === 2 ? 'text-amber-700' : 'text-slate-400'
-                    }`}
+                    className={`w-[22px] h-[22px] rounded-[6px] flex items-center justify-center font-extrabold text-[12px] shrink-0 font-mono ${getBadgeStyle(
+                      rank
+                    )}`}
                   >
-                    {idx + 1}
+                    {rank}
                   </span>
-                  <span className={`truncate max-w-[80px] ${isMe ? 'font-bold text-emerald-800' : 'font-medium text-slate-800'}`}>
-                    {item.username} {isMe && <span className="text-[10px] text-emerald-600 font-normal">(我)</span>}
+                  <span className={`truncate text-xs ${isMe ? 'font-bold text-[#0F172A]' : 'font-medium text-[#334155]'}`}>
+                    {item.username}
                   </span>
+                  {isMe && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] text-[#0099FF] shrink-0">
+                      我
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 text-right">
-                  <span className="font-bold text-slate-900">{item.highScore}分</span>
-                  <span className="text-[10px] text-slate-400">{item.bestDuration}s</span>
+
+                {/* 分数 + 用时 */}
+                <div className="flex items-center gap-2 text-right shrink-0">
+                  <span className="font-extrabold text-xs text-[#0F172A] font-mono">{item.highScore}分</span>
+                  <span className="text-[10px] text-[#94A3B8] font-mono">{item.bestDuration}s</span>
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* 战绩评语卡片 */}
+      {currentUser && currentUser.highScore > 0 && (
+        <div className="mt-3 pt-3 border-t border-[#E2E8F0] text-[11.5px] text-[#0369A1] bg-[#EBF8FF] px-3 py-2 rounded-xl flex items-center justify-between">
+          <span>当前最高分：<strong>{currentUser.highScore}分</strong></span>
+          <span className="font-bold text-[#0099FF]">超越 {beatPercent}% 学子</span>
+        </div>
+      )}
     </div>
   );
 }

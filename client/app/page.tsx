@@ -46,12 +46,25 @@ export default function Home() {
   if (!isClient) return null;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-800 flex flex-col items-center justify-center p-3 sm:p-6 font-sans">
+    <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6">
       {!user ? (
         <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
       ) : (
         <div className="w-full max-w-4xl flex flex-col gap-4">
+          {/* 导航顶栏 */}
           <Header user={user} onLogout={logout} />
+
+          {/* 人文标语与留白区 (来自 better.html) */}
+          <div className="px-2 pt-1 pb-1">
+            <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
+              方寸之间，重温经典。
+            </h1>
+            <blockquote className="mt-2 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
+              在方格与节奏的律动中，探寻每一次转身的从容。
+            </blockquote>
+          </div>
+
+          {/* 游戏主舞台与排行榜双列布局 */}
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <div className="md:col-span-2">
               <GameBoard
@@ -75,6 +88,15 @@ export default function Home() {
             </div>
             <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
           </div>
+
+          {/* 纯白紧凑页脚 */}
+          <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2">
+            <span>南大家园工作室（NCUHOME）</span>
+            <span>·</span>
+            <span>天青蓝视觉精修版</span>
+            <span>·</span>
+            <span>2026</span>
+          </footer>
         </div>
       )}
     </main>
