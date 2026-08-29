@@ -15,7 +15,14 @@ export default function Home() {
   const isClient = useIsClient();
   const { user, form, error, setForm, login, logout, updateUser } = useAuth();
   const [board, setBoard] = useState<User[]>([]);
-  const [showTutorial, setShowTutorial] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return !localStorage.getItem('snake_tutorial_seen');
+    } catch {
+      return false;
+    }
+  });
 
   const refreshBoard = useCallback(async () => {
     setBoard(await apiLeaderboard());
@@ -33,17 +40,6 @@ export default function Home() {
 
   const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
     useSnakeGame(handleGameOver);
-
-  // 首次登录自动弹出新手教程
-  useEffect(() => {
-    if (!user) return;
-    try {
-      const seen = localStorage.getItem('snake_tutorial_seen');
-      if (!seen) {
-        setShowTutorial(true);
-      }
-    } catch {}
-  }, [user]);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);
