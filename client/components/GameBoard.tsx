@@ -96,12 +96,14 @@ export default function GameBoard({
   }, [snakeRef, fenceRef, foodRef, dirRef]);
 
   useEffect(() => {
+    render();
+    if (!isPlaying || isPaused || isGameOver) return;
     const timer = setInterval(() => {
       onTick();
       render();
     }, 110);
     return () => clearInterval(timer);
-  }, [onTick, render]);
+  }, [isPlaying, isPaused, isGameOver, onTick, render]);
 
   return (
     <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col items-center">

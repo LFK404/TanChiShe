@@ -65,11 +65,16 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
+	// 根路径健康检查与服务就绪探针 (支持 Azure / Kubernetes / 浏览器探测)
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "TanChiShe Go API Server"})
+	})
+
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"*"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}))
 
 	api := r.Group("/api")
