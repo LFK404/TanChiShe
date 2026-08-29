@@ -91,7 +91,7 @@ export default function Home() {
           {/* 人文标语与留白区 (融入 #66CCFF 天青蓝点睛字与竖线) */}
           <div className="px-2 pt-1 pb-1">
             <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
-              方寸之<span className="text-[#66CCFF]">间</span>，重温经典。
+              方寸之<span className="text-[#66CCFF]">间</span>，重温经<span className="text-[#66CCFF]">典</span>
             </h1>
             <blockquote className="mt-2 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
               在方格与节奏的律动中，探寻每一次转身的从容。
@@ -126,9 +126,7 @@ export default function Home() {
 
           {/* 纯白紧凑页脚 */}
           <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2">
-            <span>极简全栈贪吃蛇</span>
-            <span>·</span>
-            <span className="text-[#0099FF] font-medium">南大家园天青蓝版</span>
+            <span>贪吃蛇</span>
           </footer>
 
           {/* 极简新手指南模态框 */}
