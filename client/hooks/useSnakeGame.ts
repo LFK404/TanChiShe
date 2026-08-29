@@ -214,5 +214,14 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     return () => window.removeEventListener('keydown', onKey);
   }, [startGame, changeDirection, togglePause]);
 
+    // 组件卸载时清理幸运果计时器
+  useEffect(() => {
+    return () => {
+      if (bonusTimerRef.current) {
+        clearTimeout(bonusTimerRef.current);
+      }
+    };
+  }, []);
+
   return { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick };
 }
