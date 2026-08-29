@@ -1,16 +1,19 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Point, Direction } from '@/types';
-import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { GRID, CELL } from '@/hooks/useSnakeGame';
 
 interface Props {
   snakeRef: React.RefObject<Point[]>;
   fenceRef: React.RefObject<Set<string>>;
   foodRef: React.RefObject<Point>;
+  bonusRef?: React.RefObject<Point | null>;
+  hasBonus?: boolean;
   dirRef: React.RefObject<Direction>;
   score: number;
   duration: number;
   length: number;
+  speedMs?: number;
   isPlaying: boolean;
   isGameOver: boolean;
   isPaused: boolean;
@@ -23,10 +26,13 @@ export default function GameBoard({
   snakeRef,
   fenceRef,
   foodRef,
+  bonusRef,
+  hasBonus,
   dirRef,
   score,
   duration,
   length,
+  speedMs = 110,
   isPlaying,
   isGameOver,
   isPaused,
@@ -92,11 +98,21 @@ export default function GameBoard({
       ctx.stroke();
     });
 
-    // 3. 苹果果实
+    // 3. 普通苹果果实
     const fx = foodRef.current.x * CELL + CELL / 2;
     const fy = foodRef.current.y * CELL + CELL / 2;
     ctx.fillStyle = '#ef4444';
     ctx.beginPath(); ctx.arc(fx, fy, CELL / 2.6, 0, Math.PI * 2); ctx.fill();
+
+    // 3.5 金色幸运果实 (限时奖励 +30分)
+    if (bonusRef?.current) {
+      const bx = bonusRef.current.x * CELL + CELL / 2;
+      const by = bonusRef.current.y * CELL + CELL / 2;
+      ctx.fillStyle = '#eab308';
+      ctx.beginPath(); ctx.arc(bx, by, CELL / 2.3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath(); ctx.arc(bx, by, CELL / 4, 0, Math.PI * 2); ctx.fill();
+    }
 
     // 4. 蛇身与蛇头
     snakeRef.current.forEach((pt, idx) => {
@@ -119,7 +135,7 @@ export default function GameBoard({
         ctx.beginPath(); ctx.roundRect(px + 2, py + 2, CELL - 4, CELL - 4, 3); ctx.fill();
       }
     });
-  }, [snakeRef, fenceRef, foodRef, dirRef]);
+  }, [snakeRef, fenceRef, foodRef, bonusRef, dirRef]);
 
   useEffect(() => {
     render();
@@ -127,16 +143,21 @@ export default function GameBoard({
     const timer = setInterval(() => {
       onTick();
       render();
-    }, 110);
+    }, speedMs);
     return () => clearInterval(timer);
-  }, [isPlaying, isPaused, isGameOver, onTick, render]);
+  }, [isPlaying, isPaused, isGameOver, speedMs, onTick, render]);
 
   return (
     <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col items-center select-none">
       {/* 极简数据栏 */}
       <div className="w-full grid grid-cols-3 gap-2.5 sm:gap-3 mb-3 sm:mb-4 text-center text-xs">
-        <div className="bg-slate-50 border border-slate-100 py-2 rounded-lg">
+        <div className="bg-slate-50 border border-slate-100 py-2 rounded-lg relative overflow-hidden">
           <span className="text-slate-500">得分 </span><strong className="text-slate-800 text-sm">{score}</strong>
+          {hasBonus && (
+            <span className="absolute top-1 right-1 flex items-center text-amber-500 font-bold text-[10px] animate-pulse">
+              <Sparkles size={11} /> +30
+            </span>
+          )}
         </div>
         <div className="bg-slate-50 border border-slate-100 py-2 rounded-lg">
           <span className="text-slate-500">用时 </span><strong className="text-slate-800 text-sm">{duration}s</strong>

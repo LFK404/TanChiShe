@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Direction, Point } from '@/types';
+import { sound } from '@/utils/audio';
 
 export const GRID = 24;
 export const CELL = 20;
@@ -15,6 +16,8 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
   const snakeRef = useRef<Point[]>([{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }]);
   const fenceRef = useRef<Set<string>>(new Set());
   const foodRef = useRef<Point>({ x: 16, y: 12 });
+  const bonusRef = useRef<Point | null>(null);
+  const bonusTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dirRef = useRef<Direction>('RIGHT');
   const queueRef = useRef<Direction[]>([]);
   const stateRef = useRef({ playing: false, over: false, paused: false, score: 0, start: 0 });
@@ -25,6 +28,17 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [speedMs, setSpeedMs] = useState(110);
+  const [hasBonus, setHasBonus] = useState(false);
+
+  const clearBonus = useCallback(() => {
+    bonusRef.current = null;
+    setHasBonus(false);
+    if (bonusTimerRef.current) {
+      clearTimeout(bonusTimerRef.current);
+      bonusTimerRef.current = null;
+    }
+  }, []);
 
   const spawnFood = useCallback(() => {
     const empty: Point[] = [];
@@ -35,7 +49,23 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
         if (!snakeKeys.has(k) && !fenceRef.current.has(k)) empty.push({ x: c, y: r });
       }
     }
-    if (empty.length > 0) foodRef.current = empty[Math.floor(Math.random() * empty.length)];
+    if (empty.length > 0) {
+      foodRef.current = empty[Math.floor(Math.random() * empty.length)];
+      
+      // 20% 概率刷出限时金色幸运果 (8 秒限时，+30 分)
+      if (Math.random() < 0.22 && !bonusRef.current && empty.length > 5) {
+        const bonusPos = empty[Math.floor(Math.random() * empty.length)];
+        if (bonusPos.x !== foodRef.current.x || bonusPos.y !== foodRef.current.y) {
+          bonusRef.current = bonusPos;
+          setHasBonus(true);
+          if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
+          bonusTimerRef.current = setTimeout(() => {
+            bonusRef.current = null;
+            setHasBonus(false);
+          }, 8000);
+        }
+      }
+    }
   }, []);
 
   const gameOver = useCallback(() => {
@@ -43,9 +73,11 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     stateRef.current.playing = false;
     setIsGameOver(true);
     setIsPlaying(false);
+    clearBonus();
+    sound.playGameOver();
     const dur = Math.floor((Date.now() - stateRef.current.start) / 1000);
     onGameOver?.(stateRef.current.score, dur);
-  }, [onGameOver]);
+  }, [onGameOver, clearBonus]);
 
   const startGame = useCallback(() => {
     snakeRef.current = [{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }];
@@ -57,17 +89,19 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     setScore(0);
     setDuration(0);
     setLength(3);
+    setSpeedMs(110);
     setIsGameOver(false);
     setIsPaused(false);
     setIsPlaying(true);
+    clearBonus();
+    sound.playToggle();
     spawnFood();
-  }, [spawnFood]);
+  }, [spawnFood, clearBonus]);
 
   const changeDirection = useCallback((t: Direction) => {
     if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
-    // 严格双指令缓冲队列判定：防止连续按键原地折返自撞
     if (t !== last && !isOpp(last, t) && q.length < 2) {
       q.push(t);
     }
@@ -77,6 +111,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     if (stateRef.current.playing && !stateRef.current.over) {
       stateRef.current.paused = !stateRef.current.paused;
       setIsPaused(stateRef.current.paused);
+      sound.playToggle();
     }
   }, []);
 
@@ -86,7 +121,6 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
 
     setDuration(Math.floor((Date.now() - start) / 1000));
     
-    // 每次单步位移严格消费一个排队方向指令
     if (queueRef.current.length > 0) {
       const nextDir = queueRef.current.shift()!;
       if (!isOpp(dirRef.current, nextDir)) {
@@ -111,18 +145,34 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     }
 
     const nextSnake = [head, ...snakeRef.current];
+
+    // 吃到金色幸运果 (+30分)
+    if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
+      stateRef.current.score += 30;
+      setScore(stateRef.current.score);
+      sound.playBonus();
+      clearBonus();
+    }
+
+    // 吃到普通苹果 (+10分)
     if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
       stateRef.current.score += 10;
       setScore(stateRef.current.score);
       setLength(nextSnake.length);
+      sound.playEat();
       fenceRef.current.clear();
+      
+      // 动态梯度加速：最低 75ms
+      const nextSpeed = Math.max(75, 110 - Math.floor(stateRef.current.score / 50) * 4);
+      setSpeedMs(nextSpeed);
+      
       spawnFood();
     } else {
       const tail = nextSnake.pop()!;
       fenceRef.current.add(toKey(tail.x, tail.y));
     }
     snakeRef.current = nextSnake;
-  }, [gameOver, spawnFood]);
+  }, [gameOver, spawnFood, clearBonus]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -146,5 +196,5 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     return () => window.removeEventListener('keydown', onKey);
   }, [startGame, changeDirection, togglePause]);
 
-  return { snakeRef, fenceRef, foodRef, dirRef, score, duration, length, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick };
+  return { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick };
 }
