@@ -1,0 +1,16 @@
+{
+  "name": "贪吃蛇 2026",
+  "short_name": "贪吃蛇",
+  "description": "南昌大学程序设计课程设计 - 极简贪吃蛇前后端分离系统",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
