@@ -17,7 +17,7 @@ const isOpposite = (d1: Direction, d2: Direction) =>
   (d1 === 'LEFT' && d2 === 'RIGHT') ||
   (d1 === 'RIGHT' && d2 === 'LEFT');
 
-// React 官方推荐的 SSR 水合安全 Hook
+// SSR 水合安全 Hook
 const emptySubscribe = () => () => {};
 const useIsClient = () => useSyncExternalStore(emptySubscribe, () => true, () => false);
 
@@ -58,7 +58,7 @@ export default function TanChiShe() {
     authFormRef.current = authForm;
   }, [authForm]);
 
-  // 2. 游戏对局核心状态（Ref 保证主循环定时器最新）
+  // 2. 游戏对局核心状态（Ref 保持定时器主循环最新）
   const snakeRef = useRef<Point[]>([
     { x: 10, y: 12 },
     { x: 9, y: 12 },
@@ -172,7 +172,7 @@ export default function TanChiShe() {
   }, [fetchLeaderboard]);
 
   // -------------------------------------------------------------
-  // 浅色系 Canvas 渲染
+  // 浅色系 Canvas 渲染（砖墙障碍物 vs 翠绿活体蛇身）
   // -------------------------------------------------------------
 
   const renderCanvas = useCallback(() => {
@@ -181,13 +181,13 @@ export default function TanChiShe() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 清空背景
+    // 1. 清空背景
     ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 绘制细网格线
+    // 2. 绘制细网格底纹
     ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.8;
     for (let i = 0; i <= GRID_SIZE; i++) {
       ctx.beginPath();
       ctx.moveTo(i * CELL_SIZE, 0);
@@ -200,16 +200,33 @@ export default function TanChiShe() {
       ctx.stroke();
     }
 
-    // 1. 绘制围栏 (深灰色方块)
+    // 3. 绘制围栏 (🧱 砖石墙障碍物：深灰砖石底色 + 浅色交错砖缝，一眼辨识为障碍物)
     fenceSetRef.current.forEach((k) => {
       const [fx, fy] = k.split(',').map(Number);
-      ctx.fillStyle = '#64748b';
+      const px = fx * CELL_SIZE;
+      const py = fy * CELL_SIZE;
+
+      // 砖石深灰本体
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+
+      // 砖石外边框
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2);
+
+      // 浅灰交错砖缝纹理（中间横线 + 错开竖线）
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
-      ctx.roundRect(fx * CELL_SIZE + 1, fy * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2, 3);
-      ctx.fill();
+      ctx.moveTo(px + 1, py + CELL_SIZE / 2);
+      ctx.lineTo(px + CELL_SIZE - 1, py + CELL_SIZE / 2);
+      ctx.moveTo(px + CELL_SIZE / 2, py + 1);
+      ctx.lineTo(px + CELL_SIZE / 2, py + CELL_SIZE / 2);
+      ctx.stroke();
     });
 
-    // 2. 绘制果实 (红色圆点)
+    // 4. 绘制果实 (🍎 鲜亮红色果实)
     const fx = foodRef.current.x * CELL_SIZE + CELL_SIZE / 2;
     const fy = foodRef.current.y * CELL_SIZE + CELL_SIZE / 2;
     ctx.fillStyle = '#ef4444';
@@ -217,19 +234,29 @@ export default function TanChiShe() {
     ctx.arc(fx, fy, CELL_SIZE / 2.6, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3. 绘制蛇身 (翠绿色) 与 蛇头
+    // 果实高光
+    ctx.fillStyle = '#fecaca';
+    ctx.beginPath();
+    ctx.arc(fx - 2, fy - 2, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. 绘制蛇身 (🟢 清新翡翠绿圆角独立胶囊) 与 蛇头
     snakeRef.current.forEach((pt, idx) => {
       const px = pt.x * CELL_SIZE;
       const py = pt.y * CELL_SIZE;
 
       if (idx === 0) {
-        // 蛇头
-        ctx.fillStyle = '#059669';
+        // --- 蛇头 ---
+        ctx.fillStyle = '#047857';
         ctx.beginPath();
         ctx.roundRect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2, 5);
         ctx.fill();
 
-        // 眼睛
+        ctx.strokeStyle = '#065f46';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 眼睛（随方向朝向）
         const curDir = dirRef.current;
         let eye1 = { x: px + 5, y: py + 5 };
         let eye2 = { x: px + 15, y: py + 5 };
@@ -240,27 +267,37 @@ export default function TanChiShe() {
 
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(eye1.x, eye1.y, 2.2, 0, Math.PI * 2);
-        ctx.arc(eye2.x, eye2.y, 2.2, 0, Math.PI * 2);
+        ctx.arc(eye1.x, eye1.y, 2.5, 0, Math.PI * 2);
+        ctx.arc(eye2.x, eye2.y, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#0f172a';
         ctx.beginPath();
-        ctx.arc(eye1.x, eye1.y, 1.1, 0, Math.PI * 2);
-        ctx.arc(eye2.x, eye2.y, 1.1, 0, Math.PI * 2);
+        ctx.arc(eye1.x, eye1.y, 1.2, 0, Math.PI * 2);
+        ctx.arc(eye2.x, eye2.y, 1.2, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // 蛇身
+        // --- 蛇身节段 ---
         ctx.fillStyle = '#10b981';
         ctx.beginPath();
-        ctx.roundRect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2, 4);
+        ctx.roundRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4, 4);
+        ctx.fill();
+
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // 蛇身鳞片微光
+        ctx.fillStyle = '#a7f3d0';
+        ctx.beginPath();
+        ctx.arc(px + CELL_SIZE / 2, py + CELL_SIZE / 2, 1.8, 0, Math.PI * 2);
         ctx.fill();
       }
     });
   }, []);
 
   // -------------------------------------------------------------
-  // 游戏逻辑
+  // 游戏逻辑与移动推进
   // -------------------------------------------------------------
 
   const spawnFood = useCallback(() => {
@@ -346,7 +383,7 @@ export default function TanChiShe() {
       return;
     }
 
-    // 4. 撞围栏与自身
+    // 4. 撞围栏与撞自身判定
     const nextKey = toKey(nextHead.x, nextHead.y);
     if (fenceSetRef.current.has(nextKey)) {
       gameOver();
@@ -359,7 +396,7 @@ export default function TanChiShe() {
       }
     }
 
-    // 5. 推进
+    // 5. 移动推进：吃到果实身体增长；未吃果实蛇尾离队并原地砌起砖墙围栏
     const newSnake = [nextHead, ...snakeRef.current];
     const ate = nextHead.x === foodRef.current.x && nextHead.y === foodRef.current.y;
 
@@ -538,7 +575,7 @@ export default function TanChiShe() {
             </div>
             <div className="bg-slate-50 border border-slate-100 py-2 rounded-lg text-xs">
               <span className="text-slate-500">长度: </span>
-              <strong className="text-slate-800 text-sm">{snakeLength}</strong>
+              <strong className="text-emerald-700 text-sm">{snakeLength}</strong>
             </div>
           </div>
 
@@ -554,7 +591,7 @@ export default function TanChiShe() {
             {!isPlaying && !isGameOver && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
                 <p className="text-xs text-slate-600 mb-4 max-w-xs leading-relaxed">
-                  蛇移动时留下的尾巴会变成围栏障碍物。撞击边界、围栏或自身均判定结束。
+                  蛇移动时留下的尾巴会砌成灰色砖墙障碍物。撞击边界、砖墙或自身均判定结束。
                 </p>
                 <button
                   onClick={startGame}
@@ -578,7 +615,7 @@ export default function TanChiShe() {
                 <div className="flex gap-4 text-xs text-slate-600 mb-4">
                   <span>得分: <strong className="text-slate-900">{score}</strong></span>
                   <span>用时: <strong className="text-slate-900">{duration}s</strong></span>
-                  <span>长度: <strong className="text-slate-900">{snakeLength}</strong></span>
+                  <span>长度: <strong className="text-emerald-700">{snakeLength}</strong></span>
                 </div>
                 <button
                   onClick={startGame}
@@ -590,10 +627,12 @@ export default function TanChiShe() {
             )}
           </div>
 
-          <div className="mt-3 text-[11px] text-slate-400 flex gap-4">
-            <span>方向键 / WASD 转向</span>
-            <span>空格 开始/重新开始</span>
-            <span>P 暂停</span>
+          {/* 底部清晰图例与按键指引 */}
+          <div className="mt-3 text-[11px] text-slate-500 flex flex-wrap gap-3 justify-center items-center">
+            <span className="flex items-center gap-1 font-medium text-emerald-700">🟢 绿色为蛇身</span>
+            <span className="flex items-center gap-1 font-medium text-slate-600">🧱 灰色为遗留砖墙(致死)</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-400">方向键转向 / 空格开局 / P暂停</span>
           </div>
         </div>
 
