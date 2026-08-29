@@ -29,7 +29,7 @@ export default function Home() {
     [user, form.password, updateUser, refreshBoard]
   );
 
-  const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, changeDirection, tick } =
+  const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
     useSnakeGame(handleGameOver);
 
   useEffect(() => {
@@ -84,6 +84,7 @@ export default function Home() {
                 onStart={startGame}
                 onTick={tick}
                 onDirection={changeDirection}
+                onTogglePause={togglePause}
               />
             </div>
             <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
