@@ -155,6 +155,10 @@ func main() {
 		})
 	}
 
-	fmt.Println("🚀 Backend API: http://localhost:8080")
-	_ = r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	fmt.Println("🚀 Backend API running on port " + port)
+	_ = r.Run(":" + port)
 }
