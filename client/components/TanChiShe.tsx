@@ -396,7 +396,7 @@ export default function TanChiShe() {
       }
     }
 
-    // 5. 移动推进：吃到果实身体增长；未吃果实蛇尾离队并原地砌起砖墙围栏
+    // 5. 移动推进：吃到果实身体增长并重置清空场上所有栅栏；未吃果实蛇尾离队并原地砌起砖墙围栏
     const newSnake = [nextHead, ...snakeRef.current];
     const ate = nextHead.x === foodRef.current.x && nextHead.y === foodRef.current.y;
 
@@ -404,6 +404,7 @@ export default function TanChiShe() {
       scoreRef.current += 10;
       setScore(scoreRef.current);
       setSnakeLength(newSnake.length);
+      fenceSetRef.current.clear(); // 每次吃完果实清空重置场上所有栅栏
       spawnFood();
     } else {
       const tail = newSnake.pop()!;
@@ -591,7 +592,7 @@ export default function TanChiShe() {
             {!isPlaying && !isGameOver && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
                 <p className="text-xs text-slate-600 mb-4 max-w-xs leading-relaxed">
-                  蛇移动时留下的尾巴会砌成灰色砖墙障碍物。撞击边界、砖墙或自身均判定结束。
+                  蛇移动时留下的尾巴会砌成灰色砖墙障碍物，每次吃完果实将清空场上所有砖墙！
                 </p>
                 <button
                   onClick={startGame}
