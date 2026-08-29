@@ -236,8 +236,8 @@ func handleLeaderboard(c *gin.Context) {
 	// 把 map 转换为切片以进行多权重排序
 	list := make([]*UserRecord, 0, len(store.Users))
 	for _, u := range store.Users {
-		// 过滤掉得分为0的空账号，增强榜单展示质量
-		if u.HighScore > 0 {
+		// 只要产生过有效对局纪录（有得分或有有效耗时）即纳入排行展示
+		if u.HighScore > 0 || u.BestDuration > 0 {
 			list = append(list, u)
 		}
 	}

@@ -48,6 +48,22 @@ export default function TanChiShe() {
     authFormRef.current = authForm;
   }, [authForm]);
 
+  // 初次加载时尝试从 localStorage 恢复登录态
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tanchishe_auth');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.user && parsed?.form) {
+          setUser(parsed.user);
+          setAuthForm(parsed.form);
+        }
+      }
+    } catch (e) {
+      console.warn('读取本地登录凭证失败:', e);
+    }
+  }, []);
+
   const [score, setScore] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [snakeLength, setSnakeLength] = useState<number>(3);
@@ -98,6 +114,12 @@ export default function TanChiShe() {
       const json = await res.json();
       if (res.ok && json.code === 200) {
         setUser(json.data);
+        try {
+          localStorage.setItem(
+            'tanchishe_auth',
+            JSON.stringify({ user: json.data, form: { username: u, password: p } })
+          );
+        } catch {}
       } else {
         setAuthError(json.message || '登录失败');
       }
@@ -108,6 +130,9 @@ export default function TanChiShe() {
 
   const handleLogout = () => {
     setUser(null);
+    try {
+      localStorage.removeItem('tanchishe_auth');
+    } catch {}
     isPlayingRef.current = false;
     isGameOverRef.current = false;
     isPausedRef.current = false;
@@ -146,6 +171,12 @@ export default function TanChiShe() {
       if (json.code === 200) {
         if (json.isNewRecord) {
           setUser(json.data);
+          try {
+            localStorage.setItem(
+              'tanchishe_auth',
+              JSON.stringify({ user: json.data, form: authFormRef.current })
+            );
+          } catch {}
         }
         fetchLeaderboard();
       }
