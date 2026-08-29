@@ -1,19 +1,19 @@
-# 贪吃蛇：项目开发宪法与技术规范
+# 🐍 贪吃蛇：项目开发宪法与技术规范
 
 本项目是一款极简现代主义、移动优先（Mobile-First）的全栈贪吃蛇 Web 游戏与竞技排行榜系统。
 
 ---
 
-## 🎯 核心架构与技术栈
+## 🎯 1. 核心架构与技术栈
 
-- **前端平台**：Next.js 15 (App Router, SSG / 静态导出) + Canvas 2D 游戏引擎 + Tailwind CSS + Web Audio API 8-bit 原生音效
+- **前端平台**：Next.js 15 (App Router, 静态导出 SSG) + Canvas 2D 游戏引擎 + Tailwind CSS + Web Audio API 8-bit 原生音效
 - **前端托管**：腾讯云 EdgeOne Pages (`https://zhixu.online`)
 - **后端服务**：Go 1.22 + Gin 高性能 API 服务，运行于 Azure App Service Linux 容器
 - **数据库**：Supabase Cloud PostgreSQL (GORM 自动迁移，`users` 与 `game_records` 双表架构)
 
 ---
 
-## 🎨 视觉与交互设计契约
+## 🎨 2. 视觉与交互设计契约
 
 1. **核心色彩体系**：
    - 主品牌色：天青蓝 **`#66CCFF`**（蛇头主色、主要指示条、进度条、竖线强调）
@@ -29,8 +29,8 @@
 
 ---
 
-## 🛡️ 工程与开发准则
+## 🛡️ 3. 工程与开发准则
 
 - **环境变量**：根目录不存放任何 `.env`，分别下沉至 `client/.env.example` 与 `server/.env.example`。
 - **敏感信息**：`.env.local` 与 `.env.production` 严格被 `.gitignore` 忽略，严禁泄露密码至代码仓库。
-- **Git 提交规范**：严格遵循 `<emoji> <type>: <中文改动简述>`（如 `✨ feat:`, `🐞 fix:`, `📃 docs:`, `🌈 style:`, `🎈 perf:`, `🔧 build:`）。
+- **界面图标**：网页 UI 界面统一使用 Lucide 纯矢量线性图标，保持专业严谨。

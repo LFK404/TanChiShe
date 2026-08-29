@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '@/types';
-import { LogOut, Volume2, VolumeX, Trophy } from 'lucide-react';
+import { LogOut, Volume2, VolumeX, Trophy, Gamepad2 } from 'lucide-react';
 import { sound } from '@/utils/audio';
 
 interface Props {
@@ -21,8 +21,8 @@ export default function Header({ user, onLogout }: Props) {
       {/* 左侧品牌与身份 */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-[#EBF8FF] flex items-center justify-center text-[#0099FF] font-black text-xs">
-            🐍
+          <div className="w-7 h-7 rounded-full bg-[#EBF8FF] flex items-center justify-center text-[#0099FF] shadow-xs">
+            <Gamepad2 size={15} />
           </div>
           <span className="font-extrabold text-[#0F172A] text-sm tracking-tight">贪吃蛇</span>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] text-[#0099FF]">

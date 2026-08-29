@@ -59,19 +59,19 @@ func initDB() {
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		fmt.Println("⚠️ PostgreSQL connect failed, retrying with sslmode=disable...")
+		fmt.Println("[WARN] PostgreSQL connect failed, retrying with sslmode=disable...")
 		db, err = gorm.Open(postgres.Open(dsn+"?sslmode=disable"), &gorm.Config{})
 		if err != nil {
-			panic(fmt.Sprintf("❌ Fatal: Failed to connect to Supabase PostgreSQL: %v", err))
+			panic(fmt.Sprintf("[ERROR] Fatal: Failed to connect to Supabase PostgreSQL: %v", err))
 		}
 	}
 
 	// 自动同步与迁移数据表结构 (AutoMigrate)
 	err = db.AutoMigrate(&User{}, &GameRecord{})
 	if err != nil {
-		fmt.Println("⚠️ AutoMigrate warning:", err)
+		fmt.Println("[WARN] AutoMigrate warning:", err)
 	} else {
-		fmt.Println("✅ Supabase PostgreSQL schema connected and auto-migrated successfully!")
+		fmt.Println("[INFO] Supabase PostgreSQL schema connected and auto-migrated successfully!")
 	}
 
 	sqlDB, err := db.DB()
@@ -91,7 +91,7 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":   "ok",
-			"service":  "TanChiShe Go API Server",
+			"service":  "Snake Go API Server",
 			"database": "Supabase PostgreSQL",
 		})
 	})
@@ -138,7 +138,7 @@ func main() {
 			} else {
 				// 用户已存在，校验密码
 				if user.Password != p {
-				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误"})
+					c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误"})
 					return
 				}
 			}
@@ -180,7 +180,7 @@ func main() {
 			}
 
 			// 归档单局战绩流水到 Supabase
-		db.Create(&GameRecord{
+			db.Create(&GameRecord{
 				Username: u,
 				Score:    req.Score,
 				Duration: req.Duration,
@@ -218,6 +218,6 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	fmt.Println("🚀 Backend API running on port " + port)
+	fmt.Println("[INFO] Backend API running on port " + port)
 	_ = r.Run(":" + port)
 }

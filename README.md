@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 🌟 **在线即玩**：[https://zhixu.online](https://zhixu.online)  
-> 📖 **设计理念**：传承经典像素，融入极简留白美学、天青蓝 (`#66CCFF`) 核心主色、等宽几何徽标体系与全栈云原生架构。
+> 📖 **设计理念**：传承经典街机像素，融入极简留白美学、天青蓝 (`#66CCFF`) 核心主色、等宽几何徽标体系与全栈云原生架构。
 
 ---
 
@@ -43,7 +43,7 @@ flowchart LR
 ## 📂 目录结构
 
 ```text
-├── client/                     # 前端应用 (Next.js)
+├── client/                     # 📱 前端应用 (Next.js)
 │   ├── app/                    # 页面、路由与全局样式
 │   ├── components/             # Header, GameBoard, Leaderboard, LoginCard
 │   ├── hooks/                  # 游戏引擎 useSnakeGame 与认证钩子
@@ -51,28 +51,28 @@ flowchart LR
 │   ├── .env.example            # 前端环境变量范本
 │   └── .gitignore              # 前端忽略规则
 │
-├── server/                     # 后端服务 (Go Gin)
+├── server/                     # ⚙️ 后端服务 (Go Gin)
 │   ├── main.go                 # API 接口、防刷分校验与数据库连接
 │   ├── .env.example            # 后端环境变量范本
 │   └── .gitignore              # 后端忽略规则
 │
-├── supabase/migrations/        # 数据库 SQL 迁移文件
-├── AGENTS.md                   # 仓库开发宪法与技术规范
-└── README.md                   # 全局文档
+├── supabase/migrations/        # 🗄️ 数据库 SQL 迁移文件
+├── AGENTS.md                   # 📜 仓库开发宪法与技术规范
+└── README.md                   # 📖 全局文档
 ```
 
 ---
 
 ## 🚀 快速上手
 
-### 后端启动
+### 1. 后端启动
 ```bash
 cd server
 go run main.go
 # 默认监听 http://localhost:8080
 ```
 
-### 前端启动
+### 2. 前端启动
 ```bash
 cd client
 npm install

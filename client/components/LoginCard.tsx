@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Lock, ArrowRight } from 'lucide-react';
+import { User, Lock, ArrowRight, Gamepad2 } from 'lucide-react';
 
 interface Props {
   form: { username: string; password: string };
@@ -13,8 +13,8 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
     <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-[#E2E8F0] text-[#0F172A]">
       {/* 头部品牌 */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] text-2xl mb-3 shadow-sm">
-          🐍
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] mb-3 shadow-xs">
+          <Gamepad2 size={24} />
         </div>
         <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
         <p className="text-xs text-[#94A3B8] mt-1">方寸之间 · 重温经典</p>
