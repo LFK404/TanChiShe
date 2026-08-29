@@ -35,7 +35,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
   };
 
   return (
-    <div className="bg-white border border-[#E2E8F0] p-5 rounded-3xl shadow-sm flex flex-col select-none">
+    <div className="bg-white border border-[#E2E8F0] p-5 rounded-3xl flex flex-col select-none">
       {/* 标题与刷新 */}
       <div className="flex justify-between items-center pb-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2">

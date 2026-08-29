@@ -66,11 +66,19 @@ export default function Home() {
   if (!isClient) return null;
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6">
+    <main className="min-h-screen bg-white text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
+      {/* 南昌大学 NCU HOME 极简浅灰背景水印 */}
+      <div className="absolute top-4 sm:top-6 left-4 sm:left-10 pointer-events-none select-none z-0 flex flex-col leading-none opacity-60">
+        <span className="font-black text-6xl sm:text-8xl tracking-tighter text-[#F1F5F9]">NCU</span>
+        <span className="font-extrabold text-2xl sm:text-3xl tracking-widest text-[#F1F5F9] pl-1 sm:pl-1.5 -mt-1 sm:-mt-2">HOME</span>
+      </div>
+
       {!user ? (
-        <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
+        <div className="z-10 w-full flex justify-center">
+          <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
+        </div>
       ) : (
-        <div className="w-full max-w-4xl flex flex-col gap-4">
+        <div className="w-full max-w-4xl flex flex-col gap-4 z-10 relative">
           {/* 导航顶栏 (包含教程入口与声音开关) */}
           <Header
             user={user}

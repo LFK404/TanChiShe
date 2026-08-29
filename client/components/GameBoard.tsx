@@ -196,7 +196,7 @@ export default function GameBoard({
   const speedRatio = (110 / speedMs).toFixed(1);
 
   return (
-    <div className="bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col items-center select-none">
+    <div className="bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none">
       {/* 顶部四段式复合状态胶囊栏 (得分、长度、用时、速度) */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
         <div className="bg-[#F8FAFC] border border-[#E2E8F0] py-2 px-1 rounded-2xl relative overflow-hidden">
@@ -229,7 +229,7 @@ export default function GameBoard({
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="relative border border-[#E2E8F0] rounded-2xl overflow-hidden bg-white touch-none max-w-full shadow-inner"
+        className="relative border border-[#E2E8F0] rounded-2xl overflow-hidden bg-white touch-none max-w-full"
       >
         {/* 限时金色幸运果顶置流光进度条 */}
         {hasBonus && (
@@ -241,7 +241,7 @@ export default function GameBoard({
           <button
             onClick={onTogglePause}
             title={isPaused ? '继续游戏' : '暂停游戏'}
-            className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-xl bg-white/90 hover:bg-white border border-[#E2E8F0] shadow-xs flex items-center justify-center text-[#334155] hover:text-[#0099FF] active:scale-95 transition-all cursor-pointer"
+            className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-xl bg-white/90 hover:bg-white border border-[#E2E8F0] flex items-center justify-center text-[#334155] hover:text-[#0099FF] active:scale-95 transition-all cursor-pointer"
           >
             {isPaused ? <Play size={15} /> : <Pause size={15} />}
           </button>
@@ -254,7 +254,7 @@ export default function GameBoard({
           <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex items-center justify-center">
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer"
             >
               <Play size={16} /> 开始游戏 (空格)
             </button>
@@ -267,7 +267,7 @@ export default function GameBoard({
             onClick={onTogglePause}
             className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center text-[#0F172A] cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center mb-2 shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center mb-2">
               <Pause size={24} />
             </div>
             <span className="text-sm font-bold">游戏已暂停</span>
@@ -286,7 +286,7 @@ export default function GameBoard({
             </div>
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer"
             >
               <RotateCcw size={15} /> 再来一局 (空格)
             </button>
@@ -298,26 +298,26 @@ export default function GameBoard({
       <div className="mt-4 flex flex-col items-center gap-1 sm:hidden">
         <button
           onClick={() => onDirection('UP')}
-          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] shadow-sm transition-all"
+          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
         >
           <ChevronUp size={20} />
         </button>
         <div className="flex gap-4">
           <button
             onClick={() => onDirection('LEFT')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] shadow-sm transition-all"
+            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
           >
             <ChevronLeft size={20} />
           </button>
           <button
             onClick={() => onDirection('DOWN')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] shadow-sm transition-all"
+            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
           >
             <ChevronDown size={20} />
           </button>
           <button
             onClick={() => onDirection('RIGHT')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] shadow-sm transition-all"
+            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all"
           >
             <ChevronRight size={20} />
           </button>

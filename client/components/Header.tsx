@@ -18,11 +18,11 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
   };
 
   return (
-    <header className="w-full bg-white border border-[#E2E8F0] rounded-2xl px-4 sm:px-5 py-3 flex items-center justify-between shadow-sm text-xs select-none">
+    <header className="w-full bg-white border border-[#E2E8F0] rounded-2xl px-4 sm:px-5 py-3 flex items-center justify-between text-xs select-none">
       {/* 左侧品牌与身份 */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-[#EBF8FF] flex items-center justify-center text-[#0099FF] shadow-xs">
+          <div className="w-7 h-7 rounded-full bg-[#EBF8FF] flex items-center justify-center text-[#0099FF]">
             <Gamepad2 size={15} />
           </div>
           <span className="font-extrabold text-[#0F172A] text-sm tracking-tight">贪吃蛇</span>

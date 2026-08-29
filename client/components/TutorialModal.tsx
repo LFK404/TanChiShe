@@ -11,11 +11,11 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[4px] animate-fade-in select-none">
-      <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-3xl shadow-xl p-6 sm:p-7 flex flex-col text-[#0F172A] relative">
+      <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-7 flex flex-col text-[#0F172A] relative">
         {/* 顶部标题与关闭 */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
               <Compass size={18} />
             </div>
             <div>
@@ -35,7 +35,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
         <div className="flex flex-col gap-3 py-4 text-xs text-[#334155]">
           {/* 1. 操控方式 */}
           <div className="flex items-start gap-3 p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl">
-            <div className="w-6 h-6 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#0099FF] shrink-0 mt-0.5 shadow-xs">
+            <div className="w-6 h-6 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#0099FF] shrink-0 mt-0.5">
               🕹️
             </div>
             <div>
@@ -48,7 +48,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
 
           {/* 2. 普通红果 */}
           <div className="flex items-start gap-3 p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl">
-            <div className="w-6 h-6 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0 mt-0.5 shadow-xs">
+            <div className="w-6 h-6 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0 mt-0.5">
               <Apple size={14} />
             </div>
             <div>
@@ -61,7 +61,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
 
           {/* 3. 金色幸运果 */}
           <div className="flex items-start gap-3 p-3 bg-[#FEF3C7]/40 border border-[#F59E0B]/30 rounded-2xl">
-            <div className="w-6 h-6 rounded-xl bg-[#FEF3C7] flex items-center justify-center text-[#D97706] shrink-0 mt-0.5 shadow-xs">
+            <div className="w-6 h-6 rounded-xl bg-[#FEF3C7] flex items-center justify-center text-[#D97706] shrink-0 mt-0.5">
               <Sparkles size={14} />
             </div>
             <div>
@@ -74,7 +74,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
 
           {/* 4. 速度进阶 */}
           <div className="flex items-start gap-3 p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl">
-            <div className="w-6 h-6 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#0099FF] shrink-0 mt-0.5 shadow-xs">
+            <div className="w-6 h-6 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[#0099FF] shrink-0 mt-0.5">
               <Zap size={14} />
             </div>
             <div>
@@ -89,7 +89,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
         {/* 底部确认按钮 */}
         <button
           onClick={onClose}
-          className="w-full py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition-all shadow-sm cursor-pointer mt-1"
+          className="w-full py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition-all cursor-pointer mt-1"
         >
           我知道了，开始游戏
         </button>

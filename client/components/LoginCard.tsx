@@ -10,10 +10,10 @@ interface Props {
 
 export default function LoginCard({ form, error, setForm, onLogin }: Props) {
   return (
-    <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-[#E2E8F0] text-[#0F172A]">
+    <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E8F0] text-[#0F172A]">
       {/* 头部品牌 */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] mb-3 shadow-xs">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] mb-3">
           <Gamepad2 size={24} />
         </div>
         <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
@@ -54,7 +54,7 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
 
         <button
           type="submit"
-          className="w-full mt-2 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-[0.98] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+          className="w-full mt-2 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-[0.98] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
         >
           <span>进入游戏</span>
           <ArrowRight size={15} />
