@@ -52,7 +52,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     if (empty.length > 0) {
       foodRef.current = empty[Math.floor(Math.random() * empty.length)];
       
-      // 20% 概率刷出限时金色幸运果 (8 秒限时，+30 分)
+      // 22% 概率刷出限时金色幸运果 (8 秒限时，+30 分，保留栅栏不清除)
       if (Math.random() < 0.22 && !bonusRef.current && empty.length > 5) {
         const bonusPos = empty[Math.floor(Math.random() * empty.length)];
         if (bonusPos.x !== foodRef.current.x || bonusPos.y !== foodRef.current.y) {
@@ -115,12 +115,14 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     }
   }, []);
 
+  // 核心游戏帧时序逻辑闭环
   const tick = useCallback(() => {
     const { playing, over, paused, start } = stateRef.current;
     if (!playing || over || paused) return;
 
     setDuration(Math.floor((Date.now() - start) / 1000));
     
+    // 1. 转向缓冲队列消费
     if (queueRef.current.length > 0) {
       const nextDir = queueRef.current.shift()!;
       if (!isOpp(dirRef.current, nextDir)) {
@@ -128,25 +130,54 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       }
     }
 
+    // 2. 计算新蛇头坐标
     const head = { ...snakeRef.current[0] };
     if (dirRef.current === 'UP') head.y--;
     if (dirRef.current === 'DOWN') head.y++;
     if (dirRef.current === 'LEFT') head.x--;
     if (dirRef.current === 'RIGHT') head.x++;
 
-    // 碰撞边界、围栏或自身
-    if (
-      head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID ||
-      fenceRef.current.has(toKey(head.x, head.y)) ||
-      snakeRef.current.some((p) => p.x === head.x && p.y === head.y)
-    ) {
+    // 3. 边界碰撞检测
+    if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
       gameOver();
       return;
     }
 
-    const nextSnake = [head, ...snakeRef.current];
+    // 4. 自身身体碰撞检测 (排除尾部即将移动离开的格子)
+    const isEatingApple = head.x === foodRef.current.x && head.y === foodRef.current.y;
+    const bodyToCheck = isEatingApple ? snakeRef.current : snakeRef.current.slice(0, -1);
+    if (bodyToCheck.some((p) => p.x === head.x && p.y === head.y)) {
+      gameOver();
+      return;
+    }
 
-    // 吃到金色幸运果 (+30分)
+    // 5. 判定吃普通苹果 (核心逻辑：优先判定吃果，立即重置清空所有栅栏，绝不发生误撞)
+    if (isEatingApple) {
+      const nextSnake = [head, ...snakeRef.current];
+      stateRef.current.score += 10;
+      setScore(stateRef.current.score);
+      setLength(nextSnake.length);
+      sound.playEat();
+
+      // 吃到苹果，瞬间清除所有残留栅栏！
+      fenceRef.current.clear();
+      
+      // 动态平滑梯度加速
+      const nextSpeed = Math.max(75, 110 - Math.floor(stateRef.current.score / 50) * 4);
+      setSpeedMs(nextSpeed);
+      
+      snakeRef.current = nextSnake;
+      spawnFood();
+      return;
+    }
+
+    // 6. 若未吃到普通苹果，再进行残留栅栏碰撞检测
+    if (fenceRef.current.has(toKey(head.x, head.y))) {
+      gameOver();
+      return;
+    }
+
+    // 7. 判定吃金色幸运果 (+30 分，保留栅栏不清除)
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
       stateRef.current.score += 30;
       setScore(stateRef.current.score);
@@ -154,23 +185,10 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       clearBonus();
     }
 
-    // 吃到普通苹果 (+10分)
-    if (head.x === foodRef.current.x && head.y === foodRef.current.y) {
-      stateRef.current.score += 10;
-      setScore(stateRef.current.score);
-      setLength(nextSnake.length);
-      sound.playEat();
-      fenceRef.current.clear();
-      
-      // 动态梯度加速：最低 75ms
-      const nextSpeed = Math.max(75, 110 - Math.floor(stateRef.current.score / 50) * 4);
-      setSpeedMs(nextSpeed);
-      
-      spawnFood();
-    } else {
-      const tail = nextSnake.pop()!;
-      fenceRef.current.add(toKey(tail.x, tail.y));
-    }
+    // 8. 正常移动：蛇头前进，蛇尾离开并留下残留栅栏
+    const nextSnake = [head, ...snakeRef.current];
+    const tail = nextSnake.pop()!;
+    fenceRef.current.add(toKey(tail.x, tail.y));
     snakeRef.current = nextSnake;
   }, [gameOver, spawnFood, clearBonus]);
 
