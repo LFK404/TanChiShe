@@ -67,6 +67,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
+    // 严格双指令缓冲队列判定：防止连续按键原地折返自撞
     if (t !== last && !isOpp(last, t) && q.length < 2) {
       q.push(t);
     }
@@ -84,7 +85,14 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     if (!playing || over || paused) return;
 
     setDuration(Math.floor((Date.now() - start) / 1000));
-    if (queueRef.current.length > 0) dirRef.current = queueRef.current.shift()!;
+    
+    // 每次单步位移严格消费一个排队方向指令
+    if (queueRef.current.length > 0) {
+      const nextDir = queueRef.current.shift()!;
+      if (!isOpp(dirRef.current, nextDir)) {
+        dirRef.current = nextDir;
+      }
+    }
 
     const head = { ...snakeRef.current[0] };
     if (dirRef.current === 'UP') head.y--;
