@@ -8,6 +8,17 @@ import { Trophy, Timer, Play, Pause, RefreshCw, User, Lock, LogIn, AlertCircle, 
 const GRID_SIZE = 24; // 24x24 网格
 const CELL_PIXELS = 20; // 每个网格 20 像素
 const SPEED_MS = 110; // 蛇移动间隔 110ms
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+
+// 坐标转换辅助函数
+const toKey = (x: number, y: number) => `${x},${y}`;
+
+// 判断两方向是否相反
+const isOpposite = (d1: Direction, d2: Direction) =>
+  (d1 === 'UP' && d2 === 'DOWN') ||
+  (d1 === 'DOWN' && d2 === 'UP') ||
+  (d1 === 'LEFT' && d2 === 'RIGHT') ||
+  (d1 === 'RIGHT' && d2 === 'LEFT');
 
 export default function TanChiShe() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -24,7 +35,7 @@ export default function TanChiShe() {
   const fenceSetRef = useRef<Set<string>>(new Set()); // 存储围栏坐标哈希 "x,y"
   const foodRef = useRef<Point>({ x: 16, y: 12 });
   const dirRef = useRef<Direction>('RIGHT');
-  const dirQueueRef = useRef<Direction[]>([]); // 转向缓冲队列，彻底杜绝一帧内反向掉头自吞并提升操作手感
+  const dirQueueRef = useRef<Direction[]>([]); // 转向缓冲队列
   
   const isPlayingRef = useRef<boolean>(false);
   const isGameOverRef = useRef<boolean>(false);
@@ -33,36 +44,40 @@ export default function TanChiShe() {
   const scoreRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
 
-  // React UI 渲染状态
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [authForm, setAuthForm] = useState({ username: '', password: '' });
+  // -------------------------------------------------------------
+  // 2. React UI 渲染状态（惰性初始化避免 Effect 内同步 setState 级联渲染）
+  // -------------------------------------------------------------
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = localStorage.getItem('tanchishe_auth');
+      return saved ? JSON.parse(saved)?.user || null : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [authForm, setAuthForm] = useState<{ username: string; password: string }>(() => {
+    if (typeof window === 'undefined') return { username: '', password: '' };
+    try {
+      const saved = localStorage.getItem('tanchishe_auth');
+      return saved ? JSON.parse(saved)?.form || { username: '', password: '' } : { username: '', password: '' };
+    } catch {
+      return { username: '', password: '' };
+    }
+  });
+
   const [authError, setAuthError] = useState('');
   
   // 使用 Ref 解决主游戏循环定时器闭包中 user 与 authForm 状态陈旧问题
-  const userRef = useRef<UserProfile | null>(null);
-  const authFormRef = useRef<{ username: string; password: string }>({ username: '', password: '' });
+  const userRef = useRef<UserProfile | null>(user);
+  const authFormRef = useRef<{ username: string; password: string }>(authForm);
   useEffect(() => {
     userRef.current = user;
   }, [user]);
   useEffect(() => {
     authFormRef.current = authForm;
   }, [authForm]);
-
-  // 初次加载时尝试从 localStorage 恢复登录态
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('tanchishe_auth');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.user && parsed?.form) {
-          setUser(parsed.user);
-          setAuthForm(parsed.form);
-        }
-      }
-    } catch (e) {
-      console.warn('读取本地登录凭证失败:', e);
-    }
-  }, []);
 
   const [score, setScore] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -72,20 +87,14 @@ export default function TanChiShe() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   
   const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
-  const [apiBase, setApiBase] = useState<string>(
-    process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'
-  );
-
-  // 生成坐标 Key
-  const toKey = (x: number, y: number) => `${x},${y}`;
 
   // -------------------------------------------------------------
-  // 2. API 通信方法
+  // 3. API 通信与鉴权方法
   // -------------------------------------------------------------
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch(`${apiBase}/api/leaderboard`);
+      const res = await fetch(`${API_BASE}/api/leaderboard`);
       const json = await res.json();
       if (json.code === 200) {
         setLeaderboard(json.data || []);
@@ -93,9 +102,9 @@ export default function TanChiShe() {
     } catch (err) {
       console.warn('拉取排行榜异常，请确保后端服务正常运行:', err);
     }
-  }, [apiBase]);
+  }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     const u = authForm.username.trim();
@@ -106,7 +115,7 @@ export default function TanChiShe() {
     }
 
     try {
-      const res = await fetch(`${apiBase}/api/auth`, {
+      const res = await fetch(`${API_BASE}/api/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: u, password: p }),
@@ -126,38 +135,13 @@ export default function TanChiShe() {
     } catch {
       setAuthError('无法连接后端服务，请检查 8080 端口');
     }
-  };
+  }, [authForm]);
 
-  const handleLogout = () => {
-    setUser(null);
-    try {
-      localStorage.removeItem('tanchishe_auth');
-    } catch {}
-    isPlayingRef.current = false;
-    isGameOverRef.current = false;
-    isPausedRef.current = false;
-    setIsPlaying(false);
-    setIsGameOver(false);
-    setIsPaused(false);
-    setScore(0);
-    setDuration(0);
-    setSnakeLength(3);
-    snakeRef.current = [
-      { x: 10, y: 12 },
-      { x: 9, y: 12 },
-      { x: 8, y: 12 },
-    ];
-    fenceSetRef.current.clear();
-    dirRef.current = 'RIGHT';
-    dirQueueRef.current = [];
-    renderCanvas();
-  };
-
-  const handleSettle = async (finalScore: number, finalDuration: number) => {
+  const handleSettle = useCallback(async (finalScore: number, finalDuration: number) => {
     const currentUser = userRef.current;
     if (!currentUser) return;
     try {
-      const res = await fetch(`${apiBase}/api/settle`, {
+      const res = await fetch(`${API_BASE}/api/settle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,14 +167,173 @@ export default function TanChiShe() {
     } catch (err) {
       console.error('战绩上报失败:', err);
     }
-  };
+  }, [fetchLeaderboard]);
 
   // -------------------------------------------------------------
-  // 3. 游戏机制与算法实现
+  // 4. Canvas 画面渲染
   // -------------------------------------------------------------
 
-  // 随机生成果实（不能落在蛇身和围栏上）
-  const spawnFood = () => {
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // 清空背景
+    ctx.fillStyle = '#090d16'; // 深邃黑底
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 绘制背景科技网格线
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i <= GRID_SIZE; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * CELL_PIXELS, 0);
+      ctx.lineTo(i * CELL_PIXELS, GRID_SIZE * CELL_PIXELS);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, i * CELL_PIXELS);
+      ctx.lineTo(GRID_SIZE * CELL_PIXELS, i * CELL_PIXELS);
+      ctx.stroke();
+    }
+
+    // 1. 绘制围栏 (Fence)：赛博激光能量栅栏
+    fenceSetRef.current.forEach((k) => {
+      const [fx, fy] = k.split(',').map(Number);
+      const px = fx * CELL_PIXELS;
+      const py = fy * CELL_PIXELS;
+
+      ctx.fillStyle = '#312e81';
+      ctx.fillRect(px + 1, py + 1, CELL_PIXELS - 2, CELL_PIXELS - 2);
+
+      ctx.strokeStyle = '#818cf8';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(px + 1, py + 1, CELL_PIXELS - 2, CELL_PIXELS - 2);
+
+      ctx.strokeStyle = 'rgba(199, 210, 254, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px + 3, py + 3);
+      ctx.lineTo(px + CELL_PIXELS - 3, py + CELL_PIXELS - 3);
+      ctx.moveTo(px + CELL_PIXELS - 3, py + 3);
+      ctx.lineTo(px + 3, py + CELL_PIXELS - 3);
+      ctx.stroke();
+    });
+
+    // 2. 绘制果实 (Food)：金色发光能量晶核
+    const fx = foodRef.current.x * CELL_PIXELS + CELL_PIXELS / 2;
+    const fy = foodRef.current.y * CELL_PIXELS + CELL_PIXELS / 2;
+
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
+    ctx.beginPath();
+    ctx.arc(fx, fy, CELL_PIXELS / 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(fx, fy, CELL_PIXELS / 3.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(fx - 2, fy - 2, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. 绘制蛇身与蛇头
+    snakeRef.current.forEach((pt, idx) => {
+      const px = pt.x * CELL_PIXELS;
+      const py = pt.y * CELL_PIXELS;
+
+      if (idx === 0) {
+        // --- 蛇头绘制 ---
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath();
+        ctx.roundRect(px + 2, py + 2, CELL_PIXELS - 4, CELL_PIXELS - 4, 5);
+        ctx.fill();
+
+        ctx.strokeStyle = '#86efac';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        const curDir = dirRef.current;
+        let eye1 = { x: px + 6, y: py + 6 };
+        let eye2 = { x: px + 14, y: py + 6 };
+
+        if (curDir === 'UP') {
+          eye1 = { x: px + 6, y: py + 5 };
+          eye2 = { x: px + 14, y: py + 5 };
+        } else if (curDir === 'DOWN') {
+          eye1 = { x: px + 6, y: py + 15 };
+          eye2 = { x: px + 14, y: py + 15 };
+        } else if (curDir === 'LEFT') {
+          eye1 = { x: px + 5, y: py + 6 };
+          eye2 = { x: px + 5, y: py + 14 };
+        } else if (curDir === 'RIGHT') {
+          eye1 = { x: px + 15, y: py + 6 };
+          eye2 = { x: px + 15, y: py + 14 };
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eye1.x, eye1.y, 2.5, 0, Math.PI * 2);
+        ctx.arc(eye2.x, eye2.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(eye1.x, eye1.y, 1.2, 0, Math.PI * 2);
+        ctx.arc(eye2.x, eye2.y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // --- 蛇身节段绘制 ---
+        ctx.fillStyle = '#16a34a';
+        ctx.beginPath();
+        ctx.roundRect(px + 2, py + 2, CELL_PIXELS - 4, CELL_PIXELS - 4, 4);
+        ctx.fill();
+
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(134, 239, 172, 0.4)';
+        ctx.beginPath();
+        ctx.arc(px + CELL_PIXELS / 2, py + CELL_PIXELS / 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    setUser(null);
+    try {
+      localStorage.removeItem('tanchishe_auth');
+    } catch {}
+    isPlayingRef.current = false;
+    isGameOverRef.current = false;
+    isPausedRef.current = false;
+    setIsPlaying(false);
+    setIsGameOver(false);
+    setIsPaused(false);
+    setScore(0);
+    setDuration(0);
+    setSnakeLength(3);
+    snakeRef.current = [
+      { x: 10, y: 12 },
+      { x: 9, y: 12 },
+      { x: 8, y: 12 },
+    ];
+    fenceSetRef.current.clear();
+    dirRef.current = 'RIGHT';
+    dirQueueRef.current = [];
+    renderCanvas();
+  }, [renderCanvas]);
+
+  // -------------------------------------------------------------
+  // 5. 游戏机制与循环逻辑
+  // -------------------------------------------------------------
+
+  const spawnFood = useCallback(() => {
     const emptyCells: Point[] = [];
     const snakeKeys = new Set(snakeRef.current.map((p) => toKey(p.x, p.y)));
 
@@ -207,10 +350,20 @@ export default function TanChiShe() {
       const idx = Math.floor(Math.random() * emptyCells.length);
       foodRef.current = emptyCells[idx];
     }
-  };
+  }, []);
 
-  // 开始/重置游戏（强制鉴权：未登录禁止开局）
-  const resetGame = () => {
+  const gameOver = useCallback(() => {
+    isGameOverRef.current = true;
+    isPlayingRef.current = false;
+    setIsGameOver(true);
+    setIsPlaying(false);
+
+    const now = Date.now();
+    const finalDur = Math.floor((now - startTimeRef.current) / 1000);
+    handleSettle(scoreRef.current, finalDur);
+  }, [handleSettle]);
+
+  const resetGame = useCallback(() => {
     if (!userRef.current) {
       usernameInputRef.current?.focus();
       return;
@@ -239,17 +392,17 @@ export default function TanChiShe() {
     setIsPlaying(true);
 
     spawnFood();
-  };
+  }, [spawnFood]);
 
-  // 核心单步逻辑
-  const updateTick = () => {
+  const updateTick = useCallback(() => {
     if (!isPlayingRef.current || isGameOverRef.current || isPausedRef.current) return;
 
     // 1. 更新秒表
-    const currentDur = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    const now = Date.now();
+    const currentDur = Math.floor((now - startTimeRef.current) / 1000);
     setDuration(currentDur);
 
-    // 2. 从转向队列中消费下一个方向（若有）
+    // 2. 从转向队列中消费下一个方向
     if (dirQueueRef.current.length > 0) {
       dirRef.current = dirQueueRef.current.shift()!;
     }
@@ -287,184 +440,21 @@ export default function TanChiShe() {
     const ateFood = newHead.x === foodRef.current.x && newHead.y === foodRef.current.y;
 
     if (ateFood) {
-      // 吃到果实：蛇身增长 1 节，分数 +10，尾巴不移除
       scoreRef.current += 10;
       setScore(scoreRef.current);
       setSnakeLength(nextSnake.length);
       spawnFood();
     } else {
-      // 未吃果实：蛇身长度严格保持不变，蛇尾离开的格子砌起围栏
       const tail = nextSnake.pop()!;
       fenceSetRef.current.add(toKey(tail.x, tail.y));
     }
 
     snakeRef.current = nextSnake;
-  };
-
-  const gameOver = () => {
-    isGameOverRef.current = true;
-    isPlayingRef.current = false;
-    setIsGameOver(true);
-    setIsPlaying(false);
-
-    const finalDur = Math.floor((Date.now() - startTimeRef.current) / 1000);
-    handleSettle(scoreRef.current, finalDur);
-  };
+  }, [gameOver, spawnFood]);
 
   // -------------------------------------------------------------
-  // 4. Canvas 画面渲染（精细化区分蛇身、蛇头、能量围栏与光晕果实）
+  // 6. 副作用驱动：按键响应、定时器与初始化
   // -------------------------------------------------------------
-
-  const renderCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // 清空背景
-    ctx.fillStyle = '#090d16'; // 深邃黑底
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 绘制浅色背景科技网格线
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 0.8;
-    for (let i = 0; i <= GRID_SIZE; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * CELL_PIXELS, 0);
-      ctx.lineTo(i * CELL_PIXELS, GRID_SIZE * CELL_PIXELS);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(0, i * CELL_PIXELS);
-      ctx.lineTo(GRID_SIZE * CELL_PIXELS, i * CELL_PIXELS);
-      ctx.stroke();
-    }
-
-    // 1. 绘制砌起来的围栏 (Fence)：赛博激光能量栅栏（带深紫底、霓虹边与能量交叉纹理）
-    fenceSetRef.current.forEach((k) => {
-      const [fx, fy] = k.split(',').map(Number);
-      const px = fx * CELL_PIXELS;
-      const py = fy * CELL_PIXELS;
-
-      // 栅栏深紫底色
-      ctx.fillStyle = '#312e81';
-      ctx.fillRect(px + 1, py + 1, CELL_PIXELS - 2, CELL_PIXELS - 2);
-
-      // 栅栏发光外边框
-      ctx.strokeStyle = '#818cf8';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(px + 1, py + 1, CELL_PIXELS - 2, CELL_PIXELS - 2);
-
-      // 栅栏内部激光交叉线
-      ctx.strokeStyle = 'rgba(199, 210, 254, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(px + 3, py + 3);
-      ctx.lineTo(px + CELL_PIXELS - 3, py + CELL_PIXELS - 3);
-      ctx.moveTo(px + CELL_PIXELS - 3, py + 3);
-      ctx.lineTo(px + 3, py + CELL_PIXELS - 3);
-      ctx.stroke();
-    });
-
-    // 2. 绘制果实 (Food)：金色发光能量晶核
-    const fx = foodRef.current.x * CELL_PIXELS + CELL_PIXELS / 2;
-    const fy = foodRef.current.y * CELL_PIXELS + CELL_PIXELS / 2;
-
-    // 光晕外环
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
-    ctx.beginPath();
-    ctx.arc(fx, fy, CELL_PIXELS / 2.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 核心光球
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(fx, fy, CELL_PIXELS / 3.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 高光白点
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath();
-    ctx.arc(fx - 2, fy - 2, 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 3. 绘制蛇身与蛇头（圆角独立胶囊，眼睛随方向转动）
-    snakeRef.current.forEach((pt, idx) => {
-      const px = pt.x * CELL_PIXELS;
-      const py = pt.y * CELL_PIXELS;
-
-      if (idx === 0) {
-        // --- 蛇头绘制 ---
-        ctx.fillStyle = '#22c55e'; // 鲜绿蛇头
-        ctx.beginPath();
-        ctx.roundRect(px + 2, py + 2, CELL_PIXELS - 4, CELL_PIXELS - 4, 5);
-        ctx.fill();
-
-        ctx.strokeStyle = '#86efac';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        // 根据蛇朝向绘制两只眼睛
-        const curDir = dirRef.current;
-        let eye1 = { x: px + 6, y: py + 6 };
-        let eye2 = { x: px + 14, y: py + 6 };
-
-        if (curDir === 'UP') {
-          eye1 = { x: px + 6, y: py + 5 };
-          eye2 = { x: px + 14, y: py + 5 };
-        } else if (curDir === 'DOWN') {
-          eye1 = { x: px + 6, y: py + 15 };
-          eye2 = { x: px + 14, y: py + 15 };
-        } else if (curDir === 'LEFT') {
-          eye1 = { x: px + 5, y: py + 6 };
-          eye2 = { x: px + 5, y: py + 14 };
-        } else if (curDir === 'RIGHT') {
-          eye1 = { x: px + 15, y: py + 6 };
-          eye2 = { x: px + 15, y: py + 14 };
-        }
-
-        // 白眼球
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(eye1.x, eye1.y, 2.5, 0, Math.PI * 2);
-        ctx.arc(eye2.x, eye2.y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 黑瞳孔
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath();
-        ctx.arc(eye1.x, eye1.y, 1.2, 0, Math.PI * 2);
-        ctx.arc(eye2.x, eye2.y, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        // --- 蛇身节段绘制（独立圆角胶囊体） ---
-        ctx.fillStyle = '#16a34a'; // 翡翠绿蛇身
-        ctx.beginPath();
-        ctx.roundRect(px + 2, py + 2, CELL_PIXELS - 4, CELL_PIXELS - 4, 4);
-        ctx.fill();
-
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-
-        // 蛇鳞中心高光点
-        ctx.fillStyle = 'rgba(134, 239, 172, 0.4)';
-        ctx.beginPath();
-        ctx.arc(px + CELL_PIXELS / 2, py + CELL_PIXELS / 2, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
-  };
-
-  // -------------------------------------------------------------
-  // 5. 副作用驱动：按键响应、定时器与初始化
-  // -------------------------------------------------------------
-
-  const isOpposite = (d1: Direction, d2: Direction) =>
-    (d1 === 'UP' && d2 === 'DOWN') ||
-    (d1 === 'DOWN' && d2 === 'UP') ||
-    (d1 === 'LEFT' && d2 === 'RIGHT') ||
-    (d1 === 'RIGHT' && d2 === 'LEFT');
 
   // 键盘事件监听
   useEffect(() => {
@@ -473,7 +463,6 @@ export default function TanChiShe() {
         e.preventDefault();
       }
 
-      // 未登录时阻断所有游戏快捷键
       if (!userRef.current) return;
 
       if (e.key === 'p' || e.key === 'P') {
@@ -507,7 +496,7 @@ export default function TanChiShe() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [resetGame]);
 
   // 驱动主逻辑与渲染
   useEffect(() => {
@@ -517,12 +506,27 @@ export default function TanChiShe() {
     }, SPEED_MS);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [updateTick, renderCanvas]);
 
-  // 初次载入榜单
+  // 初次载入榜单（规范异步请求）
   useEffect(() => {
-    fetchLeaderboard();
-  }, [fetchLeaderboard]);
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/leaderboard`);
+        const json = await res.json();
+        if (isMounted && json.code === 200) {
+          setLeaderboard(json.data || []);
+        }
+      } catch (err) {
+        console.warn('拉取排行榜异常:', err);
+      }
+    };
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-6">
