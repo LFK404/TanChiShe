@@ -1,80 +1,66 @@
 import { useState, useCallback, useSyncExternalStore } from 'react';
-import { UserProfile } from '@/types';
-import { loginOrRegister } from '@/services/api';
+import { User } from '@/types';
+import { apiAuth } from '@/services/api';
 
-const AUTH_KEY = 'tanchishe_auth';
-
-const emptySubscribe = () => () => {};
-export const useIsClient = () => useSyncExternalStore(emptySubscribe, () => true, () => false);
+const KEY = 'tanchishe_auth';
+export const useIsClient = () => useSyncExternalStore(() => () => {}, () => true, () => false);
 
 export function useAuth() {
-  const [user, setUser] = useState<UserProfile | null>(() => {
+  const [user, setUser] = useState<User | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
-      const saved = localStorage.getItem(AUTH_KEY);
+      const saved = localStorage.getItem(KEY);
       return saved ? JSON.parse(saved)?.user || null : null;
     } catch {
       return null;
     }
   });
 
-  const [authForm, setAuthForm] = useState(() => {
+  const [form, setForm] = useState(() => {
     if (typeof window === 'undefined') return { username: '', password: '' };
     try {
-      const saved = localStorage.getItem(AUTH_KEY);
+      const saved = localStorage.getItem(KEY);
       return saved ? JSON.parse(saved)?.form || { username: '', password: '' } : { username: '', password: '' };
     } catch {
       return { username: '', password: '' };
     }
   });
 
-  const [authError, setAuthError] = useState('');
+  const [error, setError] = useState('');
 
-  // 登录或注册
-  const handleLogin = useCallback(async (e: React.FormEvent) => {
+  const login = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setAuthError('');
-    const u = authForm.username.trim();
-    const p = authForm.password.trim();
+    setError('');
+    const u = form.username.trim();
+    const p = form.password.trim();
     if (!u || !p) {
-      setAuthError('请输入用户名和密码');
+      setError('请输入用户名和密码');
       return;
     }
-
-    const res = await loginOrRegister(u, p);
-    if (res.success && res.data) {
+    const res = await apiAuth(u, p);
+    if (res.ok && res.data) {
       setUser(res.data);
       try {
-        localStorage.setItem(AUTH_KEY, JSON.stringify({ user: res.data, form: { username: u, password: p } }));
+        localStorage.setItem(KEY, JSON.stringify({ user: res.data, form: { username: u, password: p } }));
       } catch {}
     } else {
-      setAuthError(res.message || '登录失败');
+      setError(res.msg || '登录失败');
     }
-  }, [authForm]);
+  }, [form]);
 
-  // 退出登录
-  const handleLogout = useCallback(() => {
+  const logout = useCallback(() => {
     setUser(null);
     try {
-      localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem(KEY);
     } catch {}
   }, []);
 
-  // 战绩刷新时更新用户档案
-  const updateUserRecord = useCallback((updated: UserProfile) => {
-    setUser(updated);
+  const updateUser = useCallback((u: User) => {
+    setUser(u);
     try {
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ user: updated, form: authForm }));
+      localStorage.setItem(KEY, JSON.stringify({ user: u, form }));
     } catch {}
-  }, [authForm]);
+  }, [form]);
 
-  return {
-    user,
-    authForm,
-    authError,
-    setAuthForm,
-    handleLogin,
-    handleLogout,
-    updateUserRecord,
-  };
+  return { user, form, error, setForm, login, logout, updateUser };
 }

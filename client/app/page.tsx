@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
 import { useSnakeGame } from '@/hooks/useSnakeGame';
-import { settleScore, fetchLeaderboardList } from '@/services/api';
-import { LeaderboardItem } from '@/types';
+import { apiSettle, apiLeaderboard } from '@/services/api';
+import { User } from '@/types';
 import Header from '@/components/Header';
 import GameBoard from '@/components/GameBoard';
 import Leaderboard from '@/components/Leaderboard';
@@ -12,104 +12,64 @@ import LoginCard from '@/components/LoginCard';
 
 export default function Home() {
   const isClient = useIsClient();
-  const { user, authForm, authError, setAuthForm, handleLogin, handleLogout, updateUserRecord } = useAuth();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
+  const { user, form, error, setForm, login, logout, updateUser } = useAuth();
+  const [board, setBoard] = useState<User[]>([]);
 
-  // 拉取排行榜
-  const loadLeaderboard = useCallback(async () => {
-    const list = await fetchLeaderboardList();
-    setLeaderboard(list);
+  const refreshBoard = useCallback(async () => {
+    setBoard(await apiLeaderboard());
   }, []);
 
-  // 对局结束时的结算回调
   const handleGameOver = useCallback(
-    async (finalScore: number, finalDuration: number) => {
+    async (finalScore: number, finalDur: number) => {
       if (!user) return;
-      const res = await settleScore(user.username, authForm.password.trim(), finalScore, finalDuration);
-      if (res.success && res.isNewRecord && res.data) {
-        updateUserRecord(res.data);
-      }
-      loadLeaderboard();
+      const res = await apiSettle(user.username, form.password.trim(), finalScore, finalDur);
+      if (res.ok && res.isNewRecord && res.data) updateUser(res.data);
+      refreshBoard();
     },
-    [user, authForm, updateUserRecord, loadLeaderboard]
+    [user, form.password, updateUser, refreshBoard]
   );
 
-  // 挂载游戏引擎 Hook
-  const {
-    snakeRef,
-    fenceSetRef,
-    foodRef,
-    dirRef,
-    score,
-    duration,
-    snakeLength,
-    isPlaying,
-    isGameOver,
-    isPaused,
-    startGame,
-    updateTick,
-  } = useSnakeGame(handleGameOver);
+  const { snakeRef, fenceRef, foodRef, dirRef, score, duration, length, isPlaying, isGameOver, isPaused, startGame, tick } =
+    useSnakeGame(handleGameOver);
 
-  // 登录后初次拉取榜单
   useEffect(() => {
     if (!user) return;
     let isMounted = true;
-    const load = async () => {
-      const list = await fetchLeaderboardList();
-      if (isMounted) {
-        setLeaderboard(list);
-      }
-    };
-    load();
+    apiLeaderboard().then((data) => {
+      if (isMounted) setBoard(data);
+    });
     return () => {
       isMounted = false;
     };
   }, [user]);
 
-  if (!isClient) {
-    return (
-      <main className="min-h-screen bg-slate-100 text-slate-800 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center text-xs text-slate-400">
-          加载中...
-        </div>
-      </main>
-    );
-  }
+  if (!isClient) return null;
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-800 flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
       {!user ? (
-        /* 1. 登录门禁卡片 */
-        <LoginCard
-          authForm={authForm}
-          authError={authError}
-          setAuthForm={setAuthForm}
-          onLogin={handleLogin}
-        />
+        <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
       ) : (
-        /* 2. 游戏主界面与排行榜 */
-        <div className="w-full max-w-4xl flex flex-col gap-5">
-          <Header user={user} onLogout={handleLogout} />
-
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+        <div className="w-full max-w-4xl flex flex-col gap-4">
+          <Header user={user} onLogout={logout} />
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <div className="md:col-span-2">
               <GameBoard
                 snakeRef={snakeRef}
-                fenceSetRef={fenceSetRef}
+                fenceRef={fenceRef}
                 foodRef={foodRef}
                 dirRef={dirRef}
                 score={score}
                 duration={duration}
-                snakeLength={snakeLength}
+                length={length}
                 isPlaying={isPlaying}
                 isGameOver={isGameOver}
                 isPaused={isPaused}
-                onStartGame={startGame}
-                onTick={updateTick}
+                onStart={startGame}
+                onTick={tick}
               />
             </div>
-
-            <Leaderboard items={leaderboard} onRefresh={loadLeaderboard} />
+            <Leaderboard items={board} onRefresh={refreshBoard} />
           </div>
         </div>
       )}

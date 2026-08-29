@@ -14,268 +14,147 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// -------------------------------------------------------------
-// 1. 结构体定义：用户数据与请求契约
-// -------------------------------------------------------------
-
-// UserRecord 用户战绩实体：保存最高纪录与用时
-type UserRecord struct {
+// User 玩家实体 (Password 通过 json:"-" 自动在响应中安全隐藏)
+type User struct {
 	Username     string `json:"username"`
-	Password     string `json:"password"`
-	HighScore    int    `json:"highScore"`    // 个人最高得分
-	BestDuration int64  `json:"bestDuration"` // 创下最高分时的用时(秒)
-	UpdatedAt    string `json:"updatedAt"`    // 纪录产生时间
+	Password     string `json:"-"`
+	HighScore    int    `json:"highScore"`
+	BestDuration int64  `json:"bestDuration"`
+	UpdatedAt    string `json:"updatedAt"`
 }
 
-// 登录/注册请求
-type AuthRequest struct {
+type AuthReq struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-// 游戏结算请求
-type SettleRequest struct {
+type SettleReq struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Score    int    `json:"score"`
 	Duration int64  `json:"duration"`
 }
 
-// -------------------------------------------------------------
-// 2. 本地文件持久化管理（带读写锁，防止并发写坏文件）
-// -------------------------------------------------------------
+var (
+	storeFile = "users.json"
+	storeMu   sync.RWMutex
+	users     = make(map[string]*User)
+)
 
-type DataStore struct {
-	sync.RWMutex
-	filePath string
-	Users    map[string]*UserRecord `json:"users"`
-}
-
-var store *DataStore
-
-func initStore(filePath string) {
-	store = &DataStore{
-		filePath: filePath,
-		Users:    make(map[string]*UserRecord),
-	}
-
-	// 尝试读取已有的 json 文件
-	data, err := os.ReadFile(filePath)
+func loadStore() {
+	data, err := os.ReadFile(storeFile)
 	if err == nil {
 		var temp struct {
-			Users map[string]*UserRecord `json:"users"`
+			Users map[string]*User `json:"users"`
 		}
-		if jsonErr := json.Unmarshal(data, &temp); jsonErr == nil && temp.Users != nil {
-			store.Users = temp.Users
+		if json.Unmarshal(data, &temp) == nil && temp.Users != nil {
+			users = temp.Users
 		}
 	}
 }
 
-// 保存内存数据到文件
-func (s *DataStore) persist() {
-	// 注意：调用前外部必须已经持有锁
-	wrapper := struct {
-		Users map[string]*UserRecord `json:"users"`
-	}{
-		Users: s.Users,
-	}
-
-	bytes, err := json.MarshalIndent(wrapper, "", "  ")
+func saveStore() {
+	bytes, err := json.MarshalIndent(gin.H{"users": users}, "", "  ")
 	if err == nil {
-		_ = os.WriteFile(s.filePath, bytes, 0644)
+		_ = os.WriteFile(storeFile, bytes, 0644)
 	}
 }
-
-// -------------------------------------------------------------
-// 3. 主程序与路由定义
-// -------------------------------------------------------------
 
 func main() {
-	// 初始化本地数据库
-	initStore("users.json")
-
+	loadStore()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	// 配置跨域中间件，方便本地与 EdgeOne 代理访问
 	r.Use(cors.New(cors.Config{
-		AllowOriginFunc:  func(origin string) bool { return true },
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowHeaders:     []string{"*"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
 	}))
 
-	// API 路由组
 	api := r.Group("/api")
 	{
-		// 1. 玩家鉴权：已存在则验证密码，不存在则自动注册并建档
-		api.POST("/auth", handleAuth)
+		// 玩家登录/自动注册
+		api.POST("/auth", func(c *gin.Context) {
+			var req AuthReq
+			if err := c.ShouldBindJSON(&req); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数不完整"})
+				return
+			}
+			u, p := strings.TrimSpace(req.Username), strings.TrimSpace(req.Password)
+			if u == "" || p == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "账号或密码不能为空"})
+				return
+			}
 
-		// 2. 游戏结算：判定是否刷新历史最高分（同分比耗时）
-		api.POST("/settle", handleSettle)
+			storeMu.Lock()
+			defer storeMu.Unlock()
 
-		// 3. 排行榜查询：获取全局 Top 10
-		api.GET("/leaderboard", handleLeaderboard)
-	}
-
-	fmt.Println("🚀 TanChiShe Backend API running on http://localhost:8080")
-	_ = r.Run(":8080")
-}
-
-// -------------------------------------------------------------
-// 4. 业务处理函数
-// -------------------------------------------------------------
-
-func handleAuth(c *gin.Context) {
-	var req AuthRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "请输入完整的用户名和密码"})
-		return
-	}
-
-	username := strings.TrimSpace(req.Username)
-	password := strings.TrimSpace(req.Password)
-	if username == "" || password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "用户名或密码不能为空白字符"})
-		return
-	}
-
-	store.Lock()
-	defer store.Unlock()
-
-	user, exists := store.Users[username]
-	if !exists {
-		// 用户不存在：直接自动注册建档
-		newUser := &UserRecord{
-			Username:     username,
-			Password:     password,
-			HighScore:    0,
-			BestDuration: 0,
-			UpdatedAt:    time.Now().Format("2006-01-02 15:04:05"),
-		}
-		store.Users[username] = newUser
-		store.persist()
-
-		c.JSON(http.StatusOK, gin.H{
-			"code":    200,
-			"message": "注册并登录成功",
-			"data":    newUser,
+			user, exists := users[u]
+			if !exists {
+				user = &User{Username: u, Password: p, UpdatedAt: time.Now().Format("2006-01-02 15:04:05")}
+				users[u] = user
+				saveStore()
+			} else if user.Password != p {
+				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"code": 200, "data": user})
 		})
-		return
+
+		// 对局战绩结算
+		api.POST("/settle", func(c *gin.Context) {
+			var req SettleReq
+			if err := c.ShouldBindJSON(&req); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数异常"})
+				return
+			}
+
+			storeMu.Lock()
+			defer storeMu.Unlock()
+
+			user, exists := users[strings.TrimSpace(req.Username)]
+			if !exists || user.Password != strings.TrimSpace(req.Password) {
+				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "认证失效"})
+				return
+			}
+
+			isNewRecord := req.Score > user.HighScore || (req.Score == user.HighScore && req.Score > 0 && (user.BestDuration == 0 || req.Duration < user.BestDuration))
+			if isNewRecord {
+				user.HighScore = req.Score
+				user.BestDuration = req.Duration
+				user.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+				saveStore()
+			}
+			c.JSON(http.StatusOK, gin.H{"code": 200, "isNewRecord": isNewRecord, "data": user})
+		})
+
+		// Top 10 排行榜
+		api.GET("/leaderboard", func(c *gin.Context) {
+			storeMu.RLock()
+			defer storeMu.RUnlock()
+
+			list := make([]*User, 0, len(users))
+			for _, u := range users {
+				if u.HighScore > 0 || u.BestDuration > 0 {
+					list = append(list, u)
+				}
+			}
+			sort.Slice(list, func(i, j int) bool {
+				if list[i].HighScore == list[j].HighScore {
+					return list[i].BestDuration < list[j].BestDuration
+				}
+				return list[i].HighScore > list[j].HighScore
+			})
+
+			limit := 10
+			if len(list) < limit {
+				limit = len(list)
+			}
+			c.JSON(http.StatusOK, gin.H{"code": 200, "data": list[:limit]})
+		})
 	}
 
-	// 用户已存在：校验密码
-	if user.Password != password {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误，请核对后重试"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"message": "登录成功",
-		"data":    user,
-	})
-}
-
-func handleSettle(c *gin.Context) {
-	var req SettleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "结算参数异常"})
-		return
-	}
-
-	username := strings.TrimSpace(req.Username)
-	password := strings.TrimSpace(req.Password)
-	if username == "" || req.Score < 0 || req.Duration < 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "非法的结算数据"})
-		return
-	}
-
-	store.Lock()
-	defer store.Unlock()
-
-	user, exists := store.Users[username]
-	if !exists || user.Password != password {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户认证失效"})
-		return
-	}
-
-	// 核心业务算法：判断是否打破个人最佳战绩
-	// 条件1：当前得分绝对高于历史最高分
-	// 条件2：当前得分等于最高分，但通关耗时更短
-	isNewRecord := false
-	if req.Score > user.HighScore {
-		isNewRecord = true
-	} else if req.Score == user.HighScore && req.Score > 0 {
-		if user.BestDuration == 0 || req.Duration < user.BestDuration {
-			isNewRecord = true
-		}
-	}
-
-	if isNewRecord {
-		user.HighScore = req.Score
-		user.BestDuration = req.Duration
-		user.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
-		store.persist()
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code":        200,
-		"message":     "战绩结算完成",
-		"isNewRecord": isNewRecord,
-		"data":        user,
-	})
-}
-
-func handleLeaderboard(c *gin.Context) {
-	store.RLock()
-	defer store.RUnlock()
-
-	// 把 map 转换为切片以进行多权重排序
-	list := make([]*UserRecord, 0, len(store.Users))
-	for _, u := range store.Users {
-		// 只要产生过有效对局纪录（有得分或有有效耗时）即纳入排行展示
-		if u.HighScore > 0 || u.BestDuration > 0 {
-			list = append(list, u)
-		}
-	}
-
-	// 双重排序：分数降序 -> 耗时升序
-	sort.Slice(list, func(i, j int) bool {
-		if list[i].HighScore == list[j].HighScore {
-			return list[i].BestDuration < list[j].BestDuration
-		}
-		return list[i].HighScore > list[j].HighScore
-	})
-
-	// 仅取前 10 名
-	limit := 10
-	if len(list) < limit {
-		limit = len(list)
-	}
-
-	// 脱敏处理，不输出密码字段
-	type SafeUser struct {
-		Username     string `json:"username"`
-		HighScore    int    `json:"highScore"`
-		BestDuration int64  `json:"bestDuration"`
-		UpdatedAt    string `json:"updatedAt"`
-	}
-
-	result := make([]SafeUser, limit)
-	for i := 0; i < limit; i++ {
-		result[i] = SafeUser{
-			Username:     list[i].Username,
-			HighScore:    list[i].HighScore,
-			BestDuration: list[i].BestDuration,
-			UpdatedAt:    list[i].UpdatedAt,
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"data": result,
-	})
+	fmt.Println("🚀 Backend API: http://localhost:8080")
+	_ = r.Run(":8080")
 }

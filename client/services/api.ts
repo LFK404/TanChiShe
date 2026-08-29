@@ -1,58 +1,30 @@
-import { UserProfile, LeaderboardItem } from '@/types';
+import { User } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
 
-/**
- * 玩家登录与免注册自动建档
- */
-export async function loginOrRegister(username: string, password: string): Promise<{ success: boolean; data?: UserProfile; message?: string }> {
+async function post<T>(path: string, body: unknown): Promise<{ ok: boolean; data?: T; isNewRecord?: boolean; msg?: string }> {
   try {
-    const res = await fetch(`${API_BASE}/api/auth`, {
+    const res = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(body),
     });
     const json = await res.json();
-    if (res.ok && json.code === 200) {
-      return { success: true, data: json.data };
-    }
-    return { success: false, message: json.message || '登录失败' };
+    return { ok: res.ok && json.code === 200, data: json.data, isNewRecord: json.isNewRecord, msg: json.message };
   } catch {
-    return { success: false, message: '无法连接后端服务 (8080)' };
+    return { ok: false, msg: '网络异常' };
   }
 }
 
-/**
- * 对局结算与同分比耗时更新
- */
-export async function settleScore(username: string, password: string, score: number, duration: number): Promise<{ success: boolean; isNewRecord?: boolean; data?: UserProfile }> {
-  try {
-    const res = await fetch(`${API_BASE}/api/settle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, score, duration }),
-    });
-    const json = await res.json();
-    if (res.ok && json.code === 200) {
-      return { success: true, isNewRecord: json.isNewRecord, data: json.data };
-    }
-    return { success: false };
-  } catch {
-    return { success: false };
-  }
-}
+export const apiAuth = (username: string, password: string) => post<User>('/api/auth', { username, password });
+export const apiSettle = (username: string, password: string, score: number, duration: number) =>
+  post<User>('/api/settle', { username, password, score, duration });
 
-/**
- * 获取全局 Top 10 排行榜
- */
-export async function fetchLeaderboardList(): Promise<LeaderboardItem[]> {
+export async function apiLeaderboard(): Promise<User[]> {
   try {
     const res = await fetch(`${API_BASE}/api/leaderboard`);
     const json = await res.json();
-    if (json.code === 200) {
-      return json.data || [];
-    }
-    return [];
+    return json.code === 200 ? json.data || [] : [];
   } catch {
     return [];
   }

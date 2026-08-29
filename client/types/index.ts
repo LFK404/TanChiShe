@@ -5,16 +5,9 @@ export interface Point {
   y: number;
 }
 
-export interface UserProfile {
+export interface User {
   username: string;
   highScore: number;
   bestDuration: number;
   updatedAt?: string;
-}
-
-export interface LeaderboardItem {
-  username: string;
-  highScore: number;
-  bestDuration: number;
-  updatedAt: string;
 }
