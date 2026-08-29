@@ -16,19 +16,21 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
     beatPercent = Math.min(99, Math.max(50, Math.round(((beaten + 1) / (items.length + 1)) * 100)));
   }
 
-  // 1~6 专属多色徽标配置 (来自 better.html)
+  // 1~6 专属南大家园多巴胺几何数字徽标
   const getBadgeStyle = (rank: number) => {
     switch (rank) {
       case 1:
         return 'bg-[#FEF3C7] text-[#D97706]'; // 暖琥珀金 (冠军)
       case 2:
-        return 'bg-[#E0F2FE] text-[#0284C7]'; // 天青蓝 (亚军)
+        return 'bg-[#FEE2E2] text-[#EF4444]'; // 珊瑚樱桃红 (亚军)
       case 3:
         return 'bg-[#DCFCE7] text-[#16A34A]'; // 翡翠绿 (季军)
       case 4:
-        return 'bg-[#EDE9FE] text-[#7C3AED]'; // 活力紫
+        return 'bg-[#EDE9FE] text-[#7C3AED]'; // 罗兰紫
       case 5:
-        return 'bg-[#EEF2FF] text-[#4F46E5]'; // 靛蓝
+        return 'bg-[#E0F2FE] text-[#0284C7]'; // 天青蓝
+      case 6:
+        return 'bg-[#CFFAFE] text-[#0891B2]'; // 活力青
       default:
         return 'bg-[#F1F5F9] text-[#64748B]'; // 极简灰
     }
@@ -100,11 +102,13 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
         )}
       </div>
 
-      {/* 战绩评语卡片 */}
+      {/* 战绩评语卡片 (融入 #66CCFF 天青蓝轻量微框) */}
       {currentUser && currentUser.highScore > 0 && (
-        <div className="mt-3 pt-3 border-t border-[#E2E8F0] text-[11.5px] text-[#0369A1] bg-[#EBF8FF] px-3 py-2 rounded-xl flex items-center justify-between">
-          <span>当前最高分：<strong>{currentUser.highScore}分</strong></span>
-          <span className="font-bold text-[#0099FF]">超越 {beatPercent}% 玩家</span>
+        <div className="mt-3 pt-3 border-t border-[#E2E8F0] text-[11.5px] text-[#0369A1] bg-[#EBF8FF] border border-[#66CCFF]/30 px-3 py-2 rounded-xl flex items-center justify-between">
+          <span>个人最高纪录：<strong className="text-[#0099FF]">{currentUser.highScore}分</strong></span>
+          <span className="font-bold text-[#0099FF] bg-white/80 px-2 py-0.5 rounded-md border border-[#66CCFF]/30">
+            超越 {beatPercent}% 玩家
+          </span>
         </div>
       )}
     </div>

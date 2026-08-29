@@ -197,11 +197,12 @@ export default function GameBoard({
 
   return (
     <div className="bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none">
-      {/* 顶部四段式复合状态胶囊栏 (得分、长度、用时、速度) */}
+      {/* 顶部四段式南大家园多巴胺复合状态胶囊栏 (得分·红、长度·绿、用时·紫、速度·天青蓝) */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] py-2 px-1 rounded-2xl relative overflow-hidden">
-          <span className="text-[#94A3B8] text-[11px]">得分 </span>
-          <strong className="text-[#0F172A] text-sm font-mono font-black">{score}</strong>
+        {/* 1. 得分 (珊瑚红) */}
+        <div className="bg-rose-50 border border-rose-100 py-2 px-1 rounded-2xl relative overflow-hidden">
+          <span className="text-rose-500 text-[11px] font-medium">得分 </span>
+          <strong className="text-rose-600 text-sm font-mono font-black">{score}</strong>
           {hasBonus && (
             <span className="absolute top-0.5 right-1 flex items-center text-[#D97706] font-extrabold text-[9px] animate-pulse">
               <Sparkles size={9} /> +30
@@ -209,18 +210,21 @@ export default function GameBoard({
           )}
         </div>
 
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] py-2 px-1 rounded-2xl">
-          <span className="text-[#94A3B8] text-[11px]">长度 </span>
-          <strong className="text-[#0099FF] text-sm font-mono font-black">{length}</strong>
+        {/* 2. 长度 (翡翠绿) */}
+        <div className="bg-emerald-50 border border-emerald-100 py-2 px-1 rounded-2xl">
+          <span className="text-emerald-600 text-[11px] font-medium">长度 </span>
+          <strong className="text-emerald-700 text-sm font-mono font-black">{length}</strong>
         </div>
 
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] py-2 px-1 rounded-2xl">
-          <span className="text-[#94A3B8] text-[11px]">用时 </span>
-          <strong className="text-[#0F172A] text-sm font-mono font-bold">{duration}s</strong>
+        {/* 3. 用时 (罗兰紫) */}
+        <div className="bg-purple-50 border border-purple-100 py-2 px-1 rounded-2xl">
+          <span className="text-purple-600 text-[11px] font-medium">用时 </span>
+          <strong className="text-purple-700 text-sm font-mono font-bold">{duration}s</strong>
         </div>
 
-        <div className="bg-[#EBF8FF] border border-[#66CCFF]/30 py-2 px-1 rounded-2xl">
-          <span className="text-[#0099FF] text-[11px] font-medium">速度 </span>
+        {/* 4. 速度 (标志性天青蓝 #66CCFF) */}
+        <div className="bg-[#EBF8FF] border border-[#66CCFF]/50 py-2 px-1 rounded-2xl">
+          <span className="text-[#0099FF] text-[11px] font-bold">速度 </span>
           <strong className="text-[#0099FF] text-sm font-mono font-black">{speedRatio}x</strong>
         </div>
       </div>

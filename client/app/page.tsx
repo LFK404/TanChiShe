@@ -63,8 +63,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
-      {/* 南昌大学 NCU HOME 极简浅灰背景水印 */}
-      <div className="absolute top-4 sm:top-6 left-4 sm:left-10 pointer-events-none select-none z-0 flex flex-col leading-none opacity-60">
+      {/* 南昌大学 NCU HOME 浅灰艺术水印与多巴胺三色微徽标 */}
+      <div className="absolute top-4 sm:top-6 left-4 sm:left-10 pointer-events-none select-none z-0 flex flex-col leading-none opacity-50">
+        <div className="flex items-center gap-1.5 mb-1 pl-0.5">
+          <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
+          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+          <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
+        </div>
         <span className="font-black text-6xl sm:text-8xl tracking-tighter text-[#F1F5F9]">NCU</span>
         <span className="font-extrabold text-2xl sm:text-3xl tracking-widest text-[#F1F5F9] pl-1 sm:pl-1.5 -mt-1 sm:-mt-2">HOME</span>
       </div>
@@ -75,17 +81,17 @@ export default function Home() {
         </div>
       ) : (
         <div className="w-full max-w-4xl flex flex-col gap-4 z-10 relative">
-          {/* 导航顶栏 (包含教程入口与声音开关) */}
+          {/* 导航顶栏 */}
           <Header
             user={user}
             onLogout={logout}
             onOpenTutorial={() => setShowTutorial(true)}
           />
 
-          {/* 人文标语与留白区 */}
+          {/* 人文标语与留白区 (融入 #66CCFF 天青蓝点睛字与竖线) */}
           <div className="px-2 pt-1 pb-1">
             <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
-              方寸之间，重温经典。
+              方寸之<span className="text-[#66CCFF]">间</span>，重温经典。
             </h1>
             <blockquote className="mt-2 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
               在方格与节奏的律动中，探寻每一次转身的从容。
@@ -122,7 +128,7 @@ export default function Home() {
           <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2">
             <span>极简全栈贪吃蛇</span>
             <span>·</span>
-            <span>天青蓝视觉精修版</span>
+            <span className="text-[#0099FF] font-medium">南大家园天青蓝版</span>
           </footer>
 
           {/* 极简新手指南模态框 */}

@@ -13,11 +13,11 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
     <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E8F0] text-[#0F172A]">
       {/* 头部品牌 */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] mb-3">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] border border-[#66CCFF]/40 text-[#0099FF] mb-3">
           <Gamepad2 size={24} />
         </div>
         <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
-        <p className="text-xs text-[#94A3B8] mt-1">方寸之间 · 重温经典</p>
+        <p className="text-xs text-[#94A3B8] mt-1">方寸之<span className="text-[#66CCFF] font-semibold">间</span> · 重温经典</p>
       </div>
 
       {/* 登录/自动注册表单 */}
