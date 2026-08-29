@@ -29,7 +29,7 @@ export default function Home() {
     [user, form.password, updateUser, refreshBoard]
   );
 
-  const { snakeRef, fenceRef, foodRef, dirRef, score, duration, length, isPlaying, isGameOver, isPaused, startGame, tick } =
+  const { snakeRef, fenceRef, foodRef, dirRef, score, duration, length, isPlaying, isGameOver, isPaused, startGame, changeDirection, tick } =
     useSnakeGame(handleGameOver);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function Home() {
   if (!isClient) return null;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-800 flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
+    <main className="min-h-screen bg-slate-100 text-slate-800 flex flex-col items-center justify-center p-3 sm:p-6 font-sans">
       {!user ? (
         <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
       ) : (
@@ -67,6 +67,7 @@ export default function Home() {
                 isPaused={isPaused}
                 onStart={startGame}
                 onTick={tick}
+                onDirection={changeDirection}
               />
             </div>
             <Leaderboard items={board} onRefresh={refreshBoard} />

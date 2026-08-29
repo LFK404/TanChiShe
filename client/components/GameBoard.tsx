@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Point, Direction } from '@/types';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GRID, CELL } from '@/hooks/useSnakeGame';
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
   isPaused: boolean;
   onStart: () => void;
   onTick: () => void;
+  onDirection: (dir: Direction) => void;
 }
 
 export default function GameBoard({
@@ -31,8 +32,33 @@ export default function GameBoard({
   isPaused,
   onStart,
   onTick,
+  onDirection,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (Math.max(absX, absY) > 20) {
+      if (absX > absY) {
+        onDirection(dx > 0 ? 'RIGHT' : 'LEFT');
+      } else {
+        onDirection(dy > 0 ? 'DOWN' : 'UP');
+      }
+    }
+    touchStartRef.current = null;
+  };
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
@@ -106,9 +132,9 @@ export default function GameBoard({
   }, [isPlaying, isPaused, isGameOver, onTick, render]);
 
   return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm flex flex-col items-center">
+    <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col items-center select-none">
       {/* 极简数据栏 */}
-      <div className="w-full grid grid-cols-3 gap-3 mb-4 text-center text-xs">
+      <div className="w-full grid grid-cols-3 gap-2.5 sm:gap-3 mb-3 sm:mb-4 text-center text-xs">
         <div className="bg-slate-50 border border-slate-100 py-2 rounded-lg">
           <span className="text-slate-500">得分 </span><strong className="text-slate-800 text-sm">{score}</strong>
         </div>
@@ -120,15 +146,19 @@ export default function GameBoard({
         </div>
       </div>
 
-      {/* 画布与极简遮罩 */}
-      <div className="relative border border-slate-300 rounded-xl overflow-hidden bg-slate-50">
-        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block" />
+      {/* 画布与极简遮罩（支持滑屏手势） */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="relative border border-slate-300 rounded-xl overflow-hidden bg-slate-50 touch-none max-w-full"
+      >
+        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square" />
 
         {!isPlaying && !isGameOver && (
           <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-lg text-sm font-medium flex items-center gap-2 cursor-pointer shadow-sm"
             >
               <Play size={16} /> 开始游戏 (空格)
             </button>
@@ -152,7 +182,7 @@ export default function GameBoard({
             </div>
             <button
               onClick={onStart}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-lg text-sm font-medium flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
               <RotateCcw size={15} /> 重新开始 (空格)
             </button>
@@ -160,9 +190,40 @@ export default function GameBoard({
         )}
       </div>
 
-      {/* 极简快捷键提示 */}
-      <div className="mt-3 text-[11px] text-slate-400">
-        方向键移动 · 空格开始 · P 暂停
+      {/* 移动端极简微型触控十字键 */}
+      <div className="mt-4 flex flex-col items-center gap-1 sm:hidden">
+        <button
+          onClick={() => onDirection('UP')}
+          className="w-12 h-10 bg-slate-100 active:bg-slate-200 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 shadow-sm"
+        >
+          <ChevronUp size={20} />
+        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => onDirection('LEFT')}
+            className="w-12 h-10 bg-slate-100 active:bg-slate-200 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 shadow-sm"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={() => onDirection('DOWN')}
+            className="w-12 h-10 bg-slate-100 active:bg-slate-200 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 shadow-sm"
+          >
+            <ChevronDown size={20} />
+          </button>
+          <button
+            onClick={() => onDirection('RIGHT')}
+            className="w-12 h-10 bg-slate-100 active:bg-slate-200 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 shadow-sm"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+        <span className="text-[10px] text-slate-400 mt-1">支持滑动屏幕或触控键转向</span>
+      </div>
+
+      {/* 电脑端极简快捷键提示 */}
+      <div className="mt-3 text-[11px] text-slate-400 hidden sm:block">
+        方向键/WASD 移动 · 空格开始 · P 暂停
       </div>
     </div>
   );

@@ -63,6 +63,22 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     spawnFood();
   }, [spawnFood]);
 
+  const changeDirection = useCallback((t: Direction) => {
+    if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
+    const q = queueRef.current;
+    const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
+    if (t !== last && !isOpp(last, t) && q.length < 2) {
+      q.push(t);
+    }
+  }, []);
+
+  const togglePause = useCallback(() => {
+    if (stateRef.current.playing && !stateRef.current.over) {
+      stateRef.current.paused = !stateRef.current.paused;
+      setIsPaused(stateRef.current.paused);
+    }
+  }, []);
+
   const tick = useCallback(() => {
     const { playing, over, paused, start } = stateRef.current;
     if (!playing || over || paused) return;
@@ -91,7 +107,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       stateRef.current.score += 10;
       setScore(stateRef.current.score);
       setLength(nextSnake.length);
-      fenceRef.current.clear(); // 吃果实重置清空栅栏
+      fenceRef.current.clear();
       spawnFood();
     } else {
       const tail = nextSnake.pop()!;
@@ -104,10 +120,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     const onKey = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') {
-        if (stateRef.current.playing && !stateRef.current.over) {
-          stateRef.current.paused = !stateRef.current.paused;
-          setIsPaused(stateRef.current.paused);
-        }
+        togglePause();
         return;
       }
       if (e.key === ' ' && (!stateRef.current.playing || stateRef.current.over)) {
@@ -119,15 +132,11 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') t = 'DOWN';
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') t = 'LEFT';
       if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') t = 'RIGHT';
-      if (t) {
-        const q = queueRef.current;
-        const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
-        if (t !== last && !isOpp(last, t) && q.length < 2) q.push(t);
-      }
+      if (t) changeDirection(t);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [startGame]);
+  }, [startGame, changeDirection, togglePause]);
 
-  return { snakeRef, fenceRef, foodRef, dirRef, score, duration, length, isPlaying, isGameOver, isPaused, startGame, tick };
+  return { snakeRef, fenceRef, foodRef, dirRef, score, duration, length, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick };
 }
