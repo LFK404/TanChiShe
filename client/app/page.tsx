@@ -54,7 +54,7 @@ export default function Home() {
           {/* 导航顶栏 */}
           <Header user={user} onLogout={logout} />
 
-          {/* 人文标语与留白区 (来自 better.html) */}
+          {/* 人文标语与留白区 */}
           <div className="px-2 pt-1 pb-1">
             <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
               方寸之间，重温经典。
@@ -94,8 +94,6 @@ export default function Home() {
             <span>南大家园工作室（NCUHOME）</span>
             <span>·</span>
             <span>天青蓝视觉精修版</span>
-            <span>·</span>
-            <span>2026</span>
           </footer>
         </div>
       )}

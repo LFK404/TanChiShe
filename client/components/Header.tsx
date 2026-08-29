@@ -24,7 +24,7 @@ export default function Header({ user, onLogout }: Props) {
           <div className="w-6 h-6 rounded-full bg-[#EBF8FF] flex items-center justify-center text-[#0099FF] font-black text-xs">
             🐍
           </div>
-          <span className="font-extrabold text-[#0F172A] text-sm tracking-tight">贪吃蛇 2026</span>
+          <span className="font-extrabold text-[#0F172A] text-sm tracking-tight">贪吃蛇</span>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] text-[#0099FF]">
             南大家园
           </span>

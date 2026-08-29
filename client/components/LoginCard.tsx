@@ -16,7 +16,7 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] text-2xl mb-3 shadow-sm">
           🐍
         </div>
-        <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇 2026</h1>
+        <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
         <p className="text-xs text-[#94A3B8] mt-1">方寸之间 · 重温经典</p>
       </div>
 

@@ -1,9 +1,12 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# 贪吃蛇 · 前端开发指南
 
-# This is NOT the Next.js you know
+本目录为贪吃蛇前端 Next.js 生产应用源码。
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+## 核心设计规范
+- 页面底色：纯白 `#FFFFFF`，工作区 `#F8FAFC`，边框 `#E2E8F0`。
+- 核心品牌色：天青蓝 `#66CCFF`，深天蓝 `#0099FF`，浅蓝 `#EBF8FF`。
+- 图标库：统一使用 `lucide-react` 线性矢量图标，严禁混入杂乱 Emoji。
+- 音效：基于 `utils/audio.ts` 原生 Web Audio API 振荡器合成 8-bit 音效，0 外部资源体积依赖。
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+## 环境变量
+- `NEXT_PUBLIC_API_BASE`：后端 API 基础请求路径（本地开发默认 `http://localhost:8080`）。
