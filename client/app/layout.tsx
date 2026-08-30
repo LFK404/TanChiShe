@@ -2,21 +2,16 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
 
+// 页面全局 SEO 元数据与 PWA 应用配置
 export const metadata: Metadata = {
   title: '贪吃蛇 · 经典竞技版',
   description: '方寸之间，重温经典。极简现代主义风格的全栈贪吃蛇网页游戏与竞技排行榜。',
-  icons: {
-    icon: '/icon.svg',
-    apple: '/icon.svg',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: '贪吃蛇',
-  },
+  icons: { icon: '/icon.svg', apple: '/icon.svg' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: '贪吃蛇' },
   applicationName: '贪吃蛇',
 };
 
+// 移动端视口设置：锁定 1.0 比例防误触缩放
 export const viewport: Viewport = {
   themeColor: '#66CCFF',
   width: 'device-width',
@@ -25,15 +20,12 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
       <body className="antialiased">
         {children}
+        {/* PWA Service Worker 离线缓存自动注册 */}
         <Script id="register-sw" strategy="afterInteractive">
           {`
             if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {

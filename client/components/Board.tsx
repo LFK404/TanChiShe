@@ -11,7 +11,6 @@ interface Props {
   bonusRef: React.MutableRefObject<Point | null>;
   hasBonus: boolean;
   bonusKey?: number;
-  dirRef?: React.MutableRefObject<Direction>;
   score: number;
   duration: number;
   length: number;
@@ -25,11 +24,13 @@ interface Props {
   onTogglePause?: () => void;
 }
 
+// 粒子爆发微特效实体
 interface Particle {
   x: number; y: number; vx: number; vy: number;
   color: string; size: number; alpha: number; life: number; maxLife: number;
 }
 
+// 浮空得分/连击微文字实体
 interface FloatingText {
   x: number; y: number; text: string; color: string;
   alpha: number; scale: number; life: number; maxLife: number;
@@ -49,7 +50,7 @@ export default function Board({
   const prevScoreRef = useRef(score);
   const prevGameOverRef = useRef(isGameOver);
 
-  // 粒子微爆发发射器
+  // 吃到苹果/金果时向四周发射微粒子爆发
   const emitParticles = useCallback((gridX: number, gridY: number, type: 'apple' | 'bonus') => {
     const originX = gridX * CELL + CELL / 2, originY = gridY * CELL + CELL / 2;
     const colors = type === 'apple'
@@ -69,7 +70,7 @@ export default function Board({
     }
   }, []);
 
-  // 浮空得分微文字发射器
+  // 发射向上浮动的得分/Combo数字
   const emitFloatingText = useCallback((gridX: number, gridY: number, text: string, color: string) => {
     floatingTextsRef.current.push({
       x: gridX * CELL + CELL / 2, y: gridY * CELL,
@@ -77,7 +78,7 @@ export default function Board({
     });
   }, []);
 
-  // 死亡瞬间蛇身晶体解体爆发
+  // 死亡瞬间蛇身晶体向四周破裂微特效
   const emitShatter = useCallback(() => {
     snakeRef.current.forEach((pt) => {
       const originX = pt.x * CELL + CELL / 2, originY = pt.y * CELL + CELL / 2;
@@ -95,7 +96,7 @@ export default function Board({
     });
   }, [snakeRef]);
 
-  // 监听分数与连击
+  // 监听分数变动触发打击感特效与连击统计
   useEffect(() => {
     if (score > prevScoreRef.current) {
       const diff = score - prevScoreRef.current;
@@ -104,6 +105,7 @@ export default function Board({
         const isBonus = diff >= 30;
         emitParticles(head.x, head.y, isBonus ? 'bonus' : 'apple');
 
+        // 3秒内连续吃果判定为连击 Combo
         const now = Date.now();
         comboRef.current.count = now - comboRef.current.lastTime < 3000 ? comboRef.current.count + 1 : 1;
         comboRef.current.lastTime = now;
@@ -115,7 +117,7 @@ export default function Board({
     prevScoreRef.current = score;
   }, [score, snakeRef, emitParticles, emitFloatingText]);
 
-  // 监听死亡触发微震屏与解体
+  // 监听死亡触发微震屏
   useEffect(() => {
     if (isGameOver && !prevGameOverRef.current) {
       shakeRef.current = { frames: 8, intensity: 3.0 };
@@ -124,7 +126,7 @@ export default function Board({
     prevGameOverRef.current = isGameOver;
   }, [isGameOver, emitShatter]);
 
-  // 手势滑动检测
+  // 移动端全屏滑动手势检测
   const handleTouchStart = (e: React.TouchEvent) => {
     sound.unlockAudio();
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -137,7 +139,7 @@ export default function Board({
     onDirection(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'RIGHT' : 'LEFT') : (dy > 0 ? 'DOWN' : 'UP'));
   };
 
-  // 渲染函数
+  // 核心 Canvas 2D 游戏画面逐帧渲染函数
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -146,14 +148,14 @@ export default function Board({
 
     ctx.save();
 
-    // 死亡微震屏偏移
+    // 1. 死亡微震屏位移
     if (shakeRef.current.frames > 0) {
       const decay = shakeRef.current.frames / 8;
       ctx.translate((Math.random() - 0.5) * shakeRef.current.intensity * decay * 2, (Math.random() - 0.5) * shakeRef.current.intensity * decay * 2);
       shakeRef.current.frames--;
     }
 
-    // 1. 底板与隐形网格
+    // 2. 浅灰底板与极细隐形网格
     ctx.fillStyle = '#F1F5F9';
     ctx.fillRect(0, 0, GRID * CELL, GRID * CELL);
     ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
@@ -163,7 +165,7 @@ export default function Board({
       ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(GRID * CELL, i * CELL); ctx.stroke();
     }
 
-    // 2. 残留栅栏
+    // 3. 绘制身后残留栅栏
     ctx.fillStyle = '#CBD5E1';
     fenceRef.current.forEach((k) => {
       const [fx, fy] = k.split(',').map(Number);
@@ -172,7 +174,7 @@ export default function Board({
       ctx.fill();
     });
 
-    // 3. 食物渲染
+    // 4. 绘制食物 (普通红苹果 / 限时金色幸运果)
     const fx = foodRef.current.x * CELL + CELL / 2, fy = foodRef.current.y * CELL + CELL / 2;
     ctx.fillStyle = '#EF4444';
     ctx.beginPath(); ctx.arc(fx, fy, CELL / 2.6, 0, Math.PI * 2); ctx.fill();
@@ -191,12 +193,12 @@ export default function Board({
       ctx.beginPath(); ctx.arc(bx, by, CELL / 5, 0, Math.PI * 2); ctx.fill();
     }
 
-    // 4. 蛇身与蛇头 (丝滑胶囊连结 + 呼吸微律动)
+    // 5. 绘制蛇身 (丝滑胶囊连结桥 + 呼吸律动)
     const snake = snakeRef.current;
     const snakeLen = snake.length;
     const nowTime = Date.now() / 220;
 
-    // 4.1 绘制相邻节点间的圆润胶囊连结桥
+    // 5.1 绘制相邻节点间的圆润胶囊连结桥，消除方块割裂感
     for (let i = 0; i < snakeLen - 1; i++) {
       const c = snake[i], n = snake[i + 1];
       const cx = c.x * CELL, cy = c.y * CELL, nx = n.x * CELL, ny = n.y * CELL;
@@ -206,18 +208,17 @@ export default function Board({
       ctx.fill();
     }
 
-    // 4.2 绘制节点与蛇头
+    // 5.2 绘制蛇头与各身体节点
     snake.forEach((pt, idx) => {
       const px = pt.x * CELL, py = pt.y * CELL;
 
       if (idx === 0) {
-        // 蛇头主体
+        // 蛇头：天青蓝底色 + 灵动双圆眼珠
         ctx.fillStyle = '#66CCFF';
         ctx.beginPath();
         ctx.roundRect(px + 1, py + 1, CELL - 2, CELL - 2, 5);
         ctx.fill();
 
-        // 极简灵动双眼珠 (免去方向偏移分支，保持清爽可爱)
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
         ctx.arc(px + 6, py + 6, 2.2, 0, Math.PI * 2);
@@ -236,6 +237,7 @@ export default function Board({
         ctx.arc(px + 13.6, py + 5.6, 0.4, 0, Math.PI * 2);
         ctx.fill();
       } else {
+        // 蛇身：微正弦呼吸律动
         ctx.fillStyle = idx / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
         const pad = Math.max(1, 2 - Math.sin(nowTime + idx * 0.45) * 0.4);
         ctx.beginPath();
@@ -244,7 +246,7 @@ export default function Board({
       }
     });
 
-    // 5. 粒子微爆发渲染
+    // 6. 粒子微爆发运动与衰减
     particlesRef.current = particlesRef.current.filter((p) => {
       p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.vx *= 0.96; p.life--;
       p.alpha = Math.max(0, p.life / p.maxLife);
@@ -258,7 +260,7 @@ export default function Board({
       return p.life > 0;
     });
 
-    // 6. 浮空得分微文字渲染
+    // 7. 浮空得分微文字渲染
     floatingTextsRef.current = floatingTextsRef.current.filter((ft) => {
       ft.y -= 0.6; ft.life--;
       ft.alpha = Math.max(0, ft.life / ft.maxLife);
@@ -278,7 +280,7 @@ export default function Board({
     ctx.restore();
   }, [snakeRef, fenceRef, foodRef, bonusRef]);
 
-  // 60FPS 动画帧循环
+  // 60FPS 动画循环与游戏 Tick 定时器
   useEffect(() => {
     render();
     let animFrame: number;
@@ -303,7 +305,7 @@ export default function Board({
     };
   }, [isPlaying, isPaused, isGameOver, speedMs, onTick, render]);
 
-  // 顶部 4 胶囊数据配置
+  // 顶部四段式复合胶囊数据配置
   const statCapsules = [
     { label: '得分', val: score, bg: 'bg-rose-50/90', text: 'text-rose-500', valColor: 'text-rose-600', isBonus: hasBonus },
     { label: '长度', val: length, bg: 'bg-emerald-50/90', text: 'text-emerald-600', valColor: 'text-emerald-700' },
@@ -311,7 +313,6 @@ export default function Board({
     { label: '速度', val: `${(BASE_SPEED_MS / speedMs).toFixed(1)}x`, bg: 'bg-[#EBF8FF]', text: 'text-[#0099FF]', valColor: 'text-[#0099FF]' },
   ];
 
-  // 移动端方向按钮触发
   const handleDirBtn = (d: Direction) => {
     sound.unlockAudio();
     onDirection(d);
@@ -319,7 +320,7 @@ export default function Board({
 
   return (
     <div className="bg-white p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-      {/* 顶部四段式多巴胺复合状态胶囊栏 */}
+      {/* 顶部四段式状态胶囊栏 */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
         {statCapsules.map((st) => (
           <div key={st.label} className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden`}>
@@ -334,13 +335,13 @@ export default function Board({
         ))}
       </div>
 
-      {/* 画布与悬浮交互层 */}
+      {/* Canvas 画布与状态遮罩层 */}
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className="relative rounded-2xl overflow-hidden bg-[#F1F5F9] border border-slate-200/80 touch-none max-w-full shadow-inner"
       >
-        {/* 限时金色幸运果顶置 8 秒倒计时进度条 */}
+        {/* 限时幸运果 8 秒倒计时条 */}
         {hasBonus && (
           <div className="absolute top-0 left-0 right-0 h-[3.5px] bg-[#EBF8FF] overflow-hidden z-20 pointer-events-none">
             <div
@@ -407,7 +408,7 @@ export default function Board({
         )}
       </div>
 
-      {/* 移动端微型虚拟十字控制台 */}
+      {/* 移动端微型十字按键控制台 */}
       <div className="mt-4 flex flex-col items-center gap-1.5 sm:hidden touch-manipulation select-none">
         <button onClick={() => handleDirBtn('UP')} className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all">
           <ChevronUp size={20} />
@@ -437,7 +438,7 @@ export default function Board({
         <span className="text-[10px] text-[#94A3B8] mt-1">支持全屏滑屏或虚拟触控键 · 中心按键暂停</span>
       </div>
 
-      {/* 电脑端暂停指引 */}
+      {/* 电脑端快捷键提示 */}
       <div className="mt-4 hidden sm:flex flex-col items-center gap-2 select-none">
         <button
           onClick={onTogglePause}

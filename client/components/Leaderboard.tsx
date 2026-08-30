@@ -8,6 +8,7 @@ interface Props {
   onRefresh: () => void;
 }
 
+// 1~6 名专属多巴胺多色几何徽标配置 (金·红·绿·紫·天青·活力青)
 const BADGE_STYLES: Record<number, string> = {
   1: 'bg-[#FEF3C7] text-[#D97706]',
   2: 'bg-[#FEE2E2] text-[#EF4444]',
@@ -17,7 +18,9 @@ const BADGE_STYLES: Record<number, string> = {
   6: 'bg-[#CFFAFE] text-[#0891B2]',
 };
 
+// 全服 Top 10 竞技风云榜组件
 export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
+  // 计算当前登录玩家战胜同榜玩家百分比
   let beatPercent = 0;
   if (currentUser && currentUser.highScore > 0 && items.length > 0) {
     const beaten = items.filter((it) => currentUser.highScore > it.highScore).length;
@@ -28,7 +31,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
 
   return (
     <div className="bg-white p-5 rounded-3xl flex flex-col select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-      {/* 标题与刷新 */}
+      {/* 榜单标题与手动刷新 */}
       <div className="flex justify-between items-center pb-2.5">
         <div className="flex items-center gap-2">
           <Trophy size={16} className="text-[#D97706]" />
@@ -42,7 +45,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
         </button>
       </div>
 
-      {/* 榜单列表 */}
+      {/* 排行榜名次流水列表 */}
       <div className="flex flex-col mt-1 max-h-[380px] overflow-y-auto gap-0.5">
         {items.length === 0 ? (
           <div className="text-center py-12 text-xs text-[#94A3B8]">暂无挑战记录，快来占领榜首！</div>
@@ -58,9 +61,8 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
                   isMe ? 'bg-[#EBF8FF] text-[#0099FF]' : 'hover:bg-slate-50/80'
                 }`}
               >
-                {/* 排名 + 用户名 */}
+                {/* 排名徽标 + 用户名 + 本人标志 */}
                 <div className="flex items-center gap-2.5 min-w-0">
-                  {/* 22px 等宽粗体几何数字徽标 */}
                   <span
                     className={`w-[22px] h-[22px] rounded-[6px] flex items-center justify-center font-extrabold text-[12px] shrink-0 font-mono ${getBadgeStyle(
                       rank
@@ -78,7 +80,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
                   )}
                 </div>
 
-                {/* 分数 + 用时 */}
+                {/* 最高得分与通关最短用时 */}
                 <div className="flex items-center gap-2 text-right shrink-0">
                   <span className="font-extrabold text-xs text-[#0F172A] font-mono">{item.highScore}分</span>
                   <span className="text-[10px] text-[#94A3B8] font-mono">{item.bestDuration}s</span>
@@ -89,7 +91,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
         )}
       </div>
 
-      {/* 战绩评语卡片 (融入 #66CCFF 天青蓝轻量微色块) */}
+      {/* 底部个人战绩超越评语 */}
       {currentUser && currentUser.highScore > 0 && (
         <div className="mt-3 text-[11.5px] text-[#0369A1] bg-[#EBF8FF] px-3 py-2.5 rounded-xl flex items-center justify-between">
           <span>个人最高纪录：<strong className="text-[#0099FF]">{currentUser.highScore}分</strong></span>

@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// 玩家用户实体 (对应 Supabase users 表)
 type User struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Username     string    `gorm:"uniqueIndex;size:50;not null" json:"username"`
@@ -31,6 +32,7 @@ type User struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
+// 战绩流水记录表 (对应 Supabase game_records 表)
 type GameRecord struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Username  string    `gorm:"index;size:50;not null" json:"username"`
@@ -39,11 +41,13 @@ type GameRecord struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+// 登录/自动注册请求载荷
 type AuthReq struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
+// 战绩结算请求载荷
 type SettleReq struct {
 	AuthReq
 	Score    int   `json:"score"`
@@ -52,7 +56,7 @@ type SettleReq struct {
 
 var db *gorm.DB
 
-// 极简滑动窗口限流器 (单 IP 20次/秒)
+// 极简滑动窗口并发限流器 (单 IP 20次/秒，防高频刷榜)
 var (
 	ipHits   = make(map[string][]time.Time)
 	ipHitsMu sync.Mutex
@@ -83,11 +87,13 @@ func RateLimitMiddleware() gin.HandlerFunc {
 	}
 }
 
+// SHA256 加盐单向哈希
 func hashPassword(p string) string {
 	h := sha256.Sum256([]byte(p + "_ncu_snake_salt_2026"))
 	return hex.EncodeToString(h[:])
 }
 
+// 密码校验与历史明文向哈希值的无感静默自升级
 func checkAndUpgradePassword(user *User, inputPwd string) bool {
 	hashed := hashPassword(inputPwd)
 	if user.Password == hashed {
@@ -103,7 +109,7 @@ func checkAndUpgradePassword(user *User, inputPwd string) bool {
 	return false
 }
 
-// 统一鉴权与自动注册逻辑
+// 统一鉴权、查库与自动注册逻辑
 func authenticate(rawU, rawP string, autoReg bool) (*User, int, string) {
 	u, p := strings.TrimSpace(rawU), strings.TrimSpace(rawP)
 	if u == "" || p == "" {
@@ -135,6 +141,7 @@ func authenticate(rawU, rawP string, autoReg bool) (*User, int, string) {
 	return &user, http.StatusOK, ""
 }
 
+// 初始化 PostgreSQL / Supabase 连接池
 func initDB() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -160,6 +167,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
+	// 健康检查探针
 	r.GET("/", func(c *gin.Context) {
 		st := "connected"
 		if db == nil {
@@ -168,6 +176,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "Snake Go API", "database": st})
 	})
 
+	// 跨域与限流中间件
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowMethods:    []string{"GET", "POST", "OPTIONS"},
@@ -177,6 +186,7 @@ func main() {
 
 	api := r.Group("/api")
 	{
+		// 登录/自动注册接口
 		api.POST("/auth", func(c *gin.Context) {
 			if db == nil {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库未就绪"})
@@ -195,6 +205,7 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": user})
 		})
 
+		// 战绩结算与防作弊校验接口
 		api.POST("/settle", func(c *gin.Context) {
 			if db == nil {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库未就绪"})
@@ -206,7 +217,7 @@ func main() {
 				return
 			}
 
-			// 全时长物理防作弊校验
+			// 严格物理用时与吞吃速率防作弊校验 (极速最高 ~16格/秒，吃果极限平均至少 2.5 秒/颗)
 			if req.Score > 0 {
 				if req.Duration < 1 {
 					c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "战绩异常：时长不足"})
@@ -225,8 +236,10 @@ func main() {
 				return
 			}
 
+			// 写入对局流水
 			db.Create(&GameRecord{Username: user.Username, Score: req.Score, Duration: req.Duration})
 
+			// 判定是否创下个人新纪录 (高分优先；同分时用时更短优先)
 			isNew := req.Score > user.HighScore || (req.Score == user.HighScore && req.Score > 0 && (user.BestDuration == 0 || req.Duration < user.BestDuration))
 			if isNew {
 				user.HighScore = req.Score
@@ -236,6 +249,7 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "isNewRecord": isNew, "data": user})
 		})
 
+		// 获取 Top 10 全服排行榜
 		api.GET("/leaderboard", func(c *gin.Context) {
 			var list []User
 			if db != nil {
@@ -261,6 +275,7 @@ func main() {
 		}
 	}()
 
+	// 优雅停机信号捕获
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

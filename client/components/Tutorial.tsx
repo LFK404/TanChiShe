@@ -6,6 +6,7 @@ interface Props {
   onClose: () => void;
 }
 
+// 核心规则与新手技巧配置条目
 const TUTORIAL_ITEMS = [
   {
     icon: <Gamepad2 size={15} />, bg: 'bg-[#EBF8FF]', color: 'text-[#0099FF]',
@@ -29,12 +30,14 @@ const TUTORIAL_ITEMS = [
   },
 ];
 
+// 游戏新手规则教学模态弹窗组件
 export default function Tutorial({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[4px] select-none">
       <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 flex flex-col text-[#0F172A] relative shadow-2xl">
+        {/* 顶部标题与关闭按钮 */}
         <div className="flex items-center justify-between pb-3.5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
@@ -50,6 +53,7 @@ export default function Tutorial({ isOpen, onClose }: Props) {
           </button>
         </div>
 
+        {/* 4条图文规则卡片 */}
         <div className="flex flex-col gap-2.5 py-3 text-xs text-[#334155]">
           {TUTORIAL_ITEMS.map((item) => (
             <div key={item.title} className="flex items-start gap-3 p-3 bg-slate-50/90 rounded-2xl">

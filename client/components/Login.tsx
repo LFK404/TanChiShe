@@ -9,10 +9,11 @@ interface Props {
   onLogin: (e: React.FormEvent) => void;
 }
 
+// 玩家登录与免密自动注册组件
 export default function Login({ form, error, setForm, onLogin }: Props) {
   return (
     <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl text-[#0F172A] shadow-[0_4px_24px_rgba(0,0,0,0.04)] select-none">
-      {/* 头部品牌 */}
+      {/* 头部品牌图标与格言标语 */}
       <div className="text-center mb-6">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#EBF8FF] mb-3 shadow-[0_2px_8px_rgba(102,204,255,0.18)]">
           <Image
@@ -28,7 +29,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
         <p className="text-xs text-[#94A3B8] mt-1">方寸之<span className="text-[#66CCFF] font-semibold">间</span> · 重温经典</p>
       </div>
 
-      {/* 登录/自动注册表单 */}
+      {/* 登录/自动注册双字段表单 */}
       <form onSubmit={onLogin} className="flex flex-col gap-3.5">
         <div className="relative">
           <User size={16} className="absolute left-3.5 top-3 text-[#94A3B8]" />
@@ -54,6 +55,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
           />
         </div>
 
+        {/* 错误提示浮条 */}
         {error && (
           <div className="text-xs text-rose-500 bg-rose-50 py-1.5 px-3 rounded-lg text-center font-medium">
             {error}

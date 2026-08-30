@@ -10,17 +10,17 @@ interface Props {
   onOpenTutorial: () => void;
 }
 
+// 页面顶部导航栏：承载品牌标识、当前玩家身份高分徽标、规则指南、8-bit 音效开关与注销退出
 export default function Header({ user, onLogout, onOpenTutorial }: Props) {
   const [isMuted, setIsMuted] = useState(sound.muted);
 
   const toggleSound = () => {
-    const next = sound.toggleMute();
-    setIsMuted(next);
+    setIsMuted(sound.toggleMute());
   };
 
   return (
     <header className="w-full bg-white rounded-2xl px-3.5 sm:px-4 py-2.5 flex items-center justify-between text-xs select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-      {/* 左侧品牌与玩家身份 (移动端自适应完整展示) */}
+      {/* 左侧：品牌图标与玩家高分徽标 */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <div className="flex items-center gap-1.5 shrink-0">
           <Image
@@ -37,7 +37,7 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
           </span>
         </div>
 
-        {/* 玩家信息 (全端自适应展示) */}
+        {/* 玩家用户名与最高分徽标 */}
         <div className="flex items-center gap-1.5 pl-2.5 border-l border-slate-100 text-slate-500 min-w-0">
           <span className="truncate text-[11px] sm:text-xs">
             玩家: <strong className="text-[#0F172A]">{user.username}</strong>
@@ -50,9 +50,8 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
         </div>
       </div>
 
-      {/* 右侧教程、音效与退出 */}
+      {/* 右侧：指南弹窗、音效切换与退出按钮 */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1">
-        {/* 游戏指南教程按钮 (罗兰紫悬浮反馈) */}
         <button
           onClick={onOpenTutorial}
           title="游戏规则与新手指南"
@@ -61,7 +60,6 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
           <HelpCircle size={15} />
         </button>
 
-        {/* 8-bit 音效开关 (天青蓝悬浮反馈) */}
         <button
           onClick={toggleSound}
           title={isMuted ? '开启 8-bit 音效' : '静音'}
@@ -70,7 +68,6 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
           {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
         </button>
 
-        {/* 退出登录 */}
         <button
           onClick={onLogout}
           className="px-2 py-0.5 text-[#64748B] hover:text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-1 transition-all cursor-pointer text-xs"

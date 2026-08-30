@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export const dynamic = 'force-static';
 
+// PWA 渐进式 Web 应用清单定义 (支持添加到主屏幕与离线桌面体验)
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: '贪吃蛇 · 经典竞技版',

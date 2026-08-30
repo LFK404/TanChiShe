@@ -3,8 +3,11 @@ import { User } from '@/types';
 import { apiAuth } from '@/services/api';
 
 const KEY = 'tanchishe_auth';
+
+// 严格 SSR 水合安全检测 Hook (杜绝服务端/客户端初次渲染内容不一致的闪烁)
 export const useIsClient = () => useSyncExternalStore(() => () => {}, () => true, () => false);
 
+// 玩家登录状态管理 Hook (支持 LocalStorage 本地持久化与即时更新)
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -28,6 +31,7 @@ export function useAuth() {
 
   const [error, setError] = useState('');
 
+  // 登录或自动注册
   const login = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -48,18 +52,16 @@ export function useAuth() {
     }
   }, [form]);
 
+  // 注销退出并清除本地凭证
   const logout = useCallback(() => {
     setUser(null);
-    try {
-      localStorage.removeItem(KEY);
-    } catch {}
+    try { localStorage.removeItem(KEY); } catch {}
   }, []);
 
+  // 游戏破纪录后同步内存与本地持久化数据
   const updateUser = useCallback((u: User) => {
     setUser(u);
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ user: u, form }));
-    } catch {}
+    try { localStorage.setItem(KEY, JSON.stringify({ user: u, form })); } catch {}
   }, [form]);
 
   return { user, form, error, setForm, login, logout, updateUser };

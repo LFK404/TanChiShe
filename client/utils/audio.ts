@@ -1,3 +1,4 @@
+// Web Audio API 原生 8-bit 复古音效与背景音乐管理器
 class SoundManager {
   private ctx: AudioContext | null = null;
   private bgmAudio: HTMLAudioElement | null = null;
@@ -8,6 +9,7 @@ class SoundManager {
     if (typeof window !== 'undefined') {
       this.muted = localStorage.getItem('tanchishe_muted') === 'true';
       this.initBgm();
+      // 页面切到后台自动暂停 BGM，切回前台自动恢复
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           if (this.bgmAudio && !this.bgmAudio.paused) this.bgmAudio.pause();
@@ -18,6 +20,7 @@ class SoundManager {
     }
   }
 
+  // 初始化 BGM 实例
   private initBgm() {
     if (typeof window === 'undefined' || this.bgmAudio) return;
     try {
@@ -28,6 +31,7 @@ class SoundManager {
     } catch {}
   }
 
+  // 用户手势交互时跨端解锁音频上下文 (解决 iOS/Chrome 自动播放策略限制)
   public unlockAudio() {
     if (typeof window === 'undefined') return;
     if (!this.ctx) {
@@ -38,6 +42,7 @@ class SoundManager {
     this.initBgm();
   }
 
+  // 切换全局静音
   toggleMute(): boolean {
     this.muted = !this.muted;
     if (typeof window !== 'undefined') localStorage.setItem('tanchishe_muted', String(this.muted));
@@ -48,6 +53,7 @@ class SoundManager {
     return this.muted;
   }
 
+  // 开始播放 BGM
   startBgm() {
     this.isBgmPlaying = true;
     if (this.muted) return;
@@ -119,10 +125,15 @@ class SoundManager {
     } catch {}
   }
 
+  // 吃普通红苹果音效 (E5 -> B5 升调)
   playEat() { this.playTone('sine', 659.25, 987.77, 0.07, 0.16); }
+  // 吃金色幸运果音效 (C5 -> E5 -> G5 -> C6 四段晶体琶音)
   playBonus() { this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.12, 0.05, 0.18); }
+  // 游戏开始音效 (G4 -> C5 -> E5 上扬三和弦)
   playStart() { this.playNotes('sine', [392.00, 523.25, 659.25], 0.1, 0.06, 0.14); }
+  // 游戏结束音效 (降调 Sawtooth 8-bit)
   playGameOver() { this.playTone('sawtooth', 261.63, 45, 0.32, 0.2); }
+  // 暂停/继续交互气泡音
   playToggle() { this.playTone('sine', 440, 440, 0.04, 0.1); }
 }
 

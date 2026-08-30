@@ -15,6 +15,8 @@ export default function Home() {
   const isClient = useIsClient();
   const { user, form, error, setForm, login, logout, updateUser } = useAuth();
   const [board, setBoard] = useState<User[]>([]);
+  
+  // 首次访问自动唤起新手指南
   const [showTutorial, setShowTutorial] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -24,10 +26,12 @@ export default function Home() {
     }
   });
 
+  // 刷新全服 Top 10 排行榜
   const refreshBoard = useCallback(async () => {
     setBoard(await apiLeaderboard());
   }, []);
 
+  // 游戏结束回调：自动上报战绩、破纪录时更新个人高分并刷新排行榜
   const handleGameOver = useCallback(
     async (finalScore: number, finalDur: number) => {
       if (!user) return;
@@ -38,30 +42,32 @@ export default function Home() {
     [user, form.password, updateUser, refreshBoard]
   );
 
-  const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
-    useSnake(handleGameOver);
+  // 贪吃蛇游戏核心状态机
+  const {
+    snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey,
+    score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
+    startGame, togglePause, changeDirection, tick,
+  } = useSnake(handleGameOver);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);
-    try {
-      localStorage.setItem('snake_tutorial_seen', 'true');
-    } catch {}
+    try { localStorage.setItem('snake_tutorial_seen', 'true'); } catch {}
   }, []);
 
   const handleOpenTutorial = useCallback(() => {
     setShowTutorial(true);
   }, []);
 
+  // 组件挂载时初始拉取排行榜
   useEffect(() => {
     let isMounted = true;
     apiLeaderboard().then((data) => {
       if (isMounted) setBoard(data);
     });
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
+  // 服务端渲染骨架屏防水合闪烁
   if (!isClient) {
     return (
       <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
@@ -73,10 +79,12 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-start p-3 sm:p-5 relative overflow-x-hidden">
       {!user ? (
+        /* 未登录态：居中登录/注册卡片 */
         <div className="w-full min-h-[85vh] flex items-center justify-center relative z-10">
           <Login form={form} error={error} setForm={setForm} onLogin={login} />
         </div>
       ) : (
+        /* 已登录态：游戏主界面 */
         <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4 relative z-10">
           <Header
             user={user}
@@ -84,6 +92,7 @@ export default function Home() {
             onOpenTutorial={handleOpenTutorial}
           />
 
+          {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
@@ -94,7 +103,6 @@ export default function Home() {
               </blockquote>
             </div>
 
-            {/* 右侧 NCU HOME 单行大字号艺术水印与四色微标 */}
             <div className="flex flex-col items-end leading-none select-none pointer-events-none opacity-80 shrink-0 pl-2">
               <div className="flex items-center gap-1.5 mb-1.5 pr-0.5">
                 <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
@@ -109,6 +117,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* 响应式主内容区：左侧游戏主舞台 (2/3) + 右侧风云榜 (1/3) */}
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <div className="md:col-span-2">
               <Board
@@ -118,7 +127,6 @@ export default function Home() {
                 bonusRef={bonusRef}
                 hasBonus={hasBonus}
                 bonusKey={bonusKey}
-                dirRef={dirRef}
                 score={score}
                 duration={duration}
                 length={length}
@@ -135,6 +143,7 @@ export default function Home() {
             <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
           </div>
 
+          {/* 极简底部署名 */}
           <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
@@ -147,10 +156,7 @@ export default function Home() {
             <span>贪吃蛇 经典排位版</span>
           </footer>
 
-          <Tutorial
-            isOpen={showTutorial}
-            onClose={handleCloseTutorial}
-          />
+          <Tutorial isOpen={showTutorial} onClose={handleCloseTutorial} />
         </div>
       )}
     </main>

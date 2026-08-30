@@ -1,11 +1,13 @@
+// PWA 静态资源缓存控制与离线回退策略
 const CACHE_NAME = 'tanchishe-pwa-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.webmanifest',
   '/icon.svg',
-  '/audio/bgm.mp3'
+  '/audio/bgm.mp3',
 ];
 
+// 1. 安装阶段：预缓存核心静态资产
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -15,6 +17,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+// 2. 激活阶段：清理旧版本缓存
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -30,15 +33,15 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// 3. 网络请求拦截：Stale-While-Revalidate 策略 (忽略 /api/ 请求)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  // 忽略 API 网络请求
   if (event.request.url.includes('/api/')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // 后台静默刷新缓存
+        // 后台静默刷新缓存并返回已缓存内容
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
