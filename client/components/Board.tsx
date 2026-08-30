@@ -397,43 +397,43 @@ export default function Board({
       </div>
 
       {/* 移动端十字按键控制台 (加大尺寸与间隔，提升拇指操控舒适度) */}
-      <div className="mt-5 flex flex-col items-center gap-2.5 sm:hidden touch-manipulation select-none">
+      <div className="mt-5 flex flex-col items-center gap-3 sm:hidden touch-manipulation select-none">
         <button
           onClick={() => handleDirBtn('UP')}
-          className="w-16 h-12 bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
+          className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
         >
-          <ChevronUp size={24} />
+          <ChevronUp size={28} />
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3.5">
           <button
             onClick={() => handleDirBtn('LEFT')}
-            className="w-16 h-12 bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
+            className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={28} />
           </button>
           <button
             onClick={() => { sound.unlockAudio(); onTogglePause?.(); }}
             disabled={!isPlaying || isGameOver}
-            className={`w-16 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xs ${
+            className={`w-[76px] h-[52px] rounded-2xl flex items-center justify-center transition-all shadow-xs ${
               isPaused ? 'bg-[#0099FF] text-white' : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
             } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
           >
-            {isPaused ? <Play size={18} /> : <Pause size={18} />}
+            {isPaused ? <Play size={20} /> : <Pause size={20} />}
           </button>
           <button
             onClick={() => handleDirBtn('RIGHT')}
-            className="w-16 h-12 bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
+            className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
           >
-            <ChevronRight size={24} />
+            <ChevronRight size={28} />
           </button>
         </div>
 
         <button
           onClick={() => handleDirBtn('DOWN')}
-          className="w-16 h-12 bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
+          className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
         >
-          <ChevronDown size={24} />
+          <ChevronDown size={28} />
         </button>
         <span className="text-[10px] text-[#94A3B8] mt-1">支持全屏滑屏或虚拟触控键 · 中心按键暂停</span>
       </div>
