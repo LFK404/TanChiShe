@@ -26,7 +26,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
           />
         </div>
         <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
-        <p className="text-xs text-[#94A3B8] mt-1">方寸之<span className="text-[#66CCFF] font-semibold">间</span> · 重温经典</p>
+        <p className="text-xs text-[#94A3B8] mt-1">方寸之<span className="text-[#66CCFF] font-semibold">间</span> · 重温经<span className="text-[#66CCFF] font-semibold">典</span></p>
       </div>
 
       {/* 登录/自动注册双字段表单 */}

@@ -4,8 +4,8 @@ import './globals.css';
 
 // 页面全局 SEO 元数据与 PWA 应用配置
 export const metadata: Metadata = {
-  title: '贪吃蛇 · 经典竞技版',
-  description: '方寸之间，重温经典。极简现代主义风格的全栈贪吃蛇网页游戏与竞技排行榜。',
+  title: '贪吃蛇',
+  description: '方寸之间，重温经典。极简现代主义风格的贪吃蛇网页游戏与竞技排行榜。',
   icons: { icon: '/icon.svg', apple: '/icon.svg' },
   appleWebApp: { capable: true, statusBarStyle: 'default', title: '贪吃蛇' },
   applicationName: '贪吃蛇',

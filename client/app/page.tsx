@@ -153,7 +153,7 @@ export default function Home() {
             </div>
             <span>NCU HOME</span>
             <span>•</span>
-            <span>贪吃蛇 经典排位版</span>
+            <span>贪吃蛇</span>
           </footer>
 
           <Tutorial isOpen={showTutorial} onClose={handleCloseTutorial} />
