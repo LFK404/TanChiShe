@@ -62,17 +62,17 @@ export default function Home() {
   if (!isClient) return null;
 
   return (
-    <main className="min-h-screen bg-white text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
-      {/* 南昌大学 NCU HOME 浅灰艺术水印与四色微徽标 (全局响应式通透浮现) */}
-      <div className="fixed top-2 sm:top-4 left-3 sm:left-6 md:left-8 pointer-events-none select-none z-0 flex flex-col leading-none opacity-80">
-        <div className="flex items-center gap-1.5 mb-1 pl-0.5">
-          <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
-          <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-          <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
+    <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
+      {/* 南昌大学 NCU HOME 全局通透底层艺术水印 (居中通透底层，绝不遮挡任何文字与按键) */}
+      <div className="fixed inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-40">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#66CCFF]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#EC4899]" />
         </div>
-        <span className="font-black text-6xl sm:text-7xl md:text-8xl tracking-tighter text-[#E2E8F0]/80">NCU</span>
-        <span className="font-extrabold text-xl sm:text-2xl md:text-3xl tracking-widest text-[#E2E8F0]/80 pl-1 sm:pl-1.5 -mt-1 sm:-mt-2">HOME</span>
+        <span className="font-black text-7xl sm:text-8xl md:text-9xl tracking-tighter text-[#E2E8F0]/70">NCU</span>
+        <span className="font-extrabold text-2xl sm:text-3xl md:text-4xl tracking-[0.25em] text-[#E2E8F0]/70 -mt-2 sm:-mt-4">HOME</span>
       </div>
 
       {!user ? (
@@ -80,8 +80,8 @@ export default function Home() {
           <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
         </div>
       ) : (
-        <div className="w-full max-w-4xl flex flex-col gap-4 z-10 relative">
-          {/* 导航顶栏 */}
+        <div className="w-full max-w-4xl flex flex-col gap-3.5 z-10 relative">
+          {/* 完整一体化导航顶栏 */}
           <Header
             user={user}
             onLogout={logout}
@@ -89,11 +89,11 @@ export default function Home() {
           />
 
           {/* 人文标语与留白区 (融入 #66CCFF 天青蓝点睛字与竖线) */}
-          <div className="px-2 pt-1 pb-1">
+          <div className="px-1 pt-0.5 pb-0.5">
             <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
               方寸之<span className="text-[#66CCFF]">间</span>，重温经<span className="text-[#66CCFF]">典</span>
             </h1>
-            <blockquote className="mt-2 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
+            <blockquote className="mt-1.5 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
               在方格与节奏的律动中，探寻每一次转身的从容。
             </blockquote>
           </div>
@@ -125,9 +125,17 @@ export default function Home() {
             <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
           </div>
 
-          {/* 纯白紧凑页脚 */}
-          <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2">
-            <span>贪吃蛇</span>
+          {/* 纯白紧凑页脚与南大家园微徽标 */}
+          <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
+            </div>
+            <span>NCU HOME · 南大家园</span>
+            <span>•</span>
+            <span>贪吃蛇 经典竞技版</span>
           </footer>
 
           {/* 极简新手指南模态框 */}
