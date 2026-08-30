@@ -33,6 +33,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
   const [isPaused, setIsPaused] = useState(false);
   const [speedMs, setSpeedMs] = useState(BASE_SPEED_MS);
   const [hasBonus, setHasBonus] = useState(false);
+  const [bonusKey, setBonusKey] = useState(0);
 
   const clearBonus = useCallback(() => {
     bonusRef.current = null;
@@ -65,12 +66,13 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     const newFood = empty[foodIdx];
     foodRef.current = newFood;
 
-    // 3. 20% 概率刷出限时金色幸运果 (8 秒限时，+30 分，保留栅栏不清除，绝对排除红苹果坐标)
-    if (Math.random() < 0.20 && !bonusRef.current && empty.length > 3) {
+    // 3. 25% 概率刷出限时金色幸运果 (8 秒限时，+30 分，保留栅栏不清除，绝对排除红苹果坐标)
+    if (Math.random() < 0.25 && !bonusRef.current && empty.length > 3) {
       const remainingEmpty = empty.filter((p) => p.x !== newFood.x || p.y !== newFood.y);
       if (remainingEmpty.length > 0) {
         const bonusPos = remainingEmpty[Math.floor(Math.random() * remainingEmpty.length)];
         bonusRef.current = bonusPos;
+        setBonusKey((prev) => prev + 1);
         setHasBonus(true);
         if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
         bonusTimerRef.current = setTimeout(() => {
@@ -258,5 +260,5 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     };
   }, []);
 
-  return { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick };
+  return { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick };
 }

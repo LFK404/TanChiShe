@@ -38,7 +38,7 @@ export default function Home() {
     [user, form.password, updateUser, refreshBoard]
   );
 
-  const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
+  const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
     useSnakeGame(handleGameOver);
 
   const handleCloseTutorial = useCallback(() => {
@@ -107,6 +107,7 @@ export default function Home() {
                 foodRef={foodRef}
                 bonusRef={bonusRef}
                 hasBonus={hasBonus}
+                bonusKey={bonusKey}
                 dirRef={dirRef}
                 score={score}
                 duration={duration}

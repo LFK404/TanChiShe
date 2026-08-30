@@ -10,6 +10,7 @@ interface Props {
   foodRef: React.MutableRefObject<Point>;
   bonusRef: React.MutableRefObject<Point | null>;
   hasBonus: boolean;
+  bonusKey?: number;
   dirRef: React.MutableRefObject<Direction>;
   score: number;
   duration: number;
@@ -30,6 +31,7 @@ export default function GameBoard({
   foodRef,
   bonusRef,
   hasBonus,
+  bonusKey = 0,
   dirRef,
   score,
   duration,
@@ -237,9 +239,18 @@ export default function GameBoard({
         onTouchEnd={handleTouchEnd}
         className="relative border border-[#E2E8F0] rounded-2xl overflow-hidden bg-white touch-none max-w-full"
       >
-        {/* 限时金色幸运果顶置流光进度条 */}
+        {/* 限时金色幸运果顶置 8 秒倒计时进度条 (金果被吃或超时立即提前消失，游戏暂停时定格) */}
         {hasBonus && (
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#66CCFF] animate-pulse z-10" />
+          <div className="absolute top-0 left-0 right-0 h-[3.5px] bg-[#EBF8FF] overflow-hidden z-20 pointer-events-none">
+            <div
+              key={bonusKey}
+              className="h-full bg-[#66CCFF] shadow-[0_0_6px_#66CCFF]"
+              style={{
+                animation: 'bonusProgress 8s linear forwards',
+                animationPlayState: isPaused ? 'paused' : 'running',
+              }}
+            />
+          </div>
         )}
 
         <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square" />
