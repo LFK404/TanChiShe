@@ -63,16 +63,16 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
-      {/* 南昌大学 NCU HOME 浅灰艺术水印与多巴胺三色微徽标 */}
-      <div className="absolute top-4 sm:top-6 left-4 sm:left-10 pointer-events-none select-none z-0 flex flex-col leading-none opacity-50">
+      {/* 南昌大学 NCU HOME 浅灰艺术水印与四色微徽标 (全局响应式通透浮现) */}
+      <div className="fixed top-2 sm:top-4 left-3 sm:left-6 md:left-8 pointer-events-none select-none z-0 flex flex-col leading-none opacity-80">
         <div className="flex items-center gap-1.5 mb-1 pl-0.5">
           <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
           <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
           <span className="w-2 h-2 rounded-full bg-[#10B981]" />
           <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
         </div>
-        <span className="font-black text-6xl sm:text-8xl tracking-tighter text-[#F1F5F9]">NCU</span>
-        <span className="font-extrabold text-2xl sm:text-3xl tracking-widest text-[#F1F5F9] pl-1 sm:pl-1.5 -mt-1 sm:-mt-2">HOME</span>
+        <span className="font-black text-6xl sm:text-7xl md:text-8xl tracking-tighter text-[#E2E8F0]/80">NCU</span>
+        <span className="font-extrabold text-xl sm:text-2xl md:text-3xl tracking-widest text-[#E2E8F0]/80 pl-1 sm:pl-1.5 -mt-1 sm:-mt-2">HOME</span>
       </div>
 
       {!user ? (
