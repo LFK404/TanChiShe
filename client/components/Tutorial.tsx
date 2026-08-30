@@ -6,7 +6,7 @@ interface Props {
   onClose: () => void;
 }
 
-export default function TutorialModal({ isOpen, onClose }: Props) {
+export default function Tutorial({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Direction, Point } from '@/types';
-import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnakeGame';
+import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnake';
 import { sound } from '@/utils/audio';
 import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
@@ -37,7 +37,7 @@ interface Particle {
   maxLife: number;
 }
 
-export default function GameBoard({
+export default function Board({
   snakeRef,
   fenceRef,
   foodRef,

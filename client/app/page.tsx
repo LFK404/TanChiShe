@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
-import { useSnakeGame } from '@/hooks/useSnakeGame';
+import { useSnake } from '@/hooks/useSnake';
 import { apiSettle, apiLeaderboard } from '@/services/api';
 import { User } from '@/types';
 import Header from '@/components/Header';
-import GameBoard from '@/components/GameBoard';
+import Board from '@/components/Board';
 import Leaderboard from '@/components/Leaderboard';
-import LoginCard from '@/components/LoginCard';
-import TutorialModal from '@/components/TutorialModal';
+import Login from '@/components/Login';
+import Tutorial from '@/components/Tutorial';
 
 export default function Home() {
   const isClient = useIsClient();
@@ -39,7 +39,7 @@ export default function Home() {
   );
 
   const { snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey, dirRef, score, duration, length, speedMs, isPlaying, isGameOver, isPaused, startGame, togglePause, changeDirection, tick } =
-    useSnakeGame(handleGameOver);
+    useSnake(handleGameOver);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);
@@ -48,8 +48,11 @@ export default function Home() {
     } catch {}
   }, []);
 
+  const handleOpenTutorial = useCallback(() => {
+    setShowTutorial(true);
+  }, []);
+
   useEffect(() => {
-    if (!user) return;
     let isMounted = true;
     apiLeaderboard().then((data) => {
       if (isMounted) setBoard(data);
@@ -57,28 +60,31 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, []);
 
-  if (!isClient) return null;
+  if (!isClient) {
+    return (
+      <main className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
+        <div className="w-8 h-8 rounded-full border-2 border-[#66CCFF] border-t-transparent animate-spin" />
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
+    <main className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-start p-3 sm:p-5 relative overflow-x-hidden">
       {!user ? (
-        <div className="z-10 w-full flex justify-center">
-          <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
+        <div className="w-full min-h-[85vh] flex items-center justify-center relative z-10">
+          <Login form={form} error={error} setForm={setForm} onLogin={login} />
         </div>
       ) : (
-        <div className="w-full max-w-4xl flex flex-col gap-3.5 z-10 relative">
-          {/* 完整一体化导航顶栏 */}
+        <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4 relative z-10">
           <Header
             user={user}
             onLogout={logout}
-            onOpenTutorial={() => setShowTutorial(true)}
+            onOpenTutorial={handleOpenTutorial}
           />
 
-          {/* 人文标语区 + 右侧 NCU HOME 艺术水印微标 (黄金留白区，100% 清晰可见不被遮挡) */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
-            {/* 左侧金句与点睛字 */}
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
                 方寸之<span className="text-[#66CCFF]">间</span>，重温经<span className="text-[#66CCFF]">典</span>
@@ -88,7 +94,6 @@ export default function Home() {
               </blockquote>
             </div>
 
-            {/* 右侧南昌大学 NCU HOME 艺术水印与四色微标 */}
             <div className="flex flex-col items-end leading-none select-none pointer-events-none opacity-85 shrink-0 pl-2">
               <div className="flex items-center gap-1.5 mb-1 pr-0.5">
                 <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
@@ -101,10 +106,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 游戏主舞台与排行榜双列布局 */}
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <div className="md:col-span-2">
-              <GameBoard
+              <Board
                 snakeRef={snakeRef}
                 fenceRef={fenceRef}
                 foodRef={foodRef}
@@ -128,7 +132,6 @@ export default function Home() {
             <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
           </div>
 
-          {/* 纯白紧凑页脚与南大家园微徽标 (无框极简人文印章) */}
           <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
@@ -141,8 +144,7 @@ export default function Home() {
             <span>贪吃蛇 经典排位版</span>
           </footer>
 
-          {/* 极简新手指南模态框 */}
-          <TutorialModal
+          <Tutorial
             isOpen={showTutorial}
             onClose={handleCloseTutorial}
           />

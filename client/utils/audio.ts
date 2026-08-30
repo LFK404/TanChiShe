@@ -27,7 +27,7 @@ class SoundManager {
     if (typeof window === 'undefined') return;
     try {
       if (!this.bgmAudio) {
-        this.bgmAudio = new Audio('/audio/Button_Mash_Sunday.mp3');
+        this.bgmAudio = new Audio('/audio/bgm.mp3');
         this.bgmAudio.loop = true;
         this.bgmAudio.volume = 0.32;
         this.bgmAudio.preload = 'auto';

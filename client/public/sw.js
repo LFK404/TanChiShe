@@ -3,7 +3,7 @@ const ASSETS_TO_CACHE = [
   '/',
   '/manifest.webmanifest',
   '/icon.svg',
-  '/audio/Button_Mash_Sunday.mp3'
+  '/audio/bgm.mp3'
 ];
 
 self.addEventListener('install', (event) => {

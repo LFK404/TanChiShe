@@ -15,7 +15,7 @@ const isOpp = (d1: Direction, d2: Direction) =>
 export const BASE_SPEED_MS = 122; // 基础速度 (原 110ms 的 0.9 倍速，更加沉着平滑)
 export const MIN_SPEED_MS = 61;   // 极速上限 (2.0x 速度)
 
-export function useSnakeGame(onGameOver?: (score: number, duration: number) => void) {
+export function useSnake(onGameOver?: (score: number, duration: number) => void) {
   const snakeRef = useRef<Point[]>([{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }]);
   const fenceRef = useRef<Set<string>>(new Set());
   const foodRef = useRef<Point>({ x: 16, y: 12 });

@@ -9,7 +9,7 @@ interface Props {
   onLogin: (e: React.FormEvent) => void;
 }
 
-export default function LoginCard({ form, error, setForm, onLogin }: Props) {
+export default function Login({ form, error, setForm, onLogin }: Props) {
   return (
     <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl text-[#0F172A] shadow-[0_4px_24px_rgba(0,0,0,0.04)] select-none">
       {/* 头部品牌 */}
