@@ -1,7 +1,7 @@
 const CACHE_NAME = 'tanchishe-pwa-v1';
 const ASSETS_TO_CACHE = [
   '/',
-  '/manifest.json',
+  '/manifest.webmanifest',
   '/icon.svg',
   '/audio/Button_Mash_Sunday.mp3'
 ];

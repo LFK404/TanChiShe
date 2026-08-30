@@ -5,7 +5,6 @@ import './globals.css';
 export const metadata: Metadata = {
   title: '贪吃蛇 · 经典竞技版',
   description: '方寸之间，重温经典。极简现代主义风格的全栈贪吃蛇网页游戏与竞技排行榜。',
-  manifest: '/manifest.json',
   icons: {
     icon: '/icon.svg',
     apple: '/icon.svg',
