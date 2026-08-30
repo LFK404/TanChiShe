@@ -115,8 +115,8 @@ class SoundManager {
   // 吃金色幸运果音效 (C5 -> E5 -> G5 -> C6 闪耀四段晶体琶音)
   playBonus() { this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.1, 0.05, 0.30); }
 
-  // 方向键/滑动转向微反馈音 (C5 短促点击音)
-  playMove() { this.playNotes('triangle', [523.25], 0.035, 0, 0.14); }
+  // 方向键/按键转向点击反馈音 (清脆 8-bit 方波点击音，A5 -> D6 穿透力强)
+  playMove() { this.playNotes('square', [880, 1174.66], 0.045, 0.02, 0.22); }
 
   // 游戏开始音效 (G4 -> C5 -> E5 明亮三和弦)
   playStart() { this.playNotes('triangle', [392.00, 523.25, 659.25], 0.09, 0.06, 0.25); }

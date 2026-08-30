@@ -227,6 +227,7 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
   // 全局键盘监听 (方向键 / WASD / 空格 / P)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      sound.unlockAudio();
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') return togglePause();
       if (e.key === ' ') {
