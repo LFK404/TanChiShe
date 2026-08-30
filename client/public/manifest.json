@@ -1,16 +1,20 @@
 {
-  "name": "贪吃蛇",
+  "name": "贪吃蛇 · 经典竞技版",
   "short_name": "贪吃蛇",
-  "description": "极简现代全栈贪吃蛇游戏",
+  "description": "方寸之间，重温经典。极简现代主义全栈贪吃蛇网页游戏与竞技排行榜。",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#FFFFFF",
   "theme_color": "#66CCFF",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "/icon.svg",
-      "sizes": "32x32 48x48 72x72 96x96 144x144 192x192 512x512",
-      "type": "image/svg+xml"
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
