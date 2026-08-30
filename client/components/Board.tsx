@@ -367,9 +367,11 @@ export default function Board({
           <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex items-center justify-center">
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <Play size={16} /> 开始游戏 (空格)
+              <Play size={16} />
+              <span>开始游戏</span>
+              <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
             </button>
           </div>
         )}
@@ -384,7 +386,9 @@ export default function Board({
               <Pause size={24} />
             </div>
             <span className="text-sm font-bold">游戏已暂停</span>
-            <span className="text-xs text-[#94A3B8] mt-1">点击任意位置或按空格/P继续</span>
+            <span className="text-xs text-[#94A3B8] mt-1">
+              点击任意位置<span className="hidden sm:inline">或按空格/P</span>继续
+            </span>
           </div>
         )}
 
@@ -399,9 +403,11 @@ export default function Board({
             </div>
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
-              <RotateCcw size={15} /> 再来一局 (空格)
+              <RotateCcw size={15} />
+              <span>再来一局</span>
+              <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
             </button>
           </div>
         )}
