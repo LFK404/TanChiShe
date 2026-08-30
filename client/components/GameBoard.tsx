@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Direction, Point } from '@/types';
 import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnakeGame';
+import { sound } from '@/utils/audio';
 import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 interface Props {
@@ -45,8 +46,9 @@ export default function GameBoard({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // 手势滑动检测
+  // 手势滑动检测 (同时触发移动端音频引擎解锁)
   const handleTouchStart = (e: React.TouchEvent) => {
+    sound.unlockAudio();
     touchStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
@@ -291,7 +293,7 @@ export default function GameBoard({
       <div className="mt-4 flex flex-col items-center gap-1.5 sm:hidden touch-manipulation select-none">
         {/* 上方向键 */}
         <button
-          onClick={() => onDirection('UP')}
+          onClick={() => { sound.unlockAudio(); onDirection('UP'); }}
           className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
         >
           <ChevronUp size={20} />
@@ -300,7 +302,7 @@ export default function GameBoard({
         {/* 中间行：左键 + 暂停键 + 右键 */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onDirection('LEFT')}
+            onClick={() => { sound.unlockAudio(); onDirection('LEFT'); }}
             className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronLeft size={20} />
@@ -308,7 +310,7 @@ export default function GameBoard({
 
           {/* 暂停/继续控制键 (位于4个移动键正中心) */}
           <button
-            onClick={onTogglePause}
+            onClick={() => { sound.unlockAudio(); onTogglePause?.(); }}
             disabled={!isPlaying || isGameOver}
             title={isPaused ? '继续游戏' : '暂停游戏'}
             className={`w-12 h-10 border rounded-xl flex items-center justify-center transition-all touch-manipulation select-none ${
@@ -321,7 +323,7 @@ export default function GameBoard({
           </button>
 
           <button
-            onClick={() => onDirection('RIGHT')}
+            onClick={() => { sound.unlockAudio(); onDirection('RIGHT'); }}
             className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronRight size={20} />
@@ -330,7 +332,7 @@ export default function GameBoard({
 
         {/* 下方向键 */}
         <button
-          onClick={() => onDirection('DOWN')}
+          onClick={() => { sound.unlockAudio(); onDirection('DOWN'); }}
           className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
         >
           <ChevronDown size={20} />

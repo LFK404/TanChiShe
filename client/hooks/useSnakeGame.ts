@@ -95,6 +95,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     setIsGameOver(true);
     setIsPlaying(false);
     clearBonus();
+    sound.stopBgm();
     sound.playGameOver();
     vibrate(40);
     const dur = Math.floor((Date.now() - stateRef.current.start) / 1000);
@@ -102,6 +103,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
   }, [onGameOver, clearBonus]);
 
   const startGame = useCallback(() => {
+    sound.unlockAudio();
     snakeRef.current = [{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }];
     fenceRef.current.clear();
     dirRef.current = 'RIGHT';
@@ -116,7 +118,8 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     setIsPaused(false);
     setIsPlaying(true);
     clearBonus();
-    sound.playToggle();
+    sound.playStart();
+    sound.startBgm();
     vibrate(10);
     spawnFood();
   }, [spawnFood, clearBonus]);
@@ -132,8 +135,14 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
 
   const togglePause = useCallback(() => {
     if (stateRef.current.playing && !stateRef.current.over) {
-      stateRef.current.paused = !stateRef.current.paused;
-      setIsPaused(stateRef.current.paused);
+      const nextPaused = !stateRef.current.paused;
+      stateRef.current.paused = nextPaused;
+      setIsPaused(nextPaused);
+      if (nextPaused) {
+        sound.pauseBgm();
+      } else {
+        sound.resumeBgm();
+      }
       sound.playToggle();
       vibrate(10);
     }
