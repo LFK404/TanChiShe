@@ -12,6 +12,9 @@ const isOpp = (d1: Direction, d2: Direction) =>
   (d1 === 'LEFT' && d2 === 'RIGHT') ||
   (d1 === 'RIGHT' && d2 === 'LEFT');
 
+export const BASE_SPEED_MS = 122; // 基础速度 (原 110ms 的 0.9 倍速，更加沉着平滑)
+export const MIN_SPEED_MS = 61;   // 极速上限 (2.0x 速度)
+
 export function useSnakeGame(onGameOver?: (score: number, duration: number) => void) {
   const snakeRef = useRef<Point[]>([{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }]);
   const fenceRef = useRef<Set<string>>(new Set());
@@ -28,7 +31,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [speedMs, setSpeedMs] = useState(110);
+  const [speedMs, setSpeedMs] = useState(BASE_SPEED_MS);
   const [hasBonus, setHasBonus] = useState(false);
 
   const clearBonus = useCallback(() => {
@@ -40,30 +43,40 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     }
   }, []);
 
+  // 严格的独立双果生成算法 (保证红苹果 100% 存在，金果与红果坐标绝对互斥)
   const spawnFood = useCallback(() => {
-    const empty: Point[] = [];
     const snakeKeys = new Set(snakeRef.current.map((p) => toKey(p.x, p.y)));
+    
+    // 1. 扫描所有合法空地 (避开蛇身与残留栅栏)
+    const empty: Point[] = [];
     for (let r = 0; r < GRID; r++) {
       for (let c = 0; c < GRID; c++) {
         const k = toKey(c, r);
-        if (!snakeKeys.has(k) && !fenceRef.current.has(k)) empty.push({ x: c, y: r });
+        if (!snakeKeys.has(k) && !fenceRef.current.has(k)) {
+          empty.push({ x: c, y: r });
+        }
       }
     }
-    if (empty.length > 0) {
-      foodRef.current = empty[Math.floor(Math.random() * empty.length)];
-      
-      // 22% 概率刷出限时金色幸运果 (8 秒限时，+30 分，保留栅栏不清除)
-      if (Math.random() < 0.22 && !bonusRef.current && empty.length > 5) {
-        const bonusPos = empty[Math.floor(Math.random() * empty.length)];
-        if (bonusPos.x !== foodRef.current.x || bonusPos.y !== foodRef.current.y) {
-          bonusRef.current = bonusPos;
-          setHasBonus(true);
-          if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
-          bonusTimerRef.current = setTimeout(() => {
-            bonusRef.current = null;
-            setHasBonus(false);
-          }, 8000);
-        }
+
+    if (empty.length === 0) return;
+
+    // 2. 红苹果必现保底主线
+    const foodIdx = Math.floor(Math.random() * empty.length);
+    const newFood = empty[foodIdx];
+    foodRef.current = newFood;
+
+    // 3. 20% 概率刷出限时金色幸运果 (8 秒限时，+30 分，保留栅栏不清除，绝对排除红苹果坐标)
+    if (Math.random() < 0.20 && !bonusRef.current && empty.length > 3) {
+      const remainingEmpty = empty.filter((p) => p.x !== newFood.x || p.y !== newFood.y);
+      if (remainingEmpty.length > 0) {
+        const bonusPos = remainingEmpty[Math.floor(Math.random() * remainingEmpty.length)];
+        bonusRef.current = bonusPos;
+        setHasBonus(true);
+        if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
+        bonusTimerRef.current = setTimeout(() => {
+          bonusRef.current = null;
+          setHasBonus(false);
+        }, 8000);
       }
     }
   }, []);
@@ -98,7 +111,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
     setScore(0);
     setDuration(0);
     setLength(3);
-    setSpeedMs(110);
+    setSpeedMs(BASE_SPEED_MS);
     setIsGameOver(false);
     setIsPaused(false);
     setIsPlaying(true);
@@ -174,8 +187,8 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       // 吃到苹果，瞬间清除所有残留栅栏！
       fenceRef.current.clear();
       
-      // 动态平滑梯度加速
-      const nextSpeed = Math.max(75, 110 - Math.floor(stateRef.current.score / 50) * 4);
+      // 动态平滑梯度加速 (最高 2.0x 极速，即 MIN_SPEED_MS=61)
+      const nextSpeed = Math.max(MIN_SPEED_MS, BASE_SPEED_MS - Math.floor(stateRef.current.score / 40) * 4);
       setSpeedMs(nextSpeed);
       
       snakeRef.current = nextSnake;
@@ -189,7 +202,7 @@ export function useSnakeGame(onGameOver?: (score: number, duration: number) => v
       return;
     }
 
-    // 7. 判定吃金色幸运果 (+30 分，保留栅栏不清除)
+    // 7. 判定吃金色幸运果 (+30 分，保留栅栏不清除，红苹果完好保留在场上)
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
       stateRef.current.score += 30;
       setScore(stateRef.current.score);

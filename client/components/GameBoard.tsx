@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Direction, Point } from '@/types';
-import { CELL, GRID } from '@/hooks/useSnakeGame';
+import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnakeGame';
 import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 interface Props {
@@ -192,8 +192,8 @@ export default function GameBoard({
     return () => clearInterval(timer);
   }, [isPlaying, isPaused, isGameOver, speedMs, onTick, render]);
 
-  // 计算速度梯度倍率
-  const speedRatio = (110 / speedMs).toFixed(1);
+  // 计算速度梯度倍率 (1.0x ~ 2.0x)
+  const speedRatio = (BASE_SPEED_MS / speedMs).toFixed(1);
 
   return (
     <div className="bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none">

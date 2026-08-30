@@ -80,7 +80,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
             <div>
               <strong className="text-[#0F172A] block font-bold mb-0.5">动态速度与冲榜</strong>
               <p className="text-[#64748B] text-[11.5px] leading-relaxed">
-                得分越高，蛇速自动平滑递增（最高 2.2x 速度）。打破纪录后自动同步全服 Top 10 排行榜！
+                得分越高，蛇速自动平滑递增（最高 2.0x 速度）。打破纪录后自动同步全服 Top 10 排行榜！
               </p>
             </div>
           </div>
