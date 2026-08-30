@@ -20,3 +20,7 @@ CREATE TABLE IF NOT EXISTS game_records (
 );
 
 CREATE INDEX IF NOT EXISTS idx_records_username ON game_records (username, created_at DESC);
+
+-- 开启行级安全防护 (Row Level Security)，防止通过 Supabase REST API 非法越权操作
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_records ENABLE ROW LEVEL SECURITY;

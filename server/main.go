@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -52,10 +55,68 @@ type SettleReq struct {
 
 var db *gorm.DB
 
+// 极简内存滑动窗口限流器 (单 IP 限制 20 次/秒，杜绝暴力爆破与 DDoS)
+var (
+	ipHits   = make(map[string][]time.Time)
+	ipHitsMu sync.Mutex
+)
+
+func RateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		now := time.Now()
+
+		ipHitsMu.Lock()
+		hits := ipHits[ip]
+		valid := hits[:0]
+		for _, t := range hits {
+			if now.Sub(t) < time.Second {
+				valid = append(valid, t)
+			}
+		}
+		if len(valid) >= 20 {
+			ipHits[ip] = valid
+			ipHitsMu.Unlock()
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"code":    429,
+				"message": "请求过于频繁，请稍候重试",
+			})
+			return
+		}
+		ipHits[ip] = append(valid, now)
+		ipHitsMu.Unlock()
+
+		c.Next()
+	}
+}
+
+// 极简加盐哈希计算 (杜绝数据库明文存储密码)
+func hashPassword(p string) string {
+	h := sha256.Sum256([]byte(p + "_ncu_snake_salt_2026"))
+	return hex.EncodeToString(h[:])
+}
+
+// 验证密码并支持旧明文平滑升级为加盐哈希
+func checkAndUpgradePassword(user *User, inputPwd string) bool {
+	hashed := hashPassword(inputPwd)
+	if user.Password == hashed {
+		return true
+	}
+	if user.Password == inputPwd {
+		user.Password = hashed
+		if db != nil {
+			db.Model(user).Update("password", hashed)
+		}
+		return true
+	}
+	return false
+}
+
 func initDB() {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgresql://postgres.itouogbtujieqovjuuew:15880993898lfk@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require"
+		fmt.Println("[WARN] DATABASE_URL 未配置，数据库服务未启动。")
+		return
 	}
 
 	var err error
@@ -63,7 +124,7 @@ func initDB() {
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		fmt.Println("[WARN] Supabase PostgreSQL connect failed:", err)
+		fmt.Println("[WARN] Supabase PostgreSQL 连接失败:", err)
 		return
 	}
 
@@ -71,7 +132,7 @@ func initDB() {
 	if err = db.AutoMigrate(&User{}, &GameRecord{}); err != nil {
 		fmt.Println("[WARN] AutoMigrate warning:", err)
 	} else {
-		fmt.Println("[INFO] Supabase PostgreSQL schema connected and migrated successfully!")
+		fmt.Println("[INFO] Supabase PostgreSQL 数据表初始化与迁移成功！")
 	}
 
 	sqlDB, err := db.DB()
@@ -107,6 +168,8 @@ func main() {
 		AllowCredentials: false,
 	}))
 
+	r.Use(RateLimitMiddleware())
+
 	api := r.Group("/api")
 	{
 		// 玩家登录/自动注册
@@ -126,14 +189,18 @@ func main() {
 				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "账号或密码不能为空"})
 				return
 			}
+			if len(u) > 50 || len(p) > 100 {
+				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "账号或密码长度超出限制"})
+				return
+			}
 
 			var user User
 			result := db.Where("username = ?", u).First(&user)
 			if result.Error != nil {
-				if result.Error == gorm.ErrRecordNotFound {
+				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 					user = User{
 						Username: u,
-						Password: p,
+						Password: hashPassword(p),
 					}
 					if createErr := db.Create(&user).Error; createErr != nil {
 						c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "注册用户失败"})
@@ -144,7 +211,7 @@ func main() {
 					return
 				}
 			} else {
-				if user.Password != p {
+				if !checkAndUpgradePassword(&user, p) {
 					c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误"})
 					return
 				}
@@ -153,7 +220,7 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": user})
 		})
 
-		// 对局战绩结算
+		// 对局战绩结算 (全时长物理防作弊校验)
 		api.POST("/settle", func(c *gin.Context) {
 			if db == nil {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库连接初始化中，请稍后重试"})
@@ -168,14 +235,15 @@ func main() {
 
 			u, p := strings.TrimSpace(req.Username), strings.TrimSpace(req.Password)
 
-			// 防刷分物理校验
+			// 严密物理防作弊校验：每秒最大合理吃果速率理论上限 + 基础用时保护
 			if req.Score > 0 {
-				maxPossibleScore := int((req.Duration+2)*4) * 10
-				if req.Duration < 3 && req.Score > 40 {
-					c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "战绩数据异常，已被安全机制拦截"})
+				if req.Duration < 1 {
+					c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "战绩异常：游玩时长不足"})
 					return
 				}
-				if req.Score > maxPossibleScore && req.Duration < 10 {
+				// 理论最高得分公式：(时长 * 4.0 + 初始缓冲 4) * 10
+				maxAllowedScore := int(float64(req.Duration)*4.0+4.0) * 10
+				if req.Score > maxAllowedScore || req.Score > 10000 || req.Duration > 7200 {
 					c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "战绩数据异常，已被安全机制拦截"})
 					return
 				}
@@ -186,7 +254,7 @@ func main() {
 				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "认证失效"})
 				return
 			}
-			if user.Password != p {
+			if !checkAndUpgradePassword(&user, p) {
 				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "密码错误"})
 				return
 			}
