@@ -128,12 +128,12 @@ export default function Board({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 1. 纯白底板
-    ctx.fillStyle = '#FFFFFF';
+    // 1. 沉着浅冷灰底板 (微色差与外层白卡片形成鲜明层次)
+    ctx.fillStyle = '#F1F5F9';
     ctx.fillRect(0, 0, GRID * CELL, GRID * CELL);
 
-    // 浅灰极简隐形网格点
-    ctx.strokeStyle = '#F1F5F9';
+    // 浅灰极简隐形网格线
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= GRID; i++) {
       ctx.beginPath();
@@ -146,8 +146,8 @@ export default function Board({
       ctx.stroke();
     }
 
-    // 2. 残留栅栏 (极简浅灰方块)
-    ctx.fillStyle = '#E2E8F0';
+    // 2. 残留栅栏 (下沉浅灰方块)
+    ctx.fillStyle = '#CBD5E1';
     fenceRef.current.forEach((k) => {
       const [fx, fy] = k.split(',').map(Number);
       ctx.beginPath();
@@ -340,11 +340,11 @@ export default function Board({
         </div>
       </div>
 
-      {/* 画布与悬浮交互层 */}
+      {/* 画布与悬浮交互层 (微色差沉底 + 极细内嵌浅边，显著增强地图与白卡片的区分度) */}
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="relative rounded-2xl overflow-hidden bg-white touch-none max-w-full"
+        className="relative rounded-2xl overflow-hidden bg-[#F1F5F9] border border-slate-200/80 touch-none max-w-full shadow-inner"
       >
         {/* 限时金色幸运果顶置 8 秒倒计时进度条 (金果被吃或超时立即提前消失，游戏暂停时定格) */}
         {hasBonus && (
@@ -360,7 +360,7 @@ export default function Board({
           </div>
         )}
 
-        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F8FAFC]" />
+        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F1F5F9]" />
 
         {/* 开始游戏遮罩 */}
         {!isPlaying && !isGameOver && (

@@ -94,15 +94,18 @@ export default function Home() {
               </blockquote>
             </div>
 
-            <div className="flex flex-col items-end leading-none select-none pointer-events-none opacity-85 shrink-0 pl-2">
-              <div className="flex items-center gap-1.5 mb-1 pr-0.5">
+            {/* 右侧 NCU HOME 单行大字号艺术水印与四色微标 */}
+            <div className="flex flex-col items-end leading-none select-none pointer-events-none opacity-80 shrink-0 pl-2">
+              <div className="flex items-center gap-1.5 mb-1.5 pr-0.5">
                 <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
                 <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
                 <span className="w-2 h-2 rounded-full bg-[#10B981]" />
                 <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
               </div>
-              <span className="font-black text-2xl sm:text-3xl md:text-4xl tracking-tighter text-[#CBD5E1]">NCU</span>
-              <span className="font-extrabold text-[10px] sm:text-xs tracking-[0.22em] text-[#94A3B8] -mt-0.5 sm:-mt-1 pr-0.5">HOME</span>
+              <div className="flex items-baseline gap-1 font-black text-3xl sm:text-4xl md:text-5xl tracking-tighter text-[#CBD5E1]">
+                <span>NCU</span>
+                <span className="text-2xl sm:text-3xl md:text-4xl tracking-tight text-[#94A3B8]">HOME</span>
+              </div>
             </div>
           </div>
 
@@ -139,7 +142,7 @@ export default function Home() {
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
               <span className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
             </div>
-            <span>NCU HOME · 南大家园</span>
+            <span>NCU HOME</span>
             <span>•</span>
             <span>贪吃蛇 经典排位版</span>
           </footer>
