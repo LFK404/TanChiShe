@@ -1,12 +1,12 @@
 # 🐍 贪吃蛇 (Snake) - 极简全栈现代版
 
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js-blue)](https://nextjs.org/)
-[![Go](https://img.shields.io/badge/Backend-Go%20Gin-00ADD8)](https://gin-gonic.com/)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-blue)](https://nextjs.org/)
+[![Go](https://img.shields.io/badge/Backend-Go%201.22%20Gin-00ADD8)](https://gin-gonic.com/)
 [![PostgreSQL](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 🌟 **在线即玩**：[https://zhixu.online](https://zhixu.online)  
-> 📖 **设计理念**：传承经典街机像素，融入南大家园纯白极简留白美学、天青蓝 (`#66CCFF` / `#0099FF`) 核心主色、多巴胺四色彩底胶囊与等宽几何徽标体系。
+> 📖 **设计理念**：南大家园纯白留白美学 + 天青蓝 (`#66CCFF` / `#0099FF`) + 多巴胺胶囊与几何徽标。
 
 ---
 
@@ -28,38 +28,35 @@ flowchart LR
 
 ## 🌟 核心特性
 
-- 🎨 **南大家园天青蓝美学**：纯白底板 (`#FFFFFF`) + 天青蓝 (`#66CCFF`) 主色 + 极薄浅灰细边线 (`#E2E8F0`)，辅以红、绿、金、紫四色轻量微点缀。
-- 📱 **移动端双触控**：支持全屏手指滑屏转向与自适应半透明虚拟十字键。
-- ⚡ **双指令缓冲队列**：单步物理位移严格消费排队方向，彻底杜绝快速连续转向自杀误判。
-- 🎵 **原生 8-bit 音效**：Web Audio API 纯数学合成吃果、碰撞与暂停音效，0 外部资源开销。
-- 🍎 **动态难度与幸运果**：平滑速度梯度；吃果概率触发 8 秒限时金色幸运果 (+30 分)。
-- 🏆 **几何数字排行榜**：22px 等宽几何徽标（冠军金、亚军红、季军绿、罗兰紫、天青蓝、活力青），高亮当前玩家并呈现超越百分比。
-- 🛡️ **物理防作弊**：后端严格校验单局得分/耗时物理极限，拦截恶意脚本。
-- 🗄️ **Supabase 持久化**：GORM 自动建表，双表存储账户与每局战绩流水。
-- 📲 **PWA 应用化**：支持“添加到手机主屏幕”全屏独立运行。
+- 🎨 **南大天青蓝美学**：纯白底板 + 天青蓝主色 + 极薄细边线，辅以四色微点缀与 NCU HOME 水印。
+- 📱 **双模触控与触觉反馈**：全屏滑动与微型虚拟十字键，配备 Web 振动反馈。
+- 🐍 **丝滑物理引擎**：双指令排队缓冲队列防自杀；相邻节点胶囊连结桥 + 灵动双眼消除方块割裂。
+- 🍎 **独立双果与动态加速**：保底普通红苹果（吃后清空残留栅栏）+ 25% 概率金色幸运果（8s 倒计时 +30分 保留栅栏）。
+- 🏆 **几何数字排行榜**：1~6 名专属多巴胺等宽几何数字徽标，动态计算超越全服玩家百分比。
+- 🛡️ **高可用与全栈安全**：后端物理防作弊校验、滑动窗口限流（20次/秒）、SHA256 加盐哈希无感升级、RLS 行级安全。
+- 🎵 **8-bit 原生音效 & PWA**：Web Audio API 实时合成音效，支持 PWA 添加到手机主屏幕离线畅玩。
 
 ---
 
 ## 📂 目录结构
 
 ```text
-├── client/                     # 📱 前端应用 (Next.js 15 App Router)
-│   ├── app/                    # 页面、路由与全局样式
-│   ├── components/             # Header, GameBoard, Leaderboard, LoginCard, TutorialModal
-│   ├── hooks/                  # 游戏引擎 useSnakeGame 与认证钩子
-│   ├── utils/                  # Web Audio API 8-bit 音效
-│   └── .env.example            # 前端环境变量范本
+├── client/                     # 📱 前端 (Next.js 15 App Router)
+│   ├── app/                    # 页面、PWA Manifest 与全局样式
+│   ├── components/             # Board, Header, Leaderboard, Login, Tutorial
+│   ├── hooks/                  # useSnake (物理引擎), useAuth (认证持久化)
+│   ├── services/api.ts         # REST API 封装
+│   ├── utils/audio.ts          # Web Audio API 8-bit 原生合成器
+│   └── public/sw.js            # PWA Service Worker 离线缓存
 │
-├── server/                     # ⚙️ 后端服务 (Go 1.22+ Gin)
-│   ├── main.go                 # API 接口、健康检查与防刷分校验
-│   ├── Dockerfile              # 多阶段容器化构建镜像配置
-│   └── .env.example            # 后端环境变量范本
+├── server/                     # ⚙️ 后端 (Go 1.22+ Gin)
+│   ├── main.go                 # 接口、限流、防作弊、GORM 与优雅停机
+│   └── Dockerfile              # 多阶段容器构建
 │
-├── .github/workflows/          # 🤖 GitHub Actions CI/CD 流水线
+├── docs/                       # 📖 设计规范与离线预览
 ├── supabase/migrations/        # 🗄️ 数据库 SQL 迁移文件
-├── .gitignore                  # 🔒 统一权威根目录忽略文件
-├── AGENTS.md                   # 📜 仓库开发宪法与技术规范
-└── README.md                   # 📖 全局说明文档
+├── AGENTS.md                   # 📜 开发宪法与技术规范
+└── README.md                   # 📖 项目说明文档
 ```
 
 ---
@@ -68,16 +65,13 @@ flowchart LR
 
 ### 1. 后端启动
 ```bash
-cd server
-go run main.go
-# 默认监听 http://localhost:8080
+cd server && go run main.go
+# 监听 http://localhost:8080
 ```
 
 ### 2. 前端启动
 ```bash
-cd client
-npm install
-npm run dev
+cd client && npm install && npm run dev
 # 浏览器访问 http://localhost:3000
 ```
 
