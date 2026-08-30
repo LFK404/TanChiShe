@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
       {/* 南昌大学 NCU HOME 全局通透底层艺术水印 (居中通透底层，轻盈若隐若现，绝不遮挡任何文字与按键) */}
-      <div className="fixed inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-20">
+      <div className="fixed inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-30">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-2.5 h-2.5 rounded-full bg-[#66CCFF]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
