@@ -11,7 +11,7 @@ interface Props {
   bonusRef: React.MutableRefObject<Point | null>;
   hasBonus: boolean;
   bonusKey?: number;
-  dirRef: React.MutableRefObject<Direction>;
+  dirRef?: React.MutableRefObject<Direction>;
   score: number;
   duration: number;
   length: number;
@@ -26,47 +26,19 @@ interface Props {
 }
 
 interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  color: string;
-  size: number;
-  alpha: number;
-  life: number;
-  maxLife: number;
+  x: number; y: number; vx: number; vy: number;
+  color: string; size: number; alpha: number; life: number; maxLife: number;
 }
 
 interface FloatingText {
-  x: number;
-  y: number;
-  text: string;
-  color: string;
-  alpha: number;
-  scale: number;
-  life: number;
-  maxLife: number;
+  x: number; y: number; text: string; color: string;
+  alpha: number; scale: number; life: number; maxLife: number;
 }
 
 export default function Board({
-  snakeRef,
-  fenceRef,
-  foodRef,
-  bonusRef,
-  hasBonus,
-  bonusKey = 0,
-  dirRef,
-  score,
-  duration,
-  length,
-  speedMs,
-  isPlaying,
-  isGameOver,
-  isPaused,
-  onStart,
-  onTick,
-  onDirection,
-  onTogglePause,
+  snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
+  score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
+  onStart, onTick, onDirection, onTogglePause,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -79,72 +51,51 @@ export default function Board({
 
   // 粒子微爆发发射器
   const emitParticles = useCallback((gridX: number, gridY: number, type: 'apple' | 'bonus') => {
-    const originX = gridX * CELL + CELL / 2;
-    const originY = gridY * CELL + CELL / 2;
+    const originX = gridX * CELL + CELL / 2, originY = gridY * CELL + CELL / 2;
     const colors = type === 'apple'
       ? ['#EF4444', '#F87171', '#FDA4AF', '#FFFFFF', '#10B981']
       : ['#F59E0B', '#FBBF24', '#FEF08A', '#FFFFFF', '#66CCFF'];
 
-    const count = type === 'apple' ? 12 : 18;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < (type === 'apple' ? 12 : 18); i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = Math.random() * 2.8 + 1.2;
       const life = Math.floor(Math.random() * 10) + 16;
       particlesRef.current.push({
-        x: originX,
-        y: originY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
+        x: originX, y: originY,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         color: colors[Math.floor(Math.random() * colors.length)],
-        size: Math.random() * 2.4 + 1.2,
-        alpha: 1,
-        life,
-        maxLife: life,
+        size: Math.random() * 2.4 + 1.2, alpha: 1, life, maxLife: life,
       });
     }
   }, []);
 
   // 浮空得分微文字发射器
   const emitFloatingText = useCallback((gridX: number, gridY: number, text: string, color: string) => {
-    const originX = gridX * CELL + CELL / 2;
-    const originY = gridY * CELL;
     floatingTextsRef.current.push({
-      x: originX,
-      y: originY,
-      text,
-      color,
-      alpha: 1,
-      scale: 1.25,
-      life: 26,
-      maxLife: 26,
+      x: gridX * CELL + CELL / 2, y: gridY * CELL,
+      text, color, alpha: 1, scale: 1.25, life: 26, maxLife: 26,
     });
   }, []);
 
   // 死亡瞬间蛇身晶体解体爆发
   const emitShatter = useCallback(() => {
     snakeRef.current.forEach((pt) => {
-      const originX = pt.x * CELL + CELL / 2;
-      const originY = pt.y * CELL + CELL / 2;
+      const originX = pt.x * CELL + CELL / 2, originY = pt.y * CELL + CELL / 2;
       for (let i = 0; i < 4; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = Math.random() * 3.2 + 1.2;
         const life = Math.floor(Math.random() * 10) + 16;
         particlesRef.current.push({
-          x: originX,
-          y: originY,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
+          x: originX, y: originY,
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
           color: Math.random() > 0.4 ? '#66CCFF' : '#38BDF8',
-          size: Math.random() * 2.2 + 1.2,
-          alpha: 1,
-          life,
-          maxLife: life,
+          size: Math.random() * 2.2 + 1.2, alpha: 1, life, maxLife: life,
         });
       }
     });
   }, [snakeRef]);
 
-  // 监听分数增量触发粒子爆发、Combo连击统计与浮空飘字
+  // 监听分数与连击
   useEffect(() => {
     if (score > prevScoreRef.current) {
       const diff = score - prevScoreRef.current;
@@ -153,26 +104,18 @@ export default function Board({
         const isBonus = diff >= 30;
         emitParticles(head.x, head.y, isBonus ? 'bonus' : 'apple');
 
-        // Combo 连击判定 (3秒内连续吃果)
         const now = Date.now();
-        if (now - comboRef.current.lastTime < 3000) {
-          comboRef.current.count++;
-        } else {
-          comboRef.current.count = 1;
-        }
+        comboRef.current.count = now - comboRef.current.lastTime < 3000 ? comboRef.current.count + 1 : 1;
         comboRef.current.lastTime = now;
 
-        let label = isBonus ? '+30' : '+10';
-        if (comboRef.current.count > 1) {
-          label += ` x${comboRef.current.count}`;
-        }
+        const label = `${isBonus ? '+30' : '+10'}${comboRef.current.count > 1 ? ` x${comboRef.current.count}` : ''}`;
         emitFloatingText(head.x, head.y, label, isBonus ? '#D97706' : '#EF4444');
       }
     }
     prevScoreRef.current = score;
   }, [score, snakeRef, emitParticles, emitFloatingText]);
 
-  // 监听死亡触发微震屏与解体微特效
+  // 监听死亡触发微震屏与解体
   useEffect(() => {
     if (isGameOver && !prevGameOverRef.current) {
       shakeRef.current = { frames: 8, intensity: 3.0 };
@@ -181,27 +124,20 @@ export default function Board({
     prevGameOverRef.current = isGameOver;
   }, [isGameOver, emitShatter]);
 
-  // 手势滑动检测 (同时触发移动端音频引擎解锁)
+  // 手势滑动检测
   const handleTouchStart = (e: React.TouchEvent) => {
     sound.unlockAudio();
-    touchStartRef.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
-    };
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     if (Math.hypot(dx, dy) < 24) return;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      onDirection(dx > 0 ? 'RIGHT' : 'LEFT');
-    } else {
-      onDirection(dy > 0 ? 'DOWN' : 'UP');
-    }
+    onDirection(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'RIGHT' : 'LEFT') : (dy > 0 ? 'DOWN' : 'UP'));
   };
 
-  // 渲染函数 (融合微震屏、丝滑连续蛇身、呼吸律动、粒子微爆发与浮空飘字)
+  // 渲染函数
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -210,34 +146,24 @@ export default function Board({
 
     ctx.save();
 
-    // 死亡微震屏偏移计算
+    // 死亡微震屏偏移
     if (shakeRef.current.frames > 0) {
       const decay = shakeRef.current.frames / 8;
-      const offsetX = (Math.random() - 0.5) * shakeRef.current.intensity * decay * 2;
-      const offsetY = (Math.random() - 0.5) * shakeRef.current.intensity * decay * 2;
-      ctx.translate(offsetX, offsetY);
+      ctx.translate((Math.random() - 0.5) * shakeRef.current.intensity * decay * 2, (Math.random() - 0.5) * shakeRef.current.intensity * decay * 2);
       shakeRef.current.frames--;
     }
 
-    // 1. 沉着浅冷灰底板 (微色差与外层白卡片形成鲜明层次)
+    // 1. 底板与隐形网格
     ctx.fillStyle = '#F1F5F9';
     ctx.fillRect(0, 0, GRID * CELL, GRID * CELL);
-
-    // 浅灰极简隐形网格线
     ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= GRID; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * CELL, 0);
-      ctx.lineTo(i * CELL, GRID * CELL);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, i * CELL);
-      ctx.lineTo(GRID * CELL, i * CELL);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, GRID * CELL); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(GRID * CELL, i * CELL); ctx.stroke();
     }
 
-    // 2. 残留栅栏 (下沉浅灰方块)
+    // 2. 残留栅栏
     ctx.fillStyle = '#CBD5E1';
     fenceRef.current.forEach((k) => {
       const [fx, fy] = k.split(',').map(Number);
@@ -247,173 +173,112 @@ export default function Board({
     });
 
     // 3. 食物渲染
-    // 3.1 鲜红小苹果
-    const fx = foodRef.current.x * CELL + CELL / 2;
-    const fy = foodRef.current.y * CELL + CELL / 2;
-    // 苹果主体
+    const fx = foodRef.current.x * CELL + CELL / 2, fy = foodRef.current.y * CELL + CELL / 2;
     ctx.fillStyle = '#EF4444';
-    ctx.beginPath();
-    ctx.arc(fx, fy, CELL / 2.6, 0, Math.PI * 2);
-    ctx.fill();
-    // 苹果高光
+    ctx.beginPath(); ctx.arc(fx, fy, CELL / 2.6, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.arc(fx - 2, fy - 2.5, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-    // 苹果小叶子
+    ctx.beginPath(); ctx.arc(fx - 2, fy - 2.5, 1.2, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#22C55E';
-    ctx.beginPath();
-    ctx.ellipse(fx + 2.5, fy - 5.5, 2.2, 1.2, Math.PI / 4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(fx + 2.5, fy - 5.5, 2.2, 1.2, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
 
-    // 3.2 限时金色幸运果 (+30分)
     if (bonusRef.current) {
-      const bx = bonusRef.current.x * CELL + CELL / 2;
-      const by = bonusRef.current.y * CELL + CELL / 2;
-      // 呼吸光晕
+      const bx = bonusRef.current.x * CELL + CELL / 2, by = bonusRef.current.y * CELL + CELL / 2;
       ctx.fillStyle = '#FEF3C7';
-      ctx.beginPath();
-      ctx.arc(bx, by, CELL / 1.8, 0, Math.PI * 2);
-      ctx.fill();
-      // 金色主体
+      ctx.beginPath(); ctx.arc(bx, by, CELL / 1.8, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#F59E0B';
-      ctx.beginPath();
-      ctx.arc(bx, by, CELL / 2.4, 0, Math.PI * 2);
-      ctx.fill();
-      // 内部亮心
+      ctx.beginPath(); ctx.arc(bx, by, CELL / 2.4, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#FEF08A';
-      ctx.beginPath();
-      ctx.arc(bx, by, CELL / 5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by, CELL / 5, 0, Math.PI * 2); ctx.fill();
     }
 
-    // 4. 天青蓝 (#66CCFF) 蛇身与蛇头 (丝滑胶囊连结 + 呼吸微律动 + 灵动眼神)
+    // 4. 蛇身与蛇头 (丝滑胶囊连结 + 呼吸微律动)
     const snake = snakeRef.current;
     const snakeLen = snake.length;
     const nowTime = Date.now() / 220;
 
-    // 4.1 绘制相邻节点间的无缝圆润胶囊连结桥 (呈现如流体般的丝滑连贯感)
+    // 4.1 绘制相邻节点间的圆润胶囊连结桥
     for (let i = 0; i < snakeLen - 1; i++) {
-      const curr = snake[i];
-      const next = snake[i + 1];
-      const cx = curr.x * CELL, cy = curr.y * CELL;
-      const nx = next.x * CELL, ny = next.y * CELL;
-
-      const minX = Math.min(cx, nx) + 2;
-      const minY = Math.min(cy, ny) + 2;
-      const bridgeW = Math.abs(cx - nx) + CELL - 4;
-      const bridgeH = Math.abs(cy - ny) + CELL - 4;
-
-      const ratio = i / snakeLen;
-      ctx.fillStyle = ratio < 0.5 ? '#38BDF8' : '#7DD3FC';
+      const c = snake[i], n = snake[i + 1];
+      const cx = c.x * CELL, cy = c.y * CELL, nx = n.x * CELL, ny = n.y * CELL;
+      ctx.fillStyle = i / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
       ctx.beginPath();
-      ctx.roundRect(minX, minY, bridgeW, bridgeH, 4);
+      ctx.roundRect(Math.min(cx, nx) + 2, Math.min(cy, ny) + 2, Math.abs(cx - nx) + CELL - 4, Math.abs(cy - ny) + CELL - 4, 4);
       ctx.fill();
     }
 
-    // 4.2 绘制蛇头与身体节点
+    // 4.2 绘制节点与蛇头
     snake.forEach((pt, idx) => {
       const px = pt.x * CELL, py = pt.y * CELL;
 
       if (idx === 0) {
-        // --- 蛇头 (天青蓝主色 #66CCFF) ---
+        // 蛇头主体
         ctx.fillStyle = '#66CCFF';
         ctx.beginPath();
         ctx.roundRect(px + 1, py + 1, CELL - 2, CELL - 2, 5);
         ctx.fill();
 
-        // 灵动微眼神 (方向动态注视 + 眼神高光)
-        const d = dirRef.current;
-        let e1 = { x: px + 5, y: py + 5 }, e2 = { x: px + 15, y: py + 5 };
-        let pupilOff = { x: 0, y: 0 };
-        if (d === 'UP') { e1 = { x: px + 5, y: py + 4 }; e2 = { x: px + 15, y: py + 4 }; pupilOff = { x: 0, y: -0.6 }; }
-        if (d === 'DOWN') { e1 = { x: px + 5, y: py + 16 }; e2 = { x: px + 15, y: py + 16 }; pupilOff = { x: 0, y: 0.6 }; }
-        if (d === 'LEFT') { e1 = { x: px + 4, y: py + 5 }; e2 = { x: px + 4, y: py + 15 }; pupilOff = { x: -0.6, y: 0 }; }
-        if (d === 'RIGHT') { e1 = { x: px + 16, y: py + 5 }; e2 = { x: px + 16, y: py + 15 }; pupilOff = { x: 0.6, y: 0 }; }
-
-        // 眼白
+        // 极简灵动双眼珠 (免去方向偏移分支，保持清爽可爱)
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(e1.x, e1.y, 2.2, 0, Math.PI * 2);
-        ctx.arc(e2.x, e2.y, 2.2, 0, Math.PI * 2);
+        ctx.arc(px + 6, py + 6, 2.2, 0, Math.PI * 2);
+        ctx.arc(px + 14, py + 6, 2.2, 0, Math.PI * 2);
         ctx.fill();
-        // 动态注视黑眼珠
+
         ctx.fillStyle = '#0F172A';
         ctx.beginPath();
-        ctx.arc(e1.x + pupilOff.x, e1.y + pupilOff.y, 1.1, 0, Math.PI * 2);
-        ctx.arc(e2.x + pupilOff.x, e2.y + pupilOff.y, 1.1, 0, Math.PI * 2);
+        ctx.arc(px + 6, py + 6, 1.1, 0, Math.PI * 2);
+        ctx.arc(px + 14, py + 6, 1.1, 0, Math.PI * 2);
         ctx.fill();
-        // 眼神晶莹高光点
+
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(e1.x + pupilOff.x - 0.3, e1.y + pupilOff.y - 0.3, 0.4, 0, Math.PI * 2);
-        ctx.arc(e2.x + pupilOff.x - 0.3, e2.y + pupilOff.y - 0.3, 0.4, 0, Math.PI * 2);
+        ctx.arc(px + 5.6, py + 5.6, 0.4, 0, Math.PI * 2);
+        ctx.arc(px + 13.6, py + 5.6, 0.4, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // --- 蛇身 (平滑渐变天青蓝 + 正弦微呼吸律动) ---
-        const ratio = idx / snakeLen;
-        ctx.fillStyle = ratio < 0.5 ? '#38BDF8' : '#7DD3FC';
-
-        // 呼吸微律动 (0.4px 微波动)
-        const breath = Math.sin(nowTime + idx * 0.45) * 0.4;
-        const pad = Math.max(1, 2 - breath);
-        const size = CELL - pad * 2;
-
+        ctx.fillStyle = idx / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
+        const pad = Math.max(1, 2 - Math.sin(nowTime + idx * 0.45) * 0.4);
         ctx.beginPath();
-        ctx.roundRect(px + pad, py + pad, size, size, 4);
+        ctx.roundRect(px + pad, py + pad, CELL - pad * 2, CELL - pad * 2, 4);
         ctx.fill();
       }
     });
 
-    // 5. 粒子微爆发渲染与物理衰减
-    if (particlesRef.current.length > 0) {
-      particlesRef.current = particlesRef.current.filter((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.05; // 微重力
-        p.vx *= 0.96; // 微空气阻力
-        p.life--;
-        p.alpha = Math.max(0, p.life / p.maxLife);
+    // 5. 粒子微爆发渲染
+    particlesRef.current = particlesRef.current.filter((p) => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.vx *= 0.96; p.life--;
+      p.alpha = Math.max(0, p.life / p.maxLife);
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return p.life > 0;
+    });
 
-        ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        return p.life > 0;
-      });
-    }
-
-    // 6. 浮空得分微文字渲染与淡出
-    if (floatingTextsRef.current.length > 0) {
-      floatingTextsRef.current = floatingTextsRef.current.filter((ft) => {
-        ft.y -= 0.6; // 向上漂浮
-        ft.life--;
-        ft.alpha = Math.max(0, ft.life / ft.maxLife);
-        const progress = 1 - ft.life / ft.maxLife;
-        const curScale = ft.scale - progress * 0.25;
-
-        ctx.save();
-        ctx.globalAlpha = ft.alpha;
-        ctx.font = `bold ${Math.round(11 * curScale)}px system-ui, -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillStyle = ft.color;
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowBlur = 4;
-        ctx.fillText(ft.text, ft.x, ft.y);
-        ctx.restore();
-
-        return ft.life > 0;
-      });
-    }
+    // 6. 浮空得分微文字渲染
+    floatingTextsRef.current = floatingTextsRef.current.filter((ft) => {
+      ft.y -= 0.6; ft.life--;
+      ft.alpha = Math.max(0, ft.life / ft.maxLife);
+      const curScale = ft.scale - (1 - ft.life / ft.maxLife) * 0.25;
+      ctx.save();
+      ctx.globalAlpha = ft.alpha;
+      ctx.font = `bold ${Math.round(11 * curScale)}px system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = ft.color;
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.restore();
+      return ft.life > 0;
+    });
 
     ctx.restore();
-  }, [snakeRef, fenceRef, foodRef, bonusRef, dirRef]);
+  }, [snakeRef, fenceRef, foodRef, bonusRef]);
 
-  // 60FPS 粒子平滑刷新与游戏主时序
+  // 60FPS 动画帧循环
   useEffect(() => {
     render();
     let animFrame: number;
@@ -425,9 +290,7 @@ export default function Board({
     };
     animFrame = requestAnimationFrame(animate);
 
-    if (!isPlaying || isPaused || isGameOver) {
-      return () => cancelAnimationFrame(animFrame);
-    }
+    if (!isPlaying || isPaused || isGameOver) return () => cancelAnimationFrame(animFrame);
 
     const timer = setInterval(() => {
       onTick();
@@ -440,50 +303,44 @@ export default function Board({
     };
   }, [isPlaying, isPaused, isGameOver, speedMs, onTick, render]);
 
-  // 计算速度梯度倍率 (1.0x ~ 2.0x)
-  const speedRatio = (BASE_SPEED_MS / speedMs).toFixed(1);
+  // 顶部 4 胶囊数据配置
+  const statCapsules = [
+    { label: '得分', val: score, bg: 'bg-rose-50/90', text: 'text-rose-500', valColor: 'text-rose-600', isBonus: hasBonus },
+    { label: '长度', val: length, bg: 'bg-emerald-50/90', text: 'text-emerald-600', valColor: 'text-emerald-700' },
+    { label: '用时', val: `${duration}s`, bg: 'bg-purple-50/90', text: 'text-purple-600', valColor: 'text-purple-700' },
+    { label: '速度', val: `${(BASE_SPEED_MS / speedMs).toFixed(1)}x`, bg: 'bg-[#EBF8FF]', text: 'text-[#0099FF]', valColor: 'text-[#0099FF]' },
+  ];
+
+  // 移动端方向按钮触发
+  const handleDirBtn = (d: Direction) => {
+    sound.unlockAudio();
+    onDirection(d);
+  };
 
   return (
     <div className="bg-white p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-      {/* 顶部四段式南大家园多巴胺复合状态胶囊栏 (得分·红、长度·绿、用时·紫、速度·天青蓝) */}
+      {/* 顶部四段式多巴胺复合状态胶囊栏 */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
-        {/* 1. 得分 (珊瑚红纯净浅底) */}
-        <div className="bg-rose-50/90 py-2 px-1 rounded-2xl relative overflow-hidden">
-          <span className="text-rose-500 text-[11px] font-medium">得分 </span>
-          <strong className="text-rose-600 text-sm font-mono font-black">{score}</strong>
-          {hasBonus && (
-            <span className="absolute top-0.5 right-1 flex items-center text-[#D97706] font-extrabold text-[9px] animate-pulse">
-              <Sparkles size={9} /> +30
-            </span>
-          )}
-        </div>
-
-        {/* 2. 长度 (翡翠绿纯净浅底) */}
-        <div className="bg-emerald-50/90 py-2 px-1 rounded-2xl">
-          <span className="text-emerald-600 text-[11px] font-medium">长度 </span>
-          <strong className="text-emerald-700 text-sm font-mono font-black">{length}</strong>
-        </div>
-
-        {/* 3. 用时 (罗兰紫纯净浅底) */}
-        <div className="bg-purple-50/90 py-2 px-1 rounded-2xl">
-          <span className="text-purple-600 text-[11px] font-medium">用时 </span>
-          <strong className="text-purple-700 text-sm font-mono font-bold">{duration}s</strong>
-        </div>
-
-        {/* 4. 速度 (标志性天青蓝纯净浅底) */}
-        <div className="bg-[#EBF8FF] py-2 px-1 rounded-2xl">
-          <span className="text-[#0099FF] text-[11px] font-bold">速度 </span>
-          <strong className="text-[#0099FF] text-sm font-mono font-black">{speedRatio}x</strong>
-        </div>
+        {statCapsules.map((st) => (
+          <div key={st.label} className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden`}>
+            <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
+            <strong className={`${st.valColor} text-sm font-mono font-black`}>{st.val}</strong>
+            {st.isBonus && (
+              <span className="absolute top-0.5 right-1 flex items-center text-[#D97706] font-extrabold text-[9px] animate-pulse">
+                <Sparkles size={9} /> +30
+              </span>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* 画布与悬浮交互层 (微色差沉底 + 极细内嵌浅边，显著增强地图与白卡片的区分度) */}
+      {/* 画布与悬浮交互层 */}
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className="relative rounded-2xl overflow-hidden bg-[#F1F5F9] border border-slate-200/80 touch-none max-w-full shadow-inner"
       >
-        {/* 限时金色幸运果顶置 8 秒倒计时进度条 (金果被吃或超时立即提前消失，游戏暂停时定格) */}
+        {/* 限时金色幸运果顶置 8 秒倒计时进度条 */}
         {hasBonus && (
           <div className="absolute top-0 left-0 right-0 h-[3.5px] bg-[#EBF8FF] overflow-hidden z-20 pointer-events-none">
             <div
@@ -529,7 +386,7 @@ export default function Board({
           </div>
         )}
 
-        {/* 游戏结束结算面板 (仿 Bottom Sheet) */}
+        {/* 游戏结束结算面板 */}
         {isGameOver && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-[3px] flex flex-col items-center justify-center text-center p-6">
             <span className="text-rose-500 text-lg font-black mb-2">游戏结束</span>
@@ -550,75 +407,49 @@ export default function Board({
         )}
       </div>
 
-      {/* 移动端极简微型十字控制台：4个方向键中间嵌入暂停/继续键 (纯净无框浅灰圆角块) */}
+      {/* 移动端微型虚拟十字控制台 */}
       <div className="mt-4 flex flex-col items-center gap-1.5 sm:hidden touch-manipulation select-none">
-        {/* 上方向键 */}
-        <button
-          onClick={() => { sound.unlockAudio(); onDirection('UP'); }}
-          className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
-        >
+        <button onClick={() => handleDirBtn('UP')} className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all">
           <ChevronUp size={20} />
         </button>
 
-        {/* 中间行：左键 + 暂停键 + 右键 */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => { sound.unlockAudio(); onDirection('LEFT'); }}
-            className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
-          >
+          <button onClick={() => handleDirBtn('LEFT')} className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all">
             <ChevronLeft size={20} />
           </button>
-
-          {/* 暂停/继续控制键 (位于4个移动键正中心) */}
           <button
             onClick={() => { sound.unlockAudio(); onTogglePause?.(); }}
             disabled={!isPlaying || isGameOver}
-            title={isPaused ? '继续游戏' : '暂停游戏'}
-            className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all touch-manipulation select-none ${
-              isPaused
-                ? 'bg-[#EBF8FF] text-[#0099FF]'
-                : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
+            className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isPaused ? 'bg-[#EBF8FF] text-[#0099FF]' : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
             } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
           >
             {isPaused ? <Play size={16} /> : <Pause size={16} />}
           </button>
-
-          <button
-            onClick={() => { sound.unlockAudio(); onDirection('RIGHT'); }}
-            className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
-          >
+          <button onClick={() => handleDirBtn('RIGHT')} className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all">
             <ChevronRight size={20} />
           </button>
         </div>
 
-        {/* 下方向键 */}
-        <button
-          onClick={() => { sound.unlockAudio(); onDirection('DOWN'); }}
-          className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
-        >
+        <button onClick={() => handleDirBtn('DOWN')} className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all">
           <ChevronDown size={20} />
         </button>
-
         <span className="text-[10px] text-[#94A3B8] mt-1">支持全屏滑屏或虚拟触控键 · 中心按键暂停</span>
       </div>
 
-      {/* 电脑端：地图正下方暂停/继续按钮与按键指引 */}
+      {/* 电脑端暂停指引 */}
       <div className="mt-4 hidden sm:flex flex-col items-center gap-2 select-none">
         <button
           onClick={onTogglePause}
           disabled={!isPlaying || isGameOver}
           className={`px-5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-            isPaused
-              ? 'bg-[#0099FF] text-white hover:bg-[#0284C7]'
-              : 'bg-slate-100 hover:bg-[#EBF8FF] text-[#334155] hover:text-[#0099FF]'
+            isPaused ? 'bg-[#0099FF] text-white hover:bg-[#0284C7]' : 'bg-slate-100 hover:bg-[#EBF8FF] text-[#334155] hover:text-[#0099FF]'
           } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
         >
           {isPaused ? <Play size={14} /> : <Pause size={14} />}
           <span>{isPaused ? '继续游戏 (P / 空格)' : '暂停游戏 (P / 空格)'}</span>
         </button>
-        <div className="text-[11px] text-[#94A3B8]">
-          方向键 / WASD 转向 · 空格键开始 · P 键暂停
-        </div>
+        <div className="text-[11px] text-[#94A3B8]">方向键 / WASD 转向 · 空格键开始 · P 键暂停</div>
       </div>
     </div>
   );

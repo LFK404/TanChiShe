@@ -8,33 +8,23 @@ interface Props {
   onRefresh: () => void;
 }
 
+const BADGE_STYLES: Record<number, string> = {
+  1: 'bg-[#FEF3C7] text-[#D97706]',
+  2: 'bg-[#FEE2E2] text-[#EF4444]',
+  3: 'bg-[#DCFCE7] text-[#16A34A]',
+  4: 'bg-[#EDE9FE] text-[#7C3AED]',
+  5: 'bg-[#E0F2FE] text-[#0284C7]',
+  6: 'bg-[#CFFAFE] text-[#0891B2]',
+};
+
 export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
-  // 计算当前玩家超越百分比
   let beatPercent = 0;
   if (currentUser && currentUser.highScore > 0 && items.length > 0) {
-    const beaten = items.filter(it => currentUser.highScore > it.highScore).length;
+    const beaten = items.filter((it) => currentUser.highScore > it.highScore).length;
     beatPercent = Math.min(99, Math.max(50, Math.round(((beaten + 1) / (items.length + 1)) * 100)));
   }
 
-  // 1~6 专属南大家园多巴胺几何数字徽标
-  const getBadgeStyle = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return 'bg-[#FEF3C7] text-[#D97706]'; // 暖琥珀金 (冠军)
-      case 2:
-        return 'bg-[#FEE2E2] text-[#EF4444]'; // 珊瑚樱桃红 (亚军)
-      case 3:
-        return 'bg-[#DCFCE7] text-[#16A34A]'; // 翡翠绿 (季军)
-      case 4:
-        return 'bg-[#EDE9FE] text-[#7C3AED]'; // 罗兰紫
-      case 5:
-        return 'bg-[#E0F2FE] text-[#0284C7]'; // 天青蓝
-      case 6:
-        return 'bg-[#CFFAFE] text-[#0891B2]'; // 活力青
-      default:
-        return 'bg-[#F1F5F9] text-[#64748B]'; // 极简灰
-    }
-  };
+  const getBadgeStyle = (rank: number) => BADGE_STYLES[rank] || 'bg-[#F1F5F9] text-[#64748B]';
 
   return (
     <div className="bg-white p-5 rounded-3xl flex flex-col select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
