@@ -329,12 +329,12 @@ export default function Board({
         onTouchEnd={handleTouchEnd}
         className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] border border-slate-200/70 touch-none max-w-full shadow-inner"
       >
-        {/* 限时幸运果 8 秒倒计时条 */}
+        {/* 限时幸运果 8 秒倒计时条 (GPU 硬件加速丝滑渐变) */}
         {hasBonus && (
           <div className="absolute top-0 left-0 right-0 h-[3.5px] bg-[#EBF8FF] overflow-hidden z-20 pointer-events-none">
             <div
               key={bonusKey}
-              className="h-full bg-[#66CCFF] shadow-[0_0_6px_#66CCFF]"
+              className="w-full h-full origin-left will-change-transform bg-gradient-to-r from-[#66CCFF] to-[#0099FF] shadow-[0_0_8px_#66CCFF]"
               style={{
                 animation: 'bonusProgress 8s linear forwards',
                 animationPlayState: isPaused ? 'paused' : 'running',

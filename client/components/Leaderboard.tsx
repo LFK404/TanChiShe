@@ -20,11 +20,22 @@ const BADGE_STYLES: Record<number, string> = {
 
 // 全服 Top 10 竞技风云榜组件
 export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
-  // 计算当前登录玩家战胜同榜玩家百分比
+  // 计算当前登录玩家排名与战胜全服玩家百分比
   let beatPercent = 0;
   if (currentUser && currentUser.highScore > 0 && items.length > 0) {
-    const beaten = items.filter((it) => currentUser.highScore > it.highScore).length;
-    beatPercent = Math.min(99, Math.max(50, Math.round(((beaten + 1) / (items.length + 1)) * 100)));
+    const myRank = items.findIndex((it) => it.username === currentUser.username) + 1;
+    if (myRank === 1) {
+      // 榜首第一名锁定 99%
+      beatPercent = 99;
+    } else if (myRank > 1) {
+      // 榜内 2~10 名：在 95% ~ 55% 之间平滑梯度递减
+      beatPercent = Math.max(50, Math.round(98 - (myRank - 1) * (45 / Math.max(items.length - 1, 1))));
+    } else {
+      // 未进 Top 10：按当前分数与榜尾分数的比值估算 10% ~ 49%
+      const lastScore = items[items.length - 1].highScore;
+      const ratio = lastScore > 0 ? currentUser.highScore / lastScore : 0.5;
+      beatPercent = Math.min(49, Math.max(10, Math.round(ratio * 45)));
+    }
   }
 
   const getBadgeStyle = (rank: number) => BADGE_STYLES[rank] || 'bg-[#F1F5F9] text-[#64748B]';

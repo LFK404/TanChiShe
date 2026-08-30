@@ -36,12 +36,13 @@ body {
   display: none;
 }
 
+/* 限时幸运果 8 秒倒计时条：采用 GPU 硬件加速 scaleX，保证 60/120FPS 满帧丝滑无卡顿 */
 @keyframes bonusProgress {
   from {
-    width: 100%;
+    transform: scaleX(1);
   }
   to {
-    width: 0%;
+    transform: scaleX(0);
   }
 }
 
