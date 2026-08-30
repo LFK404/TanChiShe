@@ -102,9 +102,9 @@ export default function Home() {
                 <span className="w-2 h-2 rounded-full bg-[#10B981]" />
                 <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
               </div>
-              <div className="flex items-baseline gap-1 font-black text-3xl sm:text-4xl md:text-5xl tracking-tighter text-[#CBD5E1]">
+              <div className="flex items-baseline gap-2 sm:gap-3 font-black text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#CBD5E1]">
                 <span>NCU</span>
-                <span className="text-2xl sm:text-3xl md:text-4xl tracking-tight text-[#94A3B8]">HOME</span>
+                <span>HOME</span>
               </div>
             </div>
           </div>
