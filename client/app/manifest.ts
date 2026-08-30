@@ -5,7 +5,7 @@ export const dynamic = 'force-static';
 // PWA 渐进式 Web 应用清单定义 (支持添加到主屏幕与离线桌面体验)
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: '贪吃蛇 · 经典竞技版',
+    name: '贪吃蛇',
     short_name: '贪吃蛇',
     description: '方寸之间，重温经典。极简现代主义全栈贪吃蛇网页游戏与竞技排行榜。',
     start_url: '/',
