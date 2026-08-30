@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { User } from '@/types';
-import { LogOut, Volume2, VolumeX, Trophy, Gamepad2, HelpCircle } from 'lucide-react';
+import { LogOut, Volume2, VolumeX, Trophy, HelpCircle } from 'lucide-react';
 import { sound } from '@/utils/audio';
 
 interface Props {
@@ -22,9 +23,14 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
       {/* 左侧品牌与玩家身份 (移动端自适应完整展示) */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <div className="flex items-center gap-1.5 shrink-0">
-          <div className="w-6 h-6 rounded-full bg-[#EBF8FF] border border-[#66CCFF]/40 flex items-center justify-center text-[#0099FF]">
-            <Gamepad2 size={13} />
-          </div>
+          <Image
+            src="/icon.svg"
+            alt="贪吃蛇"
+            width={22}
+            height={22}
+            className="w-[22px] h-[22px] rounded-md shrink-0 border border-[#E2E8F0] shadow-xs"
+            priority
+          />
           <span className="font-black text-[#0F172A] text-xs tracking-tight">贪吃蛇</span>
           <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] border border-[#66CCFF]/30 text-[#0099FF]">
             经典版
