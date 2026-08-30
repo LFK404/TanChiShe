@@ -200,7 +200,7 @@ export default function GameBoard({
       {/* 顶部四段式南大家园多巴胺复合状态胶囊栏 (得分·红、长度·绿、用时·紫、速度·天青蓝) */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
         {/* 1. 得分 (珊瑚红) */}
-        <div className="bg-rose-50 border border-rose-100 py-2 px-1 rounded-2xl relative overflow-hidden">
+        <div className="bg-rose-50 border border-rose-200 py-2 px-1 rounded-2xl relative overflow-hidden">
           <span className="text-rose-500 text-[11px] font-medium">得分 </span>
           <strong className="text-rose-600 text-sm font-mono font-black">{score}</strong>
           {hasBonus && (
@@ -211,19 +211,19 @@ export default function GameBoard({
         </div>
 
         {/* 2. 长度 (翡翠绿) */}
-        <div className="bg-emerald-50 border border-emerald-100 py-2 px-1 rounded-2xl">
+        <div className="bg-emerald-50 border border-emerald-200 py-2 px-1 rounded-2xl">
           <span className="text-emerald-600 text-[11px] font-medium">长度 </span>
           <strong className="text-emerald-700 text-sm font-mono font-black">{length}</strong>
         </div>
 
         {/* 3. 用时 (罗兰紫) */}
-        <div className="bg-purple-50 border border-purple-100 py-2 px-1 rounded-2xl">
+        <div className="bg-purple-50 border border-purple-200 py-2 px-1 rounded-2xl">
           <span className="text-purple-600 text-[11px] font-medium">用时 </span>
           <strong className="text-purple-700 text-sm font-mono font-bold">{duration}s</strong>
         </div>
 
         {/* 4. 速度 (标志性天青蓝 #66CCFF) */}
-        <div className="bg-[#EBF8FF] border border-[#66CCFF]/50 py-2 px-1 rounded-2xl">
+        <div className="bg-[#EBF8FF] border border-[#66CCFF]/40 py-2 px-1 rounded-2xl">
           <span className="text-[#0099FF] text-[11px] font-bold">速度 </span>
           <strong className="text-[#0099FF] text-sm font-mono font-black">{speedRatio}x</strong>
         </div>

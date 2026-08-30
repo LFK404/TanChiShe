@@ -85,7 +85,7 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
                     {item.username}
                   </span>
                   {isMe && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] text-[#0099FF] shrink-0">
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] border border-[#66CCFF]/30 text-[#0099FF] shrink-0">
                       我
                     </span>
                   )}
