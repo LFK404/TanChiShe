@@ -37,6 +37,17 @@ interface Particle {
   maxLife: number;
 }
 
+interface FloatingText {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  alpha: number;
+  scale: number;
+  life: number;
+  maxLife: number;
+}
+
 export default function Board({
   snakeRef,
   fenceRef,
@@ -60,7 +71,11 @@ export default function Board({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const particlesRef = useRef<Particle[]>([]);
+  const floatingTextsRef = useRef<FloatingText[]>([]);
+  const comboRef = useRef({ count: 0, lastTime: 0 });
+  const shakeRef = useRef({ frames: 0, intensity: 0 });
   const prevScoreRef = useRef(score);
+  const prevGameOverRef = useRef(isGameOver);
 
   // 粒子微爆发发射器
   const emitParticles = useCallback((gridX: number, gridY: number, type: 'apple' | 'bonus') => {
@@ -89,17 +104,82 @@ export default function Board({
     }
   }, []);
 
-  // 监听分数增量触发粒子爆发
+  // 浮空得分微文字发射器
+  const emitFloatingText = useCallback((gridX: number, gridY: number, text: string, color: string) => {
+    const originX = gridX * CELL + CELL / 2;
+    const originY = gridY * CELL;
+    floatingTextsRef.current.push({
+      x: originX,
+      y: originY,
+      text,
+      color,
+      alpha: 1,
+      scale: 1.25,
+      life: 26,
+      maxLife: 26,
+    });
+  }, []);
+
+  // 死亡瞬间蛇身晶体解体爆发
+  const emitShatter = useCallback(() => {
+    snakeRef.current.forEach((pt) => {
+      const originX = pt.x * CELL + CELL / 2;
+      const originY = pt.y * CELL + CELL / 2;
+      for (let i = 0; i < 4; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 3.2 + 1.2;
+        const life = Math.floor(Math.random() * 10) + 16;
+        particlesRef.current.push({
+          x: originX,
+          y: originY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: Math.random() > 0.4 ? '#66CCFF' : '#38BDF8',
+          size: Math.random() * 2.2 + 1.2,
+          alpha: 1,
+          life,
+          maxLife: life,
+        });
+      }
+    });
+  }, [snakeRef]);
+
+  // 监听分数增量触发粒子爆发、Combo连击统计与浮空飘字
   useEffect(() => {
     if (score > prevScoreRef.current) {
       const diff = score - prevScoreRef.current;
       if (snakeRef.current.length > 0) {
         const head = snakeRef.current[0];
-        emitParticles(head.x, head.y, diff >= 30 ? 'bonus' : 'apple');
+        const isBonus = diff >= 30;
+        emitParticles(head.x, head.y, isBonus ? 'bonus' : 'apple');
+
+        // Combo 连击判定 (3秒内连续吃果)
+        const now = Date.now();
+        if (now - comboRef.current.lastTime < 3000) {
+          comboRef.current.count++;
+        } else {
+          comboRef.current.count = 1;
+        }
+        comboRef.current.lastTime = now;
+
+        let label = isBonus ? '+30' : '+10';
+        if (comboRef.current.count > 1) {
+          label += ` x${comboRef.current.count}`;
+        }
+        emitFloatingText(head.x, head.y, label, isBonus ? '#D97706' : '#EF4444');
       }
     }
     prevScoreRef.current = score;
-  }, [score, snakeRef, emitParticles]);
+  }, [score, snakeRef, emitParticles, emitFloatingText]);
+
+  // 监听死亡触发微震屏与解体微特效
+  useEffect(() => {
+    if (isGameOver && !prevGameOverRef.current) {
+      shakeRef.current = { frames: 8, intensity: 3.0 };
+      emitShatter();
+    }
+    prevGameOverRef.current = isGameOver;
+  }, [isGameOver, emitShatter]);
 
   // 手势滑动检测 (同时触发移动端音频引擎解锁)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -121,12 +201,23 @@ export default function Board({
     }
   };
 
-  // 渲染函数 (融合呼吸微律动、粒子微爆发与灵动视线)
+  // 渲染函数 (融合微震屏、丝滑连续蛇身、呼吸律动、粒子微爆发与浮空飘字)
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    ctx.save();
+
+    // 死亡微震屏偏移计算
+    if (shakeRef.current.frames > 0) {
+      const decay = shakeRef.current.frames / 8;
+      const offsetX = (Math.random() - 0.5) * shakeRef.current.intensity * decay * 2;
+      const offsetY = (Math.random() - 0.5) * shakeRef.current.intensity * decay * 2;
+      ctx.translate(offsetX, offsetY);
+      shakeRef.current.frames--;
+    }
 
     // 1. 沉着浅冷灰底板 (微色差与外层白卡片形成鲜明层次)
     ctx.fillStyle = '#F1F5F9';
@@ -196,11 +287,32 @@ export default function Board({
       ctx.fill();
     }
 
-    // 4. 天青蓝 (#66CCFF) 蛇身与蛇头 (带正弦呼吸微律动与眼神注视)
-    const snakeLen = snakeRef.current.length;
+    // 4. 天青蓝 (#66CCFF) 蛇身与蛇头 (丝滑胶囊连结 + 呼吸微律动 + 灵动眼神)
+    const snake = snakeRef.current;
+    const snakeLen = snake.length;
     const nowTime = Date.now() / 220;
 
-    snakeRef.current.forEach((pt, idx) => {
+    // 4.1 绘制相邻节点间的无缝圆润胶囊连结桥 (呈现如流体般的丝滑连贯感)
+    for (let i = 0; i < snakeLen - 1; i++) {
+      const curr = snake[i];
+      const next = snake[i + 1];
+      const cx = curr.x * CELL, cy = curr.y * CELL;
+      const nx = next.x * CELL, ny = next.y * CELL;
+
+      const minX = Math.min(cx, nx) + 2;
+      const minY = Math.min(cy, ny) + 2;
+      const bridgeW = Math.abs(cx - nx) + CELL - 4;
+      const bridgeH = Math.abs(cy - ny) + CELL - 4;
+
+      const ratio = i / snakeLen;
+      ctx.fillStyle = ratio < 0.5 ? '#38BDF8' : '#7DD3FC';
+      ctx.beginPath();
+      ctx.roundRect(minX, minY, bridgeW, bridgeH, 4);
+      ctx.fill();
+    }
+
+    // 4.2 绘制蛇头与身体节点
+    snake.forEach((pt, idx) => {
       const px = pt.x * CELL, py = pt.y * CELL;
 
       if (idx === 0) {
@@ -242,8 +354,8 @@ export default function Board({
         const ratio = idx / snakeLen;
         ctx.fillStyle = ratio < 0.5 ? '#38BDF8' : '#7DD3FC';
 
-        // 呼吸微律动 (0.5px 微波动)
-        const breath = Math.sin(nowTime + idx * 0.45) * 0.45;
+        // 呼吸微律动 (0.4px 微波动)
+        const breath = Math.sin(nowTime + idx * 0.45) * 0.4;
         const pad = Math.max(1, 2 - breath);
         const size = CELL - pad * 2;
 
@@ -274,6 +386,31 @@ export default function Board({
         return p.life > 0;
       });
     }
+
+    // 6. 浮空得分微文字渲染与淡出
+    if (floatingTextsRef.current.length > 0) {
+      floatingTextsRef.current = floatingTextsRef.current.filter((ft) => {
+        ft.y -= 0.6; // 向上漂浮
+        ft.life--;
+        ft.alpha = Math.max(0, ft.life / ft.maxLife);
+        const progress = 1 - ft.life / ft.maxLife;
+        const curScale = ft.scale - progress * 0.25;
+
+        ctx.save();
+        ctx.globalAlpha = ft.alpha;
+        ctx.font = `bold ${Math.round(11 * curScale)}px system-ui, -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+
+        return ft.life > 0;
+      });
+    }
+
+    ctx.restore();
   }, [snakeRef, fenceRef, foodRef, bonusRef, dirRef]);
 
   // 60FPS 粒子平滑刷新与游戏主时序
@@ -281,7 +418,7 @@ export default function Board({
     render();
     let animFrame: number;
     const animate = () => {
-      if (particlesRef.current.length > 0 || isPlaying) {
+      if (particlesRef.current.length > 0 || floatingTextsRef.current.length > 0 || shakeRef.current.frames > 0 || isPlaying) {
         render();
       }
       animFrame = requestAnimationFrame(animate);
