@@ -141,7 +141,10 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
-    if (t !== last && !isOpp(last, t) && q.length < 2) q.push(t);
+    if (t !== last && !isOpp(last, t) && q.length < 2) {
+      q.push(t);
+      sound.playMove();
+    }
   }, []);
 
   // 暂停/继续游戏

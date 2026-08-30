@@ -26,7 +26,7 @@ class SoundManager {
     try {
       this.bgmAudio = new Audio('/audio/bgm.mp3');
       this.bgmAudio.loop = true;
-      this.bgmAudio.volume = 0.32;
+      this.bgmAudio.volume = 0.28;
       this.bgmAudio.preload = 'auto';
     } catch {}
   }
@@ -38,7 +38,9 @@ class SoundManager {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) this.ctx = new AudioCtx();
     }
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
     this.initBgm();
   }
 
@@ -60,7 +62,7 @@ class SoundManager {
     this.initBgm();
     if (this.bgmAudio) {
       this.bgmAudio.currentTime = 0;
-      this.bgmAudio.volume = 0.32;
+      this.bgmAudio.volume = 0.28;
       this.bgmAudio.play().catch(() => {});
     }
   }
@@ -81,32 +83,14 @@ class SoundManager {
     }
   }
 
-  // 底层通用单音合成器 (支持频率平滑过渡与指数衰减)
-  private playTone(type: OscillatorType, startFreq: number, endFreq: number, dur: number, vol: number) {
-    if (this.muted) return;
-    this.unlockAudio();
-    if (!this.ctx) return;
-    try {
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(startFreq, now);
-      if (endFreq !== startFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, now + dur);
-      gain.gain.setValueAtTime(vol, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + dur);
-    } catch {}
-  }
-
-  // 底层通用琶音/和弦合成器
+  // 底层通用音效合成器 (支持多音阶序列、谐波穿透与线性衰减)
   private playNotes(type: OscillatorType, freqs: number[], noteDur: number, gap: number, vol: number) {
     if (this.muted) return;
     this.unlockAudio();
     if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
     try {
       const now = this.ctx.currentTime;
       freqs.forEach((freq, idx) => {
@@ -116,7 +100,7 @@ class SoundManager {
         osc.type = type;
         osc.frequency.setValueAtTime(freq, start);
         gain.gain.setValueAtTime(vol, start);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + noteDur);
+        gain.gain.linearRampToValueAtTime(0.01, start + noteDur);
         osc.connect(gain);
         gain.connect(this.ctx!.destination);
         osc.start(start);
@@ -125,16 +109,23 @@ class SoundManager {
     } catch {}
   }
 
-  // 吃普通红苹果音效 (E5 -> B5 升调)
-  playEat() { this.playTone('sine', 659.25, 987.77, 0.07, 0.16); }
-  // 吃金色幸运果音效 (C5 -> E5 -> G5 -> C6 四段晶体琶音)
-  playBonus() { this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.12, 0.05, 0.18); }
-  // 游戏开始音效 (G4 -> C5 -> E5 上扬三和弦)
-  playStart() { this.playNotes('sine', [392.00, 523.25, 659.25], 0.1, 0.06, 0.14); }
-  // 游戏结束音效 (降调 Sawtooth 8-bit)
-  playGameOver() { this.playTone('sawtooth', 261.63, 45, 0.32, 0.2); }
-  // 暂停/继续交互气泡音
-  playToggle() { this.playTone('sine', 440, 440, 0.04, 0.1); }
+  // 吃普通红苹果音效 (E5 -> B5 清脆快速上扬双音阶)
+  playEat() { this.playNotes('triangle', [659.25, 987.77], 0.08, 0.035, 0.28); }
+
+  // 吃金色幸运果音效 (C5 -> E5 -> G5 -> C6 闪耀四段晶体琶音)
+  playBonus() { this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.1, 0.05, 0.30); }
+
+  // 方向键/滑动转向微反馈音 (C5 短促点击音)
+  playMove() { this.playNotes('triangle', [523.25], 0.035, 0, 0.14); }
+
+  // 游戏开始音效 (G4 -> C5 -> E5 明亮三和弦)
+  playStart() { this.playNotes('triangle', [392.00, 523.25, 659.25], 0.09, 0.06, 0.25); }
+
+  // 游戏结束音效 (G4 -> E4 -> C4 -> G3 街机复古降调四和弦)
+  playGameOver() { this.playNotes('sawtooth', [392.00, 329.63, 261.63, 196.00], 0.12, 0.07, 0.28); }
+
+  // 暂停/继续交互气泡音 (A4 -> E5 双音)
+  playToggle() { this.playNotes('triangle', [440, 659.25], 0.05, 0.03, 0.20); }
 }
 
 export const sound = new SoundManager();
