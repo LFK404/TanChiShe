@@ -200,11 +200,11 @@ export default function GameBoard({
   const speedRatio = (BASE_SPEED_MS / speedMs).toFixed(1);
 
   return (
-    <div className="bg-white border border-[#E2E8F0] p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none">
+    <div className="bg-white p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       {/* 顶部四段式南大家园多巴胺复合状态胶囊栏 (得分·红、长度·绿、用时·紫、速度·天青蓝) */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
-        {/* 1. 得分 (珊瑚红) */}
-        <div className="bg-rose-50 border border-rose-200 py-2 px-1 rounded-2xl relative overflow-hidden">
+        {/* 1. 得分 (珊瑚红纯净浅底) */}
+        <div className="bg-rose-50/90 py-2 px-1 rounded-2xl relative overflow-hidden">
           <span className="text-rose-500 text-[11px] font-medium">得分 </span>
           <strong className="text-rose-600 text-sm font-mono font-black">{score}</strong>
           {hasBonus && (
@@ -214,20 +214,20 @@ export default function GameBoard({
           )}
         </div>
 
-        {/* 2. 长度 (翡翠绿) */}
-        <div className="bg-emerald-50 border border-emerald-200 py-2 px-1 rounded-2xl">
+        {/* 2. 长度 (翡翠绿纯净浅底) */}
+        <div className="bg-emerald-50/90 py-2 px-1 rounded-2xl">
           <span className="text-emerald-600 text-[11px] font-medium">长度 </span>
           <strong className="text-emerald-700 text-sm font-mono font-black">{length}</strong>
         </div>
 
-        {/* 3. 用时 (罗兰紫) */}
-        <div className="bg-purple-50 border border-purple-200 py-2 px-1 rounded-2xl">
+        {/* 3. 用时 (罗兰紫纯净浅底) */}
+        <div className="bg-purple-50/90 py-2 px-1 rounded-2xl">
           <span className="text-purple-600 text-[11px] font-medium">用时 </span>
           <strong className="text-purple-700 text-sm font-mono font-bold">{duration}s</strong>
         </div>
 
-        {/* 4. 速度 (标志性天青蓝 #66CCFF) */}
-        <div className="bg-[#EBF8FF] border border-[#66CCFF]/40 py-2 px-1 rounded-2xl">
+        {/* 4. 速度 (标志性天青蓝纯净浅底) */}
+        <div className="bg-[#EBF8FF] py-2 px-1 rounded-2xl">
           <span className="text-[#0099FF] text-[11px] font-bold">速度 </span>
           <strong className="text-[#0099FF] text-sm font-mono font-black">{speedRatio}x</strong>
         </div>
@@ -237,7 +237,7 @@ export default function GameBoard({
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="relative border border-[#E2E8F0] rounded-2xl overflow-hidden bg-white touch-none max-w-full"
+        className="relative rounded-2xl overflow-hidden bg-white touch-none max-w-full"
       >
         {/* 限时金色幸运果顶置 8 秒倒计时进度条 (金果被吃或超时立即提前消失，游戏暂停时定格) */}
         {hasBonus && (
@@ -253,14 +253,14 @@ export default function GameBoard({
           </div>
         )}
 
-        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square" />
+        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F8FAFC]" />
 
         {/* 开始游戏遮罩 */}
         {!isPlaying && !isGameOver && (
           <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex items-center justify-center">
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer"
+              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Play size={16} /> 开始游戏 (空格)
             </button>
@@ -285,14 +285,14 @@ export default function GameBoard({
         {isGameOver && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-[3px] flex flex-col items-center justify-center text-center p-6">
             <span className="text-rose-500 text-lg font-black mb-2">游戏结束</span>
-            <div className="flex gap-4 text-xs text-[#334155] mb-4 bg-[#F8FAFC] px-4 py-2 rounded-2xl border border-[#E2E8F0]">
+            <div className="flex gap-4 text-xs text-[#334155] mb-4 bg-[#F8FAFC] px-4 py-2 rounded-2xl">
               <span>得分: <strong className="text-[#0F172A] font-mono font-black text-sm">{score}</strong></span>
               <span>长度: <strong className="text-[#0099FF] font-mono font-bold">{length}</strong></span>
               <span>用时: <strong className="text-[#0F172A] font-mono font-bold">{duration}s</strong></span>
             </div>
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer"
+              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <RotateCcw size={15} /> 再来一局 (空格)
             </button>
@@ -300,12 +300,12 @@ export default function GameBoard({
         )}
       </div>
 
-      {/* 移动端极简微型十字控制台：4个方向键中间嵌入暂停/继续键 */}
+      {/* 移动端极简微型十字控制台：4个方向键中间嵌入暂停/继续键 (纯净无框浅灰圆角块) */}
       <div className="mt-4 flex flex-col items-center gap-1.5 sm:hidden touch-manipulation select-none">
         {/* 上方向键 */}
         <button
           onClick={() => { sound.unlockAudio(); onDirection('UP'); }}
-          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
+          className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
         >
           <ChevronUp size={20} />
         </button>
@@ -314,7 +314,7 @@ export default function GameBoard({
         <div className="flex items-center gap-2">
           <button
             onClick={() => { sound.unlockAudio(); onDirection('LEFT'); }}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
+            className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronLeft size={20} />
           </button>
@@ -324,10 +324,10 @@ export default function GameBoard({
             onClick={() => { sound.unlockAudio(); onTogglePause?.(); }}
             disabled={!isPlaying || isGameOver}
             title={isPaused ? '继续游戏' : '暂停游戏'}
-            className={`w-12 h-10 border rounded-xl flex items-center justify-center transition-all touch-manipulation select-none ${
+            className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all touch-manipulation select-none ${
               isPaused
-                ? 'bg-[#EBF8FF] border-[#66CCFF] text-[#0099FF]'
-                : 'bg-[#F8FAFC] active:bg-[#EBF8FF] border-[#E2E8F0] text-[#334155] active:text-[#0099FF]'
+                ? 'bg-[#EBF8FF] text-[#0099FF]'
+                : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
             } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
           >
             {isPaused ? <Play size={16} /> : <Pause size={16} />}
@@ -335,7 +335,7 @@ export default function GameBoard({
 
           <button
             onClick={() => { sound.unlockAudio(); onDirection('RIGHT'); }}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
+            className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronRight size={20} />
           </button>
@@ -344,7 +344,7 @@ export default function GameBoard({
         {/* 下方向键 */}
         <button
           onClick={() => { sound.unlockAudio(); onDirection('DOWN'); }}
-          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
+          className="w-12 h-10 bg-slate-100 active:bg-[#EBF8FF] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
         >
           <ChevronDown size={20} />
         </button>
@@ -357,10 +357,10 @@ export default function GameBoard({
         <button
           onClick={onTogglePause}
           disabled={!isPlaying || isGameOver}
-          className={`px-5 py-2 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
+          className={`px-5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all ${
             isPaused
-              ? 'bg-[#0099FF] text-white border-[#0099FF] hover:bg-[#0284C7]'
-              : 'bg-[#F8FAFC] hover:bg-[#EBF8FF] border-[#E2E8F0] hover:border-[#66CCFF]/50 text-[#334155] hover:text-[#0099FF]'
+              ? 'bg-[#0099FF] text-white hover:bg-[#0284C7]'
+              : 'bg-slate-100 hover:bg-[#EBF8FF] text-[#334155] hover:text-[#0099FF]'
           } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
         >
           {isPaused ? <Play size={14} /> : <Pause size={14} />}

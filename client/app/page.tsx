@@ -128,8 +128,8 @@ export default function Home() {
             <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
           </div>
 
-          {/* 纯白紧凑页脚与南大家园微徽标 */}
-          <footer className="mt-2 py-4 border-t border-[#E2E8F0] text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
+          {/* 纯白紧凑页脚与南大家园微徽标 (无框极简人文印章) */}
+          <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
               <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
@@ -138,7 +138,7 @@ export default function Home() {
             </div>
             <span>NCU HOME · 南大家园</span>
             <span>•</span>
-            <span>贪吃蛇 经典竞技版</span>
+            <span>贪吃蛇 经典排位版</span>
           </footer>
 
           {/* 极简新手指南模态框 */}

@@ -19,7 +19,7 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
   };
 
   return (
-    <header className="w-full bg-white border border-[#E2E8F0] rounded-2xl px-3 sm:px-4 py-2 flex items-center justify-between text-xs select-none">
+    <header className="w-full bg-white rounded-2xl px-3.5 sm:px-4 py-2.5 flex items-center justify-between text-xs select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       {/* 左侧品牌与玩家身份 (移动端自适应完整展示) */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <div className="flex items-center gap-1.5 shrink-0">
@@ -28,22 +28,22 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
             alt="贪吃蛇"
             width={22}
             height={22}
-            className="w-[22px] h-[22px] rounded-md shrink-0 border border-[#E2E8F0] shadow-xs"
+            className="w-[22px] h-[22px] rounded-md shrink-0"
             priority
           />
           <span className="font-black text-[#0F172A] text-xs tracking-tight">贪吃蛇</span>
-          <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] border border-[#66CCFF]/30 text-[#0099FF]">
+          <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] text-[#0099FF]">
             经典版
           </span>
         </div>
 
         {/* 玩家信息 (全端自适应展示) */}
-        <div className="flex items-center gap-1.5 pl-2 border-l border-[#E2E8F0] text-slate-500 min-w-0">
+        <div className="flex items-center gap-1.5 pl-2.5 border-l border-slate-100 text-slate-500 min-w-0">
           <span className="truncate text-[11px] sm:text-xs">
             玩家: <strong className="text-[#0F172A]">{user.username}</strong>
           </span>
           {user.highScore > 0 && (
-            <span className="inline-flex items-center gap-0.5 text-[#D97706] font-bold bg-[#FEF3C7] border border-[#F59E0B]/20 px-1.5 py-0.2 rounded-full text-[10.5px] shrink-0 font-mono">
+            <span className="inline-flex items-center gap-0.5 text-[#D97706] font-bold bg-[#FEF3C7] px-1.5 py-0.2 rounded-full text-[10.5px] shrink-0 font-mono">
               <Trophy size={10} /> {user.highScore}分
             </span>
           )}

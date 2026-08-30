@@ -1,5 +1,6 @@
 import React from 'react';
-import { User, Lock, ArrowRight, Gamepad2 } from 'lucide-react';
+import Image from 'next/image';
+import { User, Lock, ArrowRight } from 'lucide-react';
 
 interface Props {
   form: { username: string; password: string };
@@ -10,11 +11,17 @@ interface Props {
 
 export default function LoginCard({ form, error, setForm, onLogin }: Props) {
   return (
-    <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E8F0] text-[#0F172A]">
+    <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl text-[#0F172A] shadow-[0_4px_24px_rgba(0,0,0,0.04)] select-none">
       {/* 头部品牌 */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] border border-[#66CCFF]/40 text-[#0099FF] mb-3">
-          <Gamepad2 size={24} />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] mb-3">
+          <Image
+            src="/icon.svg"
+            alt="贪吃蛇"
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-lg"
+          />
         </div>
         <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
         <p className="text-xs text-[#94A3B8] mt-1">方寸之<span className="text-[#66CCFF] font-semibold">间</span> · 重温经典</p>
@@ -29,7 +36,7 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
             placeholder="用户名"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:border-[#66CCFF] focus:bg-white transition-all text-[#0F172A] placeholder-[#94A3B8]"
+            className="w-full bg-slate-50 rounded-xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#66CCFF]/30 transition-all text-[#0F172A] placeholder-[#94A3B8]"
             required
           />
         </div>
@@ -41,20 +48,20 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
             placeholder="密码"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:border-[#66CCFF] focus:bg-white transition-all text-[#0F172A] placeholder-[#94A3B8]"
+            className="w-full bg-slate-50 rounded-xl pl-10 pr-3.5 py-2.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#66CCFF]/30 transition-all text-[#0F172A] placeholder-[#94A3B8]"
             required
           />
         </div>
 
         {error && (
-          <div className="text-xs text-rose-500 bg-rose-50 border border-rose-100 py-1.5 px-3 rounded-lg text-center">
+          <div className="text-xs text-rose-500 bg-rose-50 py-1.5 px-3 rounded-lg text-center font-medium">
             {error}
           </div>
         )}
 
         <button
           type="submit"
-          className="w-full mt-2 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-[0.98] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+          className="w-full mt-2 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-[0.98] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
         >
           <span>进入游戏</span>
           <ArrowRight size={15} />
