@@ -193,55 +193,43 @@ export default function Board({
       ctx.beginPath(); ctx.arc(bx, by, CELL / 5, 0, Math.PI * 2); ctx.fill();
     }
 
-    // 5. 绘制蛇身 (丝滑胶囊连结桥 + 呼吸律动)
+    // 5. 绘制蛇身 (经典方格间隔 + 纯净圆角晶体 + 丝滑渐变)
     const snake = snakeRef.current;
     const snakeLen = snake.length;
-    const nowTime = Date.now() / 220;
 
-    // 5.1 绘制相邻节点间的圆润胶囊连结桥，消除方块割裂感
-    for (let i = 0; i < snakeLen - 1; i++) {
-      const c = snake[i], n = snake[i + 1];
-      const cx = c.x * CELL, cy = c.y * CELL, nx = n.x * CELL, ny = n.y * CELL;
-      ctx.fillStyle = i / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
-      ctx.beginPath();
-      ctx.roundRect(Math.min(cx, nx) + 2, Math.min(cy, ny) + 2, Math.abs(cx - nx) + CELL - 4, Math.abs(cy - ny) + CELL - 4, 4);
-      ctx.fill();
-    }
-
-    // 5.2 绘制蛇头与各身体节点
     snake.forEach((pt, idx) => {
       const px = pt.x * CELL, py = pt.y * CELL;
 
       if (idx === 0) {
-        // 蛇头：天青蓝底色 + 灵动双圆眼珠
+        // 蛇头：天青蓝主色 (#66CCFF) + 3.5px 几何圆角，略微饱满 (16x16)
         ctx.fillStyle = '#66CCFF';
         ctx.beginPath();
-        ctx.roundRect(px + 1, py + 1, CELL - 2, CELL - 2, 5);
+        ctx.roundRect(px + 2, py + 2, CELL - 4, CELL - 4, 3.5);
         ctx.fill();
 
+        // 灵动明亮双眼珠 (白底 + 墨黑瞳孔 + 高光反光点)
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(px + 6, py + 6, 2.2, 0, Math.PI * 2);
-        ctx.arc(px + 14, py + 6, 2.2, 0, Math.PI * 2);
+        ctx.arc(px + 6.5, py + 7, 2.3, 0, Math.PI * 2);
+        ctx.arc(px + 13.5, py + 7, 2.3, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#0F172A';
         ctx.beginPath();
-        ctx.arc(px + 6, py + 6, 1.1, 0, Math.PI * 2);
-        ctx.arc(px + 14, py + 6, 1.1, 0, Math.PI * 2);
+        ctx.arc(px + 6.5, py + 7, 1.2, 0, Math.PI * 2);
+        ctx.arc(px + 13.5, py + 7, 1.2, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(px + 5.6, py + 5.6, 0.4, 0, Math.PI * 2);
-        ctx.arc(px + 13.6, py + 5.6, 0.4, 0, Math.PI * 2);
+        ctx.arc(px + 6.0, py + 6.5, 0.5, 0, Math.PI * 2);
+        ctx.arc(px + 13.0, py + 6.5, 0.5, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // 蛇身：微正弦呼吸律动
+        // 蛇身方格：与身后栅栏保持一致的 2.5px 留白与 3px 圆角 (15x15)，具备清爽的方格节奏
         ctx.fillStyle = idx / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
-        const pad = Math.max(1, 2 - Math.sin(nowTime + idx * 0.45) * 0.4);
         ctx.beginPath();
-        ctx.roundRect(px + pad, py + pad, CELL - pad * 2, CELL - pad * 2, 4);
+        ctx.roundRect(px + 2.5, py + 2.5, CELL - 5, CELL - 5, 3);
         ctx.fill();
       }
     });
