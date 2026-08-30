@@ -41,7 +41,7 @@ export default function TutorialModal({ isOpen, onClose }: Props) {
             <div>
               <strong className="text-[#0F172A] block font-bold mb-0.5">基础操作与转向</strong>
               <p className="text-[#64748B] text-[11.5px] leading-relaxed">
-                电脑端支持 <strong className="text-[#0F172A]">方向键 / WASD</strong> 转向，手机端支持 <strong className="text-[#0F172A]">全屏滑动屏幕</strong> 或下方虚拟十字键。按 <strong className="text-[#0F172A]">空格键 / P 键 / 右上角按钮</strong> 可随时暂停。
+                电脑端支持 <strong className="text-[#0F172A]">方向键 / WASD</strong> 转向，手机端支持 <strong className="text-[#0F172A]">全屏滑动屏幕</strong> 或下方虚拟十字键。按 <strong className="text-[#0F172A]">空格键 / P 键 / 下方暂停按钮</strong> 可随时暂停。
               </p>
             </div>
           </div>

@@ -240,17 +240,6 @@ export default function GameBoard({
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#66CCFF] animate-pulse z-10" />
         )}
 
-        {/* 游戏中途暂停悬浮快捷键 (右上角) */}
-        {isPlaying && !isGameOver && (
-          <button
-            onClick={onTogglePause}
-            title={isPaused ? '继续游戏' : '暂停游戏'}
-            className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-xl bg-white/90 hover:bg-white border border-[#E2E8F0] flex items-center justify-center text-[#334155] hover:text-[#0099FF] active:scale-95 transition-all cursor-pointer"
-          >
-            {isPaused ? <Play size={15} /> : <Pause size={15} />}
-          </button>
-        )}
-
         <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square" />
 
         {/* 开始游戏遮罩 */}
@@ -298,27 +287,39 @@ export default function GameBoard({
         )}
       </div>
 
-      {/* 移动端极简半透明虚拟十字键 (touch-manipulation 防缩放延迟) */}
-      <div className="mt-4 flex flex-col items-center gap-1 sm:hidden touch-manipulation select-none">
+      {/* 移动端极简微型十字控制台：4个方向键中间嵌入暂停/继续键 */}
+      <div className="mt-4 flex flex-col items-center gap-1.5 sm:hidden touch-manipulation select-none">
+        {/* 上方向键 */}
         <button
           onClick={() => onDirection('UP')}
           className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
         >
           <ChevronUp size={20} />
         </button>
-        <div className="flex gap-4">
+
+        {/* 中间行：左键 + 暂停键 + 右键 */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => onDirection('LEFT')}
             className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
           >
             <ChevronLeft size={20} />
           </button>
+
+          {/* 暂停/继续控制键 (位于4个移动键正中心) */}
           <button
-            onClick={() => onDirection('DOWN')}
-            className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
+            onClick={onTogglePause}
+            disabled={!isPlaying || isGameOver}
+            title={isPaused ? '继续游戏' : '暂停游戏'}
+            className={`w-12 h-10 border rounded-xl flex items-center justify-center transition-all touch-manipulation select-none ${
+              isPaused
+                ? 'bg-[#EBF8FF] border-[#66CCFF] text-[#0099FF]'
+                : 'bg-[#F8FAFC] active:bg-[#EBF8FF] border-[#E2E8F0] text-[#334155] active:text-[#0099FF]'
+            } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
           >
-            <ChevronDown size={20} />
+            {isPaused ? <Play size={16} /> : <Pause size={16} />}
           </button>
+
           <button
             onClick={() => onDirection('RIGHT')}
             className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
@@ -326,12 +327,35 @@ export default function GameBoard({
             <ChevronRight size={20} />
           </button>
         </div>
-        <span className="text-[10px] text-[#94A3B8] mt-1">支持全屏滑屏或虚拟触控键</span>
+
+        {/* 下方向键 */}
+        <button
+          onClick={() => onDirection('DOWN')}
+          className="w-12 h-10 bg-[#F8FAFC] active:bg-[#EBF8FF] border border-[#E2E8F0] rounded-xl flex items-center justify-center text-[#334155] active:text-[#0099FF] transition-all touch-manipulation select-none"
+        >
+          <ChevronDown size={20} />
+        </button>
+
+        <span className="text-[10px] text-[#94A3B8] mt-1">支持全屏滑屏或虚拟触控键 · 中心按键暂停</span>
       </div>
 
-      {/* 桌面端按键说明 */}
-      <div className="mt-3 text-[11px] text-[#94A3B8] hidden sm:block">
-        方向键 / WASD 转向 · 空格开始 · P / 按钮暂停
+      {/* 电脑端：地图正下方暂停/继续按钮与按键指引 */}
+      <div className="mt-4 hidden sm:flex flex-col items-center gap-2 select-none">
+        <button
+          onClick={onTogglePause}
+          disabled={!isPlaying || isGameOver}
+          className={`px-5 py-2 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
+            isPaused
+              ? 'bg-[#0099FF] text-white border-[#0099FF] hover:bg-[#0284C7]'
+              : 'bg-[#F8FAFC] hover:bg-[#EBF8FF] border-[#E2E8F0] hover:border-[#66CCFF]/50 text-[#334155] hover:text-[#0099FF]'
+          } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+        >
+          {isPaused ? <Play size={14} /> : <Pause size={14} />}
+          <span>{isPaused ? '继续游戏 (P / 空格)' : '暂停游戏 (P / 空格)'}</span>
+        </button>
+        <div className="text-[11px] text-[#94A3B8]">
+          方向键 / WASD 转向 · 空格键开始 · P 键暂停
+        </div>
       </div>
     </div>
   );
