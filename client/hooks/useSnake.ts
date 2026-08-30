@@ -226,7 +226,10 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     const onKey = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') return togglePause();
-      if (e.key === ' ' && (!stateRef.current.playing || stateRef.current.over)) return startGame();
+      if (e.key === ' ') {
+        if (!stateRef.current.playing || stateRef.current.over) return startGame();
+        return togglePause();
+      }
       const dir = KEY_DIR[e.key];
       if (dir) changeDirection(dir);
     };
