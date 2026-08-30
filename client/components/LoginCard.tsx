@@ -14,13 +14,14 @@ export default function LoginCard({ form, error, setForm, onLogin }: Props) {
     <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl text-[#0F172A] shadow-[0_4px_24px_rgba(0,0,0,0.04)] select-none">
       {/* 头部品牌 */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EBF8FF] mb-3">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#EBF8FF] mb-3 shadow-[0_2px_8px_rgba(102,204,255,0.18)]">
           <Image
             src="/icon.svg"
             alt="贪吃蛇"
-            width={32}
-            height={32}
-            className="w-8 h-8 rounded-lg"
+            width={40}
+            height={40}
+            className="w-10 h-10 rounded-xl"
+            priority
           />
         </div>
         <h1 className="text-xl font-black text-[#0F172A] tracking-tight">贪吃蛇</h1>
