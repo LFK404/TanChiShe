@@ -25,6 +25,18 @@ interface Props {
   onTogglePause?: () => void;
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  alpha: number;
+  life: number;
+  maxLife: number;
+}
+
 export default function GameBoard({
   snakeRef,
   fenceRef,
@@ -47,6 +59,47 @@ export default function GameBoard({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const particlesRef = useRef<Particle[]>([]);
+  const prevScoreRef = useRef(score);
+
+  // 粒子微爆发发射器
+  const emitParticles = useCallback((gridX: number, gridY: number, type: 'apple' | 'bonus') => {
+    const originX = gridX * CELL + CELL / 2;
+    const originY = gridY * CELL + CELL / 2;
+    const colors = type === 'apple'
+      ? ['#EF4444', '#F87171', '#FDA4AF', '#FFFFFF', '#10B981']
+      : ['#F59E0B', '#FBBF24', '#FEF08A', '#FFFFFF', '#66CCFF'];
+
+    const count = type === 'apple' ? 12 : 18;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 2.8 + 1.2;
+      const life = Math.floor(Math.random() * 10) + 16;
+      particlesRef.current.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 2.4 + 1.2,
+        alpha: 1,
+        life,
+        maxLife: life,
+      });
+    }
+  }, []);
+
+  // 监听分数增量触发粒子爆发
+  useEffect(() => {
+    if (score > prevScoreRef.current) {
+      const diff = score - prevScoreRef.current;
+      if (snakeRef.current.length > 0) {
+        const head = snakeRef.current[0];
+        emitParticles(head.x, head.y, diff >= 30 ? 'bonus' : 'apple');
+      }
+    }
+    prevScoreRef.current = score;
+  }, [score, snakeRef, emitParticles]);
 
   // 手势滑动检测 (同时触发移动端音频引擎解锁)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -68,7 +121,7 @@ export default function GameBoard({
     }
   };
 
-  // 渲染函数
+  // 渲染函数 (融合呼吸微律动、粒子微爆发与灵动视线)
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -143,8 +196,10 @@ export default function GameBoard({
       ctx.fill();
     }
 
-    // 4. 天青蓝 (#66CCFF) 蛇身与蛇头
+    // 4. 天青蓝 (#66CCFF) 蛇身与蛇头 (带正弦呼吸微律动与眼神注视)
     const snakeLen = snakeRef.current.length;
+    const nowTime = Date.now() / 220;
+
     snakeRef.current.forEach((pt, idx) => {
       const px = pt.x * CELL, py = pt.y * CELL;
 
@@ -155,13 +210,14 @@ export default function GameBoard({
         ctx.roundRect(px + 1, py + 1, CELL - 2, CELL - 2, 5);
         ctx.fill();
 
-        // 灵动微眼神 (方向自适应)
+        // 灵动微眼神 (方向动态注视 + 眼神高光)
         const d = dirRef.current;
         let e1 = { x: px + 5, y: py + 5 }, e2 = { x: px + 15, y: py + 5 };
-        if (d === 'UP') { e1 = { x: px + 5, y: py + 4 }; e2 = { x: px + 15, y: py + 4 }; }
-        if (d === 'DOWN') { e1 = { x: px + 5, y: py + 16 }; e2 = { x: px + 15, y: py + 16 }; }
-        if (d === 'LEFT') { e1 = { x: px + 4, y: py + 5 }; e2 = { x: px + 4, y: py + 15 }; }
-        if (d === 'RIGHT') { e1 = { x: px + 16, y: py + 5 }; e2 = { x: px + 16, y: py + 15 }; }
+        let pupilOff = { x: 0, y: 0 };
+        if (d === 'UP') { e1 = { x: px + 5, y: py + 4 }; e2 = { x: px + 15, y: py + 4 }; pupilOff = { x: 0, y: -0.6 }; }
+        if (d === 'DOWN') { e1 = { x: px + 5, y: py + 16 }; e2 = { x: px + 15, y: py + 16 }; pupilOff = { x: 0, y: 0.6 }; }
+        if (d === 'LEFT') { e1 = { x: px + 4, y: py + 5 }; e2 = { x: px + 4, y: py + 15 }; pupilOff = { x: -0.6, y: 0 }; }
+        if (d === 'RIGHT') { e1 = { x: px + 16, y: py + 5 }; e2 = { x: px + 16, y: py + 15 }; pupilOff = { x: 0.6, y: 0 }; }
 
         // 眼白
         ctx.fillStyle = '#FFFFFF';
@@ -169,31 +225,82 @@ export default function GameBoard({
         ctx.arc(e1.x, e1.y, 2.2, 0, Math.PI * 2);
         ctx.arc(e2.x, e2.y, 2.2, 0, Math.PI * 2);
         ctx.fill();
-        // 眼珠
+        // 动态注视黑眼珠
         ctx.fillStyle = '#0F172A';
         ctx.beginPath();
-        ctx.arc(e1.x, e1.y, 1.1, 0, Math.PI * 2);
-        ctx.arc(e2.x, e2.y, 1.1, 0, Math.PI * 2);
+        ctx.arc(e1.x + pupilOff.x, e1.y + pupilOff.y, 1.1, 0, Math.PI * 2);
+        ctx.arc(e2.x + pupilOff.x, e2.y + pupilOff.y, 1.1, 0, Math.PI * 2);
+        ctx.fill();
+        // 眼神晶莹高光点
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(e1.x + pupilOff.x - 0.3, e1.y + pupilOff.y - 0.3, 0.4, 0, Math.PI * 2);
+        ctx.arc(e2.x + pupilOff.x - 0.3, e2.y + pupilOff.y - 0.3, 0.4, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // --- 蛇身 (平滑渐变浅天蓝) ---
+        // --- 蛇身 (平滑渐变天青蓝 + 正弦微呼吸律动) ---
         const ratio = idx / snakeLen;
         ctx.fillStyle = ratio < 0.5 ? '#38BDF8' : '#7DD3FC';
+
+        // 呼吸微律动 (0.5px 微波动)
+        const breath = Math.sin(nowTime + idx * 0.45) * 0.45;
+        const pad = Math.max(1, 2 - breath);
+        const size = CELL - pad * 2;
+
         ctx.beginPath();
-        ctx.roundRect(px + 2, py + 2, CELL - 4, CELL - 4, 4);
+        ctx.roundRect(px + pad, py + pad, size, size, 4);
         ctx.fill();
       }
     });
+
+    // 5. 粒子微爆发渲染与物理衰减
+    if (particlesRef.current.length > 0) {
+      particlesRef.current = particlesRef.current.filter((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05; // 微重力
+        p.vx *= 0.96; // 微空气阻力
+        p.life--;
+        p.alpha = Math.max(0, p.life / p.maxLife);
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (p.life / p.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        return p.life > 0;
+      });
+    }
   }, [snakeRef, fenceRef, foodRef, bonusRef, dirRef]);
 
+  // 60FPS 粒子平滑刷新与游戏主时序
   useEffect(() => {
     render();
-    if (!isPlaying || isPaused || isGameOver) return;
+    let animFrame: number;
+    const animate = () => {
+      if (particlesRef.current.length > 0 || isPlaying) {
+        render();
+      }
+      animFrame = requestAnimationFrame(animate);
+    };
+    animFrame = requestAnimationFrame(animate);
+
+    if (!isPlaying || isPaused || isGameOver) {
+      return () => cancelAnimationFrame(animFrame);
+    }
+
     const timer = setInterval(() => {
       onTick();
       render();
     }, speedMs);
-    return () => clearInterval(timer);
+
+    return () => {
+      clearInterval(timer);
+      cancelAnimationFrame(animFrame);
+    };
   }, [isPlaying, isPaused, isGameOver, speedMs, onTick, render]);
 
   // 计算速度梯度倍率 (1.0x ~ 2.0x)
