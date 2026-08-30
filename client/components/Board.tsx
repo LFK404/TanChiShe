@@ -155,10 +155,10 @@ export default function Board({
       shakeRef.current.frames--;
     }
 
-    // 2. 浅灰底板与极细隐形网格
-    ctx.fillStyle = '#F1F5F9';
+    // 2. 柔白底板与极细隐形网格
+    ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(0, 0, GRID * CELL, GRID * CELL);
-    ctx.strokeStyle = 'rgba(203, 213, 225, 0.45)';
+    ctx.strokeStyle = 'rgba(226, 232, 240, 0.65)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= GRID; i++) {
       ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, GRID * CELL); ctx.stroke();
@@ -339,7 +339,7 @@ export default function Board({
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="relative rounded-2xl overflow-hidden bg-[#F1F5F9] border border-slate-200/80 touch-none max-w-full shadow-inner"
+        className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] border border-slate-200/70 touch-none max-w-full shadow-inner"
       >
         {/* 限时幸运果 8 秒倒计时条 */}
         {hasBonus && (
@@ -355,7 +355,7 @@ export default function Board({
           </div>
         )}
 
-        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F1F5F9]" />
+        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F8FAFC]" />
 
         {/* 开始游戏遮罩 */}
         {!isPlaying && !isGameOver && (
