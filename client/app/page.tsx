@@ -63,18 +63,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
-      {/* 南昌大学 NCU HOME 全局通透底层艺术水印 (居中通透底层，轻盈若隐若现，绝不遮挡任何文字与按键) */}
-      <div className="fixed inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 opacity-30">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#66CCFF]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#EC4899]" />
-        </div>
-        <span className="font-black text-7xl sm:text-8xl md:text-9xl tracking-tighter text-[#E2E8F0]">NCU</span>
-        <span className="font-extrabold text-2xl sm:text-3xl md:text-4xl tracking-[0.25em] text-[#E2E8F0] -mt-2 sm:-mt-4">HOME</span>
-      </div>
-
       {!user ? (
         <div className="z-10 w-full flex justify-center">
           <LoginCard form={form} error={error} setForm={setForm} onLogin={login} />
@@ -88,14 +76,29 @@ export default function Home() {
             onOpenTutorial={() => setShowTutorial(true)}
           />
 
-          {/* 人文标语与留白区 (融入 #66CCFF 天青蓝点睛字与竖线) */}
-          <div className="px-1 pt-0.5 pb-0.5">
-            <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
-              方寸之<span className="text-[#66CCFF]">间</span>，重温经<span className="text-[#66CCFF]">典</span>
-            </h1>
-            <blockquote className="mt-1.5 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
-              在方格与节奏的律动中，探寻每一次转身的从容。
-            </blockquote>
+          {/* 人文标语区 + 右侧 NCU HOME 艺术水印微标 (黄金留白区，100% 清晰可见不被遮挡) */}
+          <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
+            {/* 左侧金句与点睛字 */}
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
+                方寸之<span className="text-[#66CCFF]">间</span>，重温经<span className="text-[#66CCFF]">典</span>
+              </h1>
+              <blockquote className="mt-1.5 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
+                在方格与节奏的律动中，探寻每一次转身的从容。
+              </blockquote>
+            </div>
+
+            {/* 右侧南昌大学 NCU HOME 艺术水印与四色微标 */}
+            <div className="flex flex-col items-end leading-none select-none pointer-events-none opacity-85 shrink-0 pl-2">
+              <div className="flex items-center gap-1.5 mb-1 pr-0.5">
+                <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
+                <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
+              </div>
+              <span className="font-black text-2xl sm:text-3xl md:text-4xl tracking-tighter text-[#CBD5E1]">NCU</span>
+              <span className="font-extrabold text-[10px] sm:text-xs tracking-[0.22em] text-[#94A3B8] -mt-0.5 sm:-mt-1 pr-0.5">HOME</span>
+            </div>
           </div>
 
           {/* 游戏主舞台与排行榜双列布局 */}
