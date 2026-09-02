@@ -246,3 +246,29 @@ export function NCUNumberBadge({ num, color = '#0099FF', bg = '#EBF8FF' }: { num
     </span>
   );
 }
+
+// 9. 统一南大家园段位勋章解析与呈现组件 (消灭各业务组件中的重复 switch-case 冗余)
+export function NCUCrestBadge({
+  tier = 'BRONZE',
+  unlocked = false,
+  size = 40,
+  className = '',
+}: {
+  tier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
+  unlocked?: boolean;
+  size?: number;
+  className?: string;
+}) {
+  switch (tier) {
+    case 'BRONZE':
+      return <BronzeCrestIcon unlocked={unlocked} size={size} className={className} />;
+    case 'SILVER':
+      return <SilverCrestIcon unlocked={unlocked} size={size} className={className} />;
+    case 'GOLD':
+      return <GoldCrestIcon unlocked={unlocked} size={size} className={className} />;
+    case 'DIAMOND':
+      return <DiamondCrestIcon unlocked={unlocked} size={size} className={className} />;
+    default:
+      return <BronzeCrestIcon unlocked={unlocked} size={size} className={className} />;
+  }
+}

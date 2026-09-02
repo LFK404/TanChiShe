@@ -12,60 +12,37 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import {
-  BronzeCrestIcon,
-  SilverCrestIcon,
-  GoldCrestIcon,
-  DiamondCrestIcon,
-} from './NCUIcon';
+import { NCUCrestBadge } from './NCUIcon';
 
-// 战局终了段位微拟态勋章加冕组件
+// 战局终了段位微拟态勋章加冕组件 (基于统一 NCUCrestBadge 极简实现)
 function SettleTierCrest({ score }: { score: number }) {
-  if (score >= 800) {
-    return (
-      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
-        <DiamondCrestIcon unlocked size={52} />
-        <span className="text-[10.5px] font-bold text-[#0099FF] bg-[#EBF8FF] px-2.5 py-0.5 rounded-full">
-          钻石·超凡殿堂
-        </span>
-      </div>
-    );
-  }
-  if (score >= 500) {
-    return (
-      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
-        <GoldCrestIcon unlocked size={52} />
-        <span className="text-[10.5px] font-bold text-[#D97706] bg-[#FEF3C7] px-2.5 py-0.5 rounded-full">
-          黄金·登峰造极
-        </span>
-      </div>
-    );
-  }
-  if (score >= 300) {
-    return (
-      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
-        <SilverCrestIcon unlocked size={52} />
-        <span className="text-[10.5px] font-bold text-[#64748B] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full">
-          白银·技巧渐熟
-        </span>
-      </div>
-    );
-  }
-  if (score >= 100) {
-    return (
-      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
-        <BronzeCrestIcon unlocked size={52} />
-        <span className="text-[10.5px] font-bold text-[#10B981] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full">
-          青铜·方寸探索
-        </span>
-      </div>
-    );
-  }
+  const tier =
+    score >= 800
+      ? 'DIAMOND'
+      : score >= 500
+      ? 'GOLD'
+      : score >= 300
+      ? 'SILVER'
+      : score >= 100
+      ? 'BRONZE'
+      : null;
+
+  const badgeConfig =
+    score >= 800
+      ? { text: '钻石·超凡殿堂', color: 'text-[#0099FF] bg-[#EBF8FF]' }
+      : score >= 500
+      ? { text: '黄金·登峰造极', color: 'text-[#D97706] bg-[#FEF3C7]' }
+      : score >= 300
+      ? { text: '白银·技巧渐熟', color: 'text-[#64748B] bg-[#F1F5F9]' }
+      : score >= 100
+      ? { text: '青铜·方寸探索', color: 'text-[#10B981] bg-[#ECFDF5]' }
+      : { text: '初出茅庐', color: 'text-slate-400 bg-slate-100' };
+
   return (
     <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
-      <BronzeCrestIcon unlocked={false} size={46} />
-      <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.2 rounded-full">
-        初出茅庐
+      <NCUCrestBadge tier={tier || 'BRONZE'} unlocked={!!tier} size={tier ? 52 : 46} />
+      <span className={`text-[10.5px] font-bold px-2.5 py-0.5 rounded-full ${badgeConfig.color}`}>
+        {badgeConfig.text}
       </span>
     </div>
   );

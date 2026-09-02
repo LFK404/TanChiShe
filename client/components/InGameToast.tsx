@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-  BronzeCrestIcon,
-  SilverCrestIcon,
-  GoldCrestIcon,
-  DiamondCrestIcon,
-} from './NCUIcon';
+import { NCUCrestBadge } from './NCUIcon';
 import { AchievementTier } from '@/utils/achievements';
 
 export interface ToastItem {
@@ -33,20 +28,7 @@ export default function InGameToast({ toasts, onRemove }: Props) {
   );
 }
 
-function RenderToastCrest({ tier = 'BRONZE' }: { tier?: AchievementTier }) {
-  switch (tier) {
-    case 'BRONZE':
-      return <BronzeCrestIcon unlocked size={22} />;
-    case 'SILVER':
-      return <SilverCrestIcon unlocked size={22} />;
-    case 'GOLD':
-      return <GoldCrestIcon unlocked size={22} />;
-    case 'DIAMOND':
-      return <DiamondCrestIcon unlocked size={22} />;
-    default:
-      return <BronzeCrestIcon unlocked size={22} />;
-  }
-}
+
 
 function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: string) => void }) {
   const [visible, setVisible] = useState(false);
@@ -73,7 +55,7 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
       }`}
     >
       {/* 南大家园多巴胺微拟态勋章微缩版 */}
-      <RenderToastCrest tier={toast.tier} />
+      <NCUCrestBadge tier={toast.tier} unlocked size={22} />
 
       {/* 成就解锁文字 */}
       <div className="flex items-center gap-1.5 tracking-tight text-[11.5px] sm:text-xs">

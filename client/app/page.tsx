@@ -342,7 +342,7 @@ export default function Home() {
               </blockquote>
             </div>
 
-            <div className="flex flex-col items-end leading-none select-none pointer-events-none opacity-80 shrink-0 pl-2">
+            <div className="hidden sm:flex flex-col items-end leading-none select-none pointer-events-none opacity-80 shrink-0 pl-2">
               <div className="flex items-center gap-1.5 mb-1.5 pr-0.5">
                 <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
                 <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />

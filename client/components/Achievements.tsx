@@ -2,13 +2,7 @@
 
 import React, { useState } from 'react';
 import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
-import {
-  BronzeCrestIcon,
-  SilverCrestIcon,
-  GoldCrestIcon,
-  DiamondCrestIcon,
-  NCUTrophyIcon,
-} from './NCUIcon';
+import { NCUTrophyIcon, NCUCrestBadge } from './NCUIcon';
 
 interface Props {
   isOpen: boolean;
@@ -45,29 +39,7 @@ const TIER_CONFIG: Record<
   },
 };
 
-// 渲染对应段位的南大家园微拟态勋章
-function RenderTierCrest({
-  tier,
-  unlocked = false,
-  size = 40,
-}: {
-  tier: AchievementTier;
-  unlocked?: boolean;
-  size?: number;
-}) {
-  switch (tier) {
-    case 'BRONZE':
-      return <BronzeCrestIcon unlocked={unlocked} size={size} />;
-    case 'SILVER':
-      return <SilverCrestIcon unlocked={unlocked} size={size} />;
-    case 'GOLD':
-      return <GoldCrestIcon unlocked={unlocked} size={size} />;
-    case 'DIAMOND':
-      return <DiamondCrestIcon unlocked={unlocked} size={size} />;
-    default:
-      return <BronzeCrestIcon unlocked={unlocked} size={size} />;
-  }
-}
+
 
 export default function Achievements({ isOpen, onClose }: Props) {
   const [activeTier, setActiveTier] = useState<AchievementTier | 'ALL'>('ALL');
@@ -195,7 +167,7 @@ export default function Achievements({ isOpen, onClose }: Props) {
                   >
                     {/* 左侧：南大家园多巴胺微拟态专属勋章 */}
                     <div className="shrink-0 pt-0.5">
-                      <RenderTierCrest tier={ach.tier} unlocked={isUnlocked} size={42} />
+                      <NCUCrestBadge tier={ach.tier} unlocked={isUnlocked} size={42} />
                     </div>
 
                     {/* 右侧：成就名称、说明、段位代号 */}
