@@ -1,11 +1,12 @@
 import React from 'react';
 import { User } from '@/types';
-import { Trophy, RefreshCw } from 'lucide-react';
+import { Trophy, RefreshCw, Film } from 'lucide-react';
 
 interface Props {
   items: User[];
   currentUser?: User | null;
   onRefresh: () => void;
+  onWatchReplay?: (user: User) => void;
 }
 
 // 1~6 名专属多巴胺多色几何徽标配置 (金·红·绿·紫·天青·活力青)
@@ -91,10 +92,23 @@ export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
                   )}
                 </div>
 
-                {/* 最高得分与通关最短用时 */}
+                {/* 最高得分、通关最短用时与观摩录像按钮 */}
                 <div className="flex items-center gap-2 text-right shrink-0">
-                  <span className="font-extrabold text-xs text-[#0F172A] font-mono">{item.highScore}分</span>
-                  <span className="text-[10px] text-[#94A3B8] font-mono">{item.bestDuration}s</span>
+                  <div className="flex flex-col items-end">
+                    <span className="font-extrabold text-xs text-[#0F172A] font-mono">{item.highScore}分</span>
+                    <span className="text-[10px] text-[#94A3B8] font-mono">{item.bestDuration}s</span>
+                  </div>
+
+                  {item.replayInputs && onWatchReplay && (
+                    <button
+                      onClick={() => onWatchReplay(item)}
+                      title={`观摩 ${item.username} 的神级走位录像`}
+                      className="px-2 py-1 bg-[#EBF8FF] hover:bg-[#0099FF] text-[#0099FF] hover:text-white rounded-lg text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-95"
+                    >
+                      <Film size={11} />
+                      <span>观摩</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

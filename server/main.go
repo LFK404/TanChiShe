@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -177,21 +178,33 @@ func main() {
 				return
 			}
 
-			// 写入对局流水
-			database.DB.Create(&database.GameRecord{
-				Username: user.Username,
-				Score:    verifiedScore,
-				Duration: verifiedDuration,
-			})
+			// 序列化按键轨迹流为 JSON
+			inputsJSON, _ := json.Marshal(req.Inputs)
+			inputsStr := string(inputsJSON)
 
-			// 判定是否创下个人新纪录 (原子化安全条件更新)
+			// 写入对局流水
+			if database.DB != nil {
+				database.DB.Create(&database.GameRecord{
+					Username:     user.Username,
+					Score:        verifiedScore,
+					Duration:     verifiedDuration,
+					ReplaySeed:   int64(payload.Seed),
+					ReplayInputs: inputsStr,
+				})
+			}
+
+			// 判定是否创下个人新纪录 (原子化安全条件更新并保存最高分录像轨迹)
 			isNew := verifiedScore > user.HighScore || (verifiedScore == user.HighScore && verifiedScore > 0 && (user.BestDuration == 0 || verifiedDuration < user.BestDuration))
-			if isNew {
+			if isNew && database.DB != nil {
 				user.HighScore = verifiedScore
 				user.BestDuration = verifiedDuration
+				user.ReplaySeed = int64(payload.Seed)
+				user.ReplayInputs = inputsStr
 				database.DB.Model(user).Where("id = ?", user.ID).Updates(map[string]interface{}{
 					"high_score":    verifiedScore,
 					"best_duration": verifiedDuration,
+					"replay_seed":   int64(payload.Seed),
+					"replay_inputs": inputsStr,
 				})
 			}
 

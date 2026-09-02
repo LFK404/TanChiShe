@@ -12,6 +12,8 @@ export interface User {
   username: string;
   highScore: number;
   bestDuration: number;
+  replaySeed?: number;
+  replayInputs?: string;
   updatedAt?: string;
   token?: string;
 }

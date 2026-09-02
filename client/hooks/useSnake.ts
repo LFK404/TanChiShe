@@ -85,6 +85,13 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const stepsRef = useRef<number>(0);
   const bonusCountRef = useRef<number>(0);
 
+  // 电竞对局录像回放状态机
+  const [isReplay, setIsReplay] = useState(false);
+  const [replayUser, setReplayUser] = useState<string>('');
+  const [replaySpeedRate, setReplaySpeedRate] = useState<number>(1);
+  const isReplayRef = useRef<boolean>(false);
+  const replayInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
+
   // 清除金色幸运果与其超时计时器
   const clearBonus = useCallback(() => {
     bonusRef.current = null;
@@ -152,14 +159,21 @@ export function useSnake(onGameOver?: GameOverCallback) {
     sound.stopBgm();
     sound.playGameOver();
     vibrate(40);
-    const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
-    onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
+    if (!isReplayRef.current) {
+      const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
+      onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
+    }
   }, [onGameOver, clearBonus]);
 
   // 开始新对局 (支持传入服务端下发的确定性 seed)
   const startGame = useCallback(
     (seed?: number) => {
       sound.unlockAudio();
+      isReplayRef.current = false;
+      setIsReplay(false);
+      setReplayUser('');
+      setReplaySpeedRate(1);
+
       rngRef.current = new Mulberry32(seed !== undefined ? seed : Date.now());
       tickCountRef.current = 0;
       inputsRef.current = [];
@@ -196,8 +210,84 @@ export function useSnake(onGameOver?: GameOverCallback) {
     [spawnFood, clearBonus]
   );
 
+  // 启动电竞对局录像回放模式 (基于确定性种子与输入流 100% 还原)
+  const startReplay = useCallback(
+    (seed: number, inputsData: InputRecord[] | string, targetUser?: string) => {
+      sound.unlockAudio();
+      let parsedInputs: InputRecord[] = [];
+      if (typeof inputsData === 'string') {
+        try {
+          parsedInputs = JSON.parse(inputsData);
+        } catch {
+          parsedInputs = [];
+        }
+      } else if (Array.isArray(inputsData)) {
+        parsedInputs = inputsData;
+      }
+
+      const map = new Map<number, Direction[]>();
+      parsedInputs.forEach((item) => {
+        if (!map.has(item.tick)) map.set(item.tick, []);
+        map.get(item.tick)!.push(item.dir);
+      });
+      replayInputsMapRef.current = map;
+      isReplayRef.current = true;
+      setIsReplay(true);
+      setReplayUser(targetUser || '高手玩家');
+      setReplaySpeedRate(1);
+
+      rngRef.current = new Mulberry32(seed);
+      tickCountRef.current = 0;
+      inputsRef.current = [];
+      pausedMsRef.current = 0;
+      pauseStartRef.current = 0;
+      stepsRef.current = 0;
+      bonusCountRef.current = 0;
+
+      snakeRef.current = [
+        { x: 10, y: 12 },
+        { x: 9, y: 12 },
+        { x: 8, y: 12 },
+      ];
+      fenceRef.current.clear();
+      dirRef.current = 'RIGHT';
+      queueRef.current = [];
+      stateRef.current = { playing: true, over: false, paused: false, score: 0, start: Date.now() };
+
+      setScore(0);
+      setDuration(0);
+      setLength(3);
+      setSteps(0);
+      setBonusCount(0);
+      setSpeedMs(BASE_SPEED_MS);
+      setIsGameOver(false);
+      setIsPaused(false);
+      setIsPlaying(true);
+      clearBonus();
+      sound.playStart();
+      sound.startBgm();
+      spawnFood();
+    },
+    [spawnFood, clearBonus]
+  );
+
+  // 退出对局录像回放
+  const exitReplay = useCallback(() => {
+    isReplayRef.current = false;
+    setIsReplay(false);
+    setReplayUser('');
+    setReplaySpeedRate(1);
+    stateRef.current = { playing: false, over: false, paused: false, score: 0, start: 0 };
+    setIsPlaying(false);
+    setIsGameOver(false);
+    setIsPaused(false);
+    clearBonus();
+    sound.stopBgm();
+  }, [clearBonus]);
+
   // 转向指令压入排队缓冲队列 (最大缓冲 2 条指令，并捕获当前 tick 帧)
   const changeDirection = useCallback((t: Direction) => {
+    if (isReplayRef.current) return; // 回放模式禁止手动干预转向
     if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
@@ -235,6 +325,21 @@ export function useSnake(onGameOver?: GameOverCallback) {
     if (!playing || over || paused) return;
 
     setDuration(Math.max(0, Math.floor((Date.now() - start - pausedMsRef.current) / 1000)));
+
+    // 如果处于电竞对局回放模式，从录像映射表中消费当前 tick 的转向输入
+    if (isReplayRef.current) {
+      const dirs = replayInputsMapRef.current.get(tickCountRef.current);
+      if (dirs) {
+        dirs.forEach((d) => {
+          const q = queueRef.current;
+          const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
+          if (d !== last && !isOpp(last, d) && q.length < 2) {
+            q.push(d);
+          }
+        });
+      }
+    }
+
     tickCountRef.current += 1;
 
     // 1. 消费转向队列
@@ -345,7 +450,13 @@ export function useSnake(onGameOver?: GameOverCallback) {
     isPlaying,
     isGameOver,
     isPaused,
+    isReplay,
+    replayUser,
+    replaySpeedRate,
+    setReplaySpeedRate,
     startGame,
+    startReplay,
+    exitReplay,
     togglePause,
     changeDirection,
     tick,

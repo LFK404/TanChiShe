@@ -154,11 +154,30 @@ export default function Home() {
     isPlaying,
     isGameOver,
     isPaused,
+    isReplay,
+    replayUser,
+    replaySpeedRate,
+    setReplaySpeedRate,
     startGame,
+    startReplay,
+    exitReplay,
     togglePause,
     changeDirection,
     tick,
   } = useSnake(handleGameOver);
+
+  // 观摩排行榜高手通关微操录像
+  const handleWatchReplay = useCallback(
+    (targetUser: User) => {
+      if (!targetUser.replayInputs || !targetUser.replaySeed) {
+        addToast('该记录未包含操作录像轨迹', 'Shield', '#94A3B8');
+        return;
+      }
+      startReplay(targetUser.replaySeed, targetUser.replayInputs, targetUser.username);
+      addToast(`正在观摩 [${targetUser.username}] 的通关神级走位`, 'Film', '#0099FF');
+    },
+    [startReplay, addToast]
+  );
 
   // 局中即时高光与成就达成监听 (全矢量纯净图符)
   useEffect(() => {
@@ -337,13 +356,23 @@ export default function Home() {
                 isPlaying={isPlaying}
                 isGameOver={isGameOver}
                 isPaused={isPaused}
+                isReplay={isReplay}
+                replayUser={replayUser}
+                replaySpeedRate={replaySpeedRate}
+                onSetReplaySpeed={setReplaySpeedRate}
+                onExitReplay={exitReplay}
                 onStart={handleStartGame}
                 onTick={tick}
                 onDirection={changeDirection}
                 onTogglePause={togglePause}
               />
             </div>
-            <Leaderboard items={board} currentUser={user} onRefresh={refreshBoard} />
+            <Leaderboard
+              items={board}
+              currentUser={user}
+              onRefresh={refreshBoard}
+              onWatchReplay={handleWatchReplay}
+            />
           </div>
 
           {/* 极简底部署名 */}

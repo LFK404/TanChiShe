@@ -22,6 +22,8 @@ type User struct {
 	Password     string    `gorm:"size:100;not null" json:"-"`
 	HighScore    int       `gorm:"default:0;index:idx_leaderboard,priority:1,sort:desc" json:"highScore"`
 	BestDuration int64     `gorm:"default:0;index:idx_leaderboard,priority:2,sort:asc" json:"bestDuration"`
+	ReplaySeed   int64     `gorm:"default:0" json:"replaySeed,omitempty"`
+	ReplayInputs string    `gorm:"type:text" json:"replayInputs,omitempty"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 	Token        string    `gorm:"-" json:"token,omitempty"`
@@ -29,11 +31,13 @@ type User struct {
 
 // GameRecord 战绩流水记录表 (对应 Supabase game_records 表)
 type GameRecord struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Username  string    `gorm:"index;size:50;not null" json:"username"`
-	Score     int       `gorm:"default:0" json:"score"`
-	Duration  int64     `gorm:"default:0" json:"duration"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	Username     string    `gorm:"index;size:50;not null" json:"username"`
+	Score        int       `gorm:"default:0" json:"score"`
+	Duration     int64     `gorm:"default:0" json:"duration"`
+	ReplaySeed   int64     `gorm:"default:0" json:"replaySeed,omitempty"`
+	ReplayInputs string    `gorm:"type:text" json:"replayInputs,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 var DB *gorm.DB
