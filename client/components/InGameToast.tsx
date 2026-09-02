@@ -20,7 +20,7 @@ export default function InGameToast({ toasts, onRemove }: Props) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none select-none">
+    <div className="fixed top-14 sm:top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none select-none">
       {toasts.map((t) => (
         <ToastCard key={t.id} toast={t} onRemove={onRemove} />
       ))}
@@ -50,7 +50,7 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
 
   return (
     <div
-      className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-800 bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex items-center gap-2.5 ${
+      className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-800 bg-white/95 backdrop-blur-md border border-slate-200/80 shadow-xs flex items-center gap-2.5 ${
         visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95'
       }`}
     >

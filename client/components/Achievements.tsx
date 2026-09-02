@@ -215,16 +215,6 @@ export default function Achievements({ isOpen, onClose }: Props) {
             </div>
           )}
         </div>
-
-        {/* 底部关闭按钮 */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/60 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-          >
-            完成
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -63,6 +63,7 @@ interface Props {
   isPlaying: boolean;
   isGameOver: boolean;
   isPaused: boolean;
+  isWaitingStart?: boolean;
   isReplay?: boolean;
   replayUser?: string;
   replaySpeedRate?: number;
@@ -140,6 +141,7 @@ export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
   queueRef,
   score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
+  isWaitingStart = false,
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
@@ -983,6 +985,16 @@ export default function Board({
               <span>开始游戏</span>
               <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
             </button>
+          </div>
+        )}
+
+        {/* 开局就绪等待唤醒指示器 (消除重开瞬发猝死，按键或触控即走) */}
+        {isPlaying && !isGameOver && !isPaused && isWaitingStart && !isReplay && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none bg-black/[0.02]">
+            <div className="animate-pulse flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 border border-slate-200/90 shadow-sm text-xs font-bold text-slate-700">
+              <span className="w-2 h-2 rounded-full bg-[#0099FF]" />
+              <span>按方向键 / 滑动屏幕出发</span>
+            </div>
           </div>
         )}
 

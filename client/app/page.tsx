@@ -97,6 +97,9 @@ export default function Home() {
       totalTicks: number
     ) => {
       if (!user) return;
+      // 战局结束时立即清空悬浮 Toast，避免与结算面板重叠冲突
+      setToasts([]);
+
       const currentSession = sessionRef.current;
       sessionRef.current = null; // 消费当前 session
 
@@ -125,11 +128,11 @@ export default function Home() {
         }
       }
 
-      // 刷新排行榜并校验榜单成就
+      // 刷新排行榜并仅在【刷新个人纪录且位列前10】时才祝贺
       const newBoard = await apiLeaderboard();
       setBoard(newBoard);
       const userRank = newBoard.findIndex((u) => u.username === user.username) + 1;
-      if (userRank > 0 && userRank <= 10) {
+      if (res.ok && res.isNewRecord && userRank > 0 && userRank <= 10) {
         addToast(`荣登全服风云榜第 ${userRank} 名！`, 'DIAMOND');
         const rankAch = checkAndUnlockAchievements({
           score: _finalScore,
@@ -167,6 +170,7 @@ export default function Home() {
     isPlaying,
     isGameOver,
     isPaused,
+    isWaitingStart,
     isReplay,
     replayUser,
     replaySpeedRate,
@@ -373,6 +377,7 @@ export default function Home() {
                 isPlaying={isPlaying}
                 isGameOver={isGameOver}
                 isPaused={isPaused}
+                isWaitingStart={isWaitingStart}
                 isReplay={isReplay}
                 replayUser={replayUser}
                 replaySpeedRate={replaySpeedRate}

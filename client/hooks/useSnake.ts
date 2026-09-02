@@ -81,6 +81,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [hasBonus, setHasBonus] = useState(false);
   const [bonusKey, setBonusKey] = useState(0);
   const [bonusCount, setBonusCount] = useState(0);
+  const [isWaitingStart, setIsWaitingStart] = useState(false);
+  const isWaitingStartRef = useRef(false);
   const durationRef = useRef<number>(0);
   const stepsRef = useRef<number>(0);
   const bonusCountRef = useRef<number>(0);
@@ -233,6 +235,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setIsGameOver(false);
       setIsPaused(false);
       setIsPlaying(true);
+      isWaitingStartRef.current = true;
+      setIsWaitingStart(true);
       clearBonus();
       sound.playReadyGo();
       sound.startInGameBgm();
@@ -246,6 +250,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const startReplay = useCallback(
     (seed: number, inputsData: InputRecord[] | string, targetUser?: string) => {
       sound.unlockAudio();
+      isWaitingStartRef.current = false;
+      setIsWaitingStart(false);
       let parsedInputs: InputRecord[] = [];
       if (typeof inputsData === 'string') {
         try {
@@ -263,6 +269,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
         map.get(item.tick)!.push(item.dir);
       });
       replayInputsMapRef.current = map;
+
       isReplayRef.current = true;
       setIsReplay(true);
       setReplayUser(targetUser || '高手玩家');
@@ -305,6 +312,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
   // 退出对局录像回放
   const exitReplay = useCallback(() => {
+    isWaitingStartRef.current = false;
+    setIsWaitingStart(false);
     isReplayRef.current = false;
     setIsReplay(false);
     setReplayUser('');
@@ -321,6 +330,14 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const changeDirection = useCallback((t: Direction) => {
     if (isReplayRef.current) return; // 回放模式禁止手动干预转向
     if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
+
+    // 若当前处于开局等待唤醒状态，任意有效转向输入立即唤醒起跑
+    if (isWaitingStartRef.current) {
+      isWaitingStartRef.current = false;
+      setIsWaitingStart(false);
+      stateRef.current.start = Date.now();
+    }
+
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
     if (t !== last && !isOpp(last, t) && q.length < 2) {
@@ -355,7 +372,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
   // 核心主物理 Tick 时序 (净物理用时实时计算)
   const tick = useCallback(() => {
     const { playing, over, paused, start } = stateRef.current;
-    if (!playing || over || paused) return;
+    if (!playing || over || paused || isWaitingStartRef.current) return;
 
     const currentDur = Math.max(0, Math.floor((Date.now() - start - pausedMsRef.current) / 1000));
     if (currentDur !== durationRef.current) {
@@ -462,6 +479,14 @@ export function useSnake(onGameOver?: GameOverCallback) {
         e.preventDefault();
       if (e.key === 'p' || e.key === 'P') return togglePause();
       if (e.key === ' ') {
+        // 等待起跑状态下按空格立即唤醒出发
+        if (isWaitingStartRef.current) {
+          isWaitingStartRef.current = false;
+          setIsWaitingStart(false);
+          stateRef.current.start = Date.now();
+          sound.playMove();
+          return;
+        }
         if (!stateRef.current.playing || stateRef.current.over) return;
         return togglePause();
       }
@@ -496,6 +521,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     isPlaying,
     isGameOver,
     isPaused,
+    isWaitingStart,
     isReplay,
     replayUser,
     replaySpeedRate,
