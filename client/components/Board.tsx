@@ -504,18 +504,39 @@ export default function Board({
           </div>
         )}
 
-        {/* 游戏结束结算面板 */}
+        {/* 游戏结束结算面板 (精细打磨：极简南大家园现代主义几何卡片) */}
         {isGameOver && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-[3px] flex flex-col items-center justify-center text-center p-6">
-            <span className="text-rose-500 text-lg font-black mb-2">游戏结束</span>
-            <div className="flex gap-4 text-xs text-[#334155] mb-4 bg-[#F8FAFC] px-4 py-2 rounded-2xl">
-              <span>得分: <strong className="text-[#0F172A] font-mono font-black text-sm">{score}</strong></span>
-              <span>长度: <strong className="text-[#0099FF] font-mono font-bold">{length}</strong></span>
-              <span>用时: <strong className="text-[#0F172A] font-mono font-bold">{duration}s</strong></span>
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.8 rounded-full bg-rose-50 text-rose-500 font-bold text-xs mb-2">
+              <span>游戏结束</span>
             </div>
+
+            <div className="text-2xl sm:text-3xl font-black text-[#0F172A] font-mono tracking-tight mb-3">
+              {score} <span className="text-xs font-normal text-slate-400">分</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-xs text-slate-600 mb-5 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] text-slate-400">蛇身长度</span>
+                <strong className="text-[#0099FF] font-mono font-bold text-sm">{length}</strong>
+              </div>
+              <span className="w-px h-6 bg-slate-200" />
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] text-slate-400">存活用时</span>
+                <strong className="text-[#8B5CF6] font-mono font-bold text-sm">{duration}s</strong>
+              </div>
+              <span className="w-px h-6 bg-slate-200" />
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] text-slate-400">平均移速</span>
+                <strong className="text-[#10B981] font-mono font-bold text-sm">
+                  {Math.round((BASE_SPEED_MS / speedMs) * 10) / 10}x
+                </strong>
+              </div>
+            </div>
+
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow-md"
             >
               <RotateCcw size={15} />
               <span>再来一局</span>
