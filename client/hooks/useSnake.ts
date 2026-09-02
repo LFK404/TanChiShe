@@ -91,6 +91,15 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const isReplayRef = useRef<boolean>(false);
   const replayInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
 
+  // 移动端振动触觉反馈
+  const vibrate = useCallback((pattern: number | number[]) => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(pattern);
+      } catch {}
+    }
+  }, []);
+
   // 清除金色幸运果与其超时计时器
   const bonusTimersRef = useRef<NodeJS.Timeout[]>([]);
   const clearBonus = useCallback(() => {
@@ -133,10 +142,25 @@ export function useSnake(onGameOver?: GameOverCallback) {
         bonusTimersRef.current.forEach((t) => clearTimeout(t));
         bonusTimersRef.current = [];
 
-        // 5秒、6秒、7秒时触发清脆紧迫的倒计时警报音
-        const t5 = setTimeout(() => { if (bonusRef.current) sound.playCountdownTick(); }, 5000);
-        const t6 = setTimeout(() => { if (bonusRef.current) sound.playCountdownTick(); }, 6000);
-        const t7 = setTimeout(() => { if (bonusRef.current) sound.playCountdownTick(); }, 7000);
+        // 5秒、6秒、7秒时触发清脆紧迫的倒计时警报音与提示微震
+        const t5 = setTimeout(() => {
+          if (bonusRef.current) {
+            sound.playCountdownTick();
+            vibrate(8);
+          }
+        }, 5000);
+        const t6 = setTimeout(() => {
+          if (bonusRef.current) {
+            sound.playCountdownTick();
+            vibrate(8);
+          }
+        }, 6000);
+        const t7 = setTimeout(() => {
+          if (bonusRef.current) {
+            sound.playCountdownTick();
+            vibrate(8);
+          }
+        }, 7000);
 
         // 8秒金果彻底消失
         const t8 = setTimeout(() => {
@@ -147,16 +171,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
         bonusTimersRef.current.push(t5, t6, t7, t8);
       }
     }
-  }, []);
-
-  // 移动端振动触觉反馈
-  const vibrate = (pattern: number | number[]) => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate(pattern);
-      } catch {}
-    }
-  };
+  }, [vibrate]);
 
   // 游戏结束结算 (自动剔除中途暂停时长)
   const gameOver = useCallback(() => {
@@ -167,7 +182,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     clearBonus();
     sound.stopBgm();
     sound.playGameOver();
-    vibrate(40);
+    vibrate([45, 50, 60]);
     // 局后平滑切回温馨大厅 BGM
     setTimeout(() => {
       sound.startMenuBgm();
@@ -176,7 +191,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
       onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
     }
-  }, [onGameOver, clearBonus]);
+  }, [onGameOver, clearBonus, vibrate]);
 
   // 开始新对局 (支持传入服务端下发的确定性 seed)
   const startGame = useCallback(
@@ -220,7 +235,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       vibrate(10);
       spawnFood();
     },
-    [spawnFood, clearBonus]
+    [spawnFood, clearBonus, vibrate]
   );
 
   // 启动电竞对局录像回放模式 (基于确定性种子与输入流 100% 还原)
@@ -308,8 +323,9 @@ export function useSnake(onGameOver?: GameOverCallback) {
       q.push(t);
       inputsRef.current.push({ tick: tickCountRef.current, dir: t });
       sound.playMove();
+      vibrate(8);
     }
-  }, []);
+  }, [vibrate]);
 
   // 暂停/继续游戏 (精准记录暂停时长并自动抵扣)
   const togglePause = useCallback(() => {
@@ -330,7 +346,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       sound.playToggle();
       vibrate(10);
     }
-  }, []);
+  }, [vibrate]);
 
   // 核心主物理 Tick 时序 (净物理用时实时计算)
   const tick = useCallback(() => {
@@ -412,7 +428,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setScore(stateRef.current.score);
       setBonusCount(bonusCountRef.current);
       sound.playBonus();
-      vibrate([15, 30, 15]);
+      vibrate([15, 30, 20, 30, 25]);
       clearBonus();
     }
 
@@ -423,7 +439,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     const tail = nextSnake.pop()!;
     fenceRef.current.add(toKey(tail.x, tail.y));
     snakeRef.current = nextSnake;
-  }, [gameOver, spawnFood, clearBonus]);
+  }, [gameOver, spawnFood, clearBonus, vibrate]);
 
   // 全局键盘监听 (方向键 / WASD / 空格 / P)
   useEffect(() => {
