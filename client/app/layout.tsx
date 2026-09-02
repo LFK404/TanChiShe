@@ -11,10 +11,10 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: 'default', title: '贪吃蛇' },
   applicationName: '贪吃蛇',
   openGraph: {
-    title: '南大家园 · 极简贪吃蛇',
+    title: '极简贪吃蛇 · 方寸之间 重温经典',
     description: '方寸之间，重温经典。极简现代主义、全屏连续滑屏手势、Level 3 物理重放防作弊竞技排行榜。',
     url: 'https://zhixu.online',
-    siteName: '南大家园贪吃蛇',
+    siteName: '极简贪吃蛇',
     locale: 'zh_CN',
     type: 'website',
     images: [
@@ -22,13 +22,13 @@ export const metadata: Metadata = {
         url: '/icon.svg',
         width: 512,
         height: 512,
-        alt: '南大家园极简贪吃蛇微拟态图标',
+        alt: '极简贪吃蛇微拟态图标',
       },
     ],
   },
   twitter: {
     card: 'summary',
-    title: '南大家园 · 极简贪吃蛇',
+    title: '极简贪吃蛇 · 方寸之间 重温经典',
     description: '极简现代主义、移动优先的全栈贪吃蛇竞技游戏。',
     images: ['/icon.svg'],
   },

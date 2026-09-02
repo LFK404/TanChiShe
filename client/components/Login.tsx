@@ -36,7 +36,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
 
         <h1 className="text-xl font-bold tracking-tight text-slate-800">贪吃蛇</h1>
         <p className="text-xs text-slate-400 mt-1 font-normal">
-          南大家园在线游戏平台
+          方寸之间 · 重温经典
         </p>
       </div>
 
@@ -48,7 +48,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
           </label>
           <input
             type="text"
-            placeholder="输入你的南大账号或昵称"
+            placeholder="输入玩家用户名或昵称"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             className="w-full bg-[#F8FAFC] border border-slate-200/80 rounded-2xl px-4 py-2.5 text-sm text-[#0F172A] placeholder-slate-400 outline-none transition-all focus:bg-white focus:border-[#0099FF] focus:ring-4 focus:ring-[#66CCFF]/15"
