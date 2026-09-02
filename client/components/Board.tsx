@@ -12,6 +12,64 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import {
+  BronzeCrestIcon,
+  SilverCrestIcon,
+  GoldCrestIcon,
+  DiamondCrestIcon,
+} from './NCUIcon';
+
+// 战局终了段位微拟态勋章加冕组件
+function SettleTierCrest({ score }: { score: number }) {
+  if (score >= 800) {
+    return (
+      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
+        <DiamondCrestIcon unlocked size={52} />
+        <span className="text-[10.5px] font-bold text-[#0099FF] bg-[#EBF8FF] px-2.5 py-0.5 rounded-full">
+          钻石·超凡殿堂
+        </span>
+      </div>
+    );
+  }
+  if (score >= 500) {
+    return (
+      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
+        <GoldCrestIcon unlocked size={52} />
+        <span className="text-[10.5px] font-bold text-[#D97706] bg-[#FEF3C7] px-2.5 py-0.5 rounded-full">
+          黄金·登峰造极
+        </span>
+      </div>
+    );
+  }
+  if (score >= 300) {
+    return (
+      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
+        <SilverCrestIcon unlocked size={52} />
+        <span className="text-[10.5px] font-bold text-[#64748B] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full">
+          白银·技巧渐熟
+        </span>
+      </div>
+    );
+  }
+  if (score >= 100) {
+    return (
+      <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
+        <BronzeCrestIcon unlocked size={52} />
+        <span className="text-[10.5px] font-bold text-[#10B981] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full">
+          青铜·方寸探索
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
+      <BronzeCrestIcon unlocked={false} size={46} />
+      <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.2 rounded-full">
+        初出茅庐
+      </span>
+    </div>
+  );
+}
 
 interface Props {
   snakeRef: React.MutableRefObject<Point[]>;
@@ -126,9 +184,18 @@ export default function Board({
   const bonusSpawnTimeRef = useRef<number>(0);
   const foodSpawnTimeRef = useRef<number>(0);
 
-  // 监听开局与吃果得分，触发红果果冻微弹跳
+  // 监听开局与吃果得分，触发红果果冻微弹跳与得分胶囊微弹性脉冲
+  const [scorePulse, setScorePulse] = useState(false);
   useEffect(() => {
     foodSpawnTimeRef.current = Date.now();
+    if (score > 0) {
+      const anim = requestAnimationFrame(() => setScorePulse(true));
+      const timer = setTimeout(() => setScorePulse(false), 180);
+      return () => {
+        cancelAnimationFrame(anim);
+        clearTimeout(timer);
+      };
+    }
   }, [score, isPlaying]);
 
   // 监听金果生成时间用于临期急速频闪判定
@@ -377,12 +444,18 @@ export default function Board({
       ctx.fillRect(0, 0, cvs.width, cvs.height);
     }
 
-    // 2. 绘制残留栅栏 (浅灰无阴影对称方块)
+    // 2. 绘制残留栅栏 (浅灰极简方块 + 现代微定位暗标)
     ctx.fillStyle = '#E2E8F0';
     fenceRef.current.forEach((k) => {
       const [x, y] = k.split(',').map(Number);
       ctx.beginPath();
       drawRoundRect(ctx, x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2, 3);
+      ctx.fill();
+
+      // 现代建筑极简中心定位微标 (微凹点质感)
+      ctx.fillStyle = '#CBD5E1';
+      ctx.beginPath();
+      ctx.arc(x * CELL + CELL / 2, y * CELL + CELL / 2, 1.2, 0, Math.PI * 2);
       ctx.fill();
     });
 
@@ -400,6 +473,18 @@ export default function Board({
       ctx.fillStyle = '#EF4444';
       ctx.beginPath();
       ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, foodR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 水滴晶莹月牙微高光 (与主图标 icon.svg 保持统一纯净质感)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.beginPath();
+      ctx.arc(
+        food.x * CELL + CELL / 2 - foodR * 0.35,
+        food.y * CELL + CELL / 2 - foodR * 0.35,
+        foodR * 0.28,
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
 
       // 果梗与果叶
@@ -488,6 +573,11 @@ export default function Board({
           4
         );
         ctx.fill();
+
+        // 晶体纯白微描边 (密集折叠转弯时各节边界清晰透气)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
       }
     }
 
@@ -516,12 +606,16 @@ export default function Board({
       }
     });
 
-    // 7. 绘制蛇头 (南大家园天青蓝 #66CCFF + 灵动双眼视线追踪)
+    // 7. 绘制蛇头 (南大家园天青蓝 #66CCFF + 纯白晶体描边 + 灵动双眼视线追踪)
     if (head) {
       ctx.fillStyle = '#66CCFF';
       ctx.beginPath();
       drawRoundRect(ctx, head.x * CELL + 1, head.y * CELL + 1, CELL - 2, CELL - 2, 5);
       ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
 
       // 计算双眼在蛇头上的朝向偏移与视线追踪
       let eyeOffset1 = { x: 4, y: 4 };
@@ -868,7 +962,12 @@ export default function Board({
       {/* 顶部四段式状态胶囊栏 */}
       <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-3 sm:mb-4 text-center text-xs">
         {statCapsules.map((st) => (
-          <div key={st.label} className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden`}>
+          <div
+            key={st.label}
+            className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden transition-transform duration-150 ${
+              st.label === '得分' && scorePulse ? 'scale-105' : 'scale-100'
+            }`}
+          >
             <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
             <strong className={`${st.valColor} text-sm font-mono font-black`}>{st.val}</strong>
             {st.isBonus && (
@@ -937,8 +1036,13 @@ export default function Board({
         {/* 游戏结束结算面板 (极简南大家园现代主义几何卡片) */}
         {isGameOver && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.8 rounded-full bg-rose-50 text-rose-500 font-bold text-xs mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.8 rounded-full bg-rose-50 text-rose-500 font-bold text-xs mb-2.5">
               <span>{isReplay ? '观摩播放结束' : '游戏结束'}</span>
+            </div>
+
+            {/* 荣耀加冕：南大家园多巴胺微拟态段位勋章 */}
+            <div className="mb-2">
+              <SettleTierCrest score={score} />
             </div>
 
             <div className="text-2xl sm:text-3xl font-black text-[#0F172A] font-mono tracking-tight mb-3">
