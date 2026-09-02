@@ -28,30 +28,27 @@
   <circle cx="19" cy="7.5" r="1.3" fill="#10B981" />
   <circle cx="23" cy="7.5" r="1.3" fill="#EC4899" />
 
-  <!-- 3. 灵动曲折层叠方块贪吃蛇 (打破生硬直线，起伏曲折更富生命力) -->
-  <!-- [段一：左下方至右下方波浪走位] -->
-  <!-- 节0: 蛇尾 (往上微翘，浅淡冰蓝) -->
-  <rect x="8.5" y="28.8" width="8" height="8" rx="2.4" fill="#BAE6FD" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 3. 灵动曲折层叠方块贪吃蛇 (第3节往上提、第5节往下沉，蜿蜒生动) -->
+  <!-- 节0: 蛇尾 (左下方起始，浅淡冰蓝) -->
+  <rect x="7.5" y="33" width="8" height="8" rx="2.4" fill="#BAE6FD" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节1: 底横下沉中节 (天青淡蓝，形成波浪底洼) -->
-  <rect x="14.2" y="32.8" width="8" height="8" rx="2.4" fill="#93C5FD" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节1: 底横微抬节 (天青淡蓝，平滑向上微过渡) -->
+  <rect x="13.5" y="31" width="8" height="8" rx="2.4" fill="#93C5FD" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节2: 第三个方块 (往上提，起伏扬起，清澈水蓝) -->
-  <rect x="20.5" y="28.2" width="8" height="8" rx="2.4" fill="#60A5FA" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节2: [尾巴第3个方块 往上提一点] (清澈水蓝，打破死板直线) -->
+  <rect x="19.5" y="26.5" width="8" height="8" rx="2.4" fill="#60A5FA" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- [段二：从右下方对角斜穿至左上方] -->
-  <!-- 节3: 第四个方块 (对角斜穿中枢节，明亮天青蓝) -->
-  <rect x="15.0" y="22.2" width="8" height="8" rx="2.4" fill="#38BDF8" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节3: 中枢过渡节 (明亮天青蓝，灵动折转) -->
+  <rect x="14" y="21" width="8" height="8" rx="2.4" fill="#38BDF8" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节4: 第五个方块 (往下落，形成生动凹折过渡，纯正天蓝) -->
-  <rect x="9.5" y="18.2" width="8" height="8" rx="2.4" fill="#0284C7" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节4: [尾巴第5个方块 往下沉一点] (纯正天蓝，打破顶线生硬感) -->
+  <rect x="9.5" y="17.5" width="8" height="8" rx="2.4" fill="#0284C7" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- [段三：从左上方折向右上方冲刺] -->
-  <!-- 节5: 第六个方块 (顶横跃升过渡节，深天蓝) -->
+  <!-- 节5: 顶横向上攀升节 (深天蓝) -->
   <rect x="16.5" y="14.5" width="8" height="8" rx="2.4" fill="#0099FF" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
   <!-- 节6: 蛇头 (右上方顶层方块，南大家园渐变，昂首朝右) -->
-  <rect x="24.0" y="14.5" width="8.8" height="8.8" rx="2.6" fill="url(#headGrad)" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <rect x="24" y="14.5" width="8.8" height="8.8" rx="2.6" fill="url(#headGrad)" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
   <!-- 蛇头灵动双眸 (专注注视右上前方红苹果) -->
   <!-- 上眼 -->
