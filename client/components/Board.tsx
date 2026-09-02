@@ -24,6 +24,27 @@ interface Props {
   onTogglePause?: () => void;
 }
 
+// 兼容老旧 WebView / QQ / 微信内置浏览器 Canvas 2D roundRect
+const drawRoundRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) => {
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+};
+
 // 粒子爆发微特效实体
 interface Particle {
   x: number; y: number; vx: number; vy: number;
@@ -170,7 +191,7 @@ export default function Board({
     fenceRef.current.forEach((k) => {
       const [fx, fy] = k.split(',').map(Number);
       ctx.beginPath();
-      ctx.roundRect(fx * CELL + 2.5, fy * CELL + 2.5, CELL - 5, CELL - 5, 2.5);
+      drawRoundRect(ctx, fx * CELL + 2.5, fy * CELL + 2.5, CELL - 5, CELL - 5, 2.5);
       ctx.fill();
     });
 
@@ -204,7 +225,7 @@ export default function Board({
         // 蛇头：天青蓝主色 (#66CCFF) + 3.5px 几何圆角，略微饱满 (16x16)
         ctx.fillStyle = '#66CCFF';
         ctx.beginPath();
-        ctx.roundRect(px + 2, py + 2, CELL - 4, CELL - 4, 3.5);
+        drawRoundRect(ctx, px + 2, py + 2, CELL - 4, CELL - 4, 3.5);
         ctx.fill();
 
         // 灵动明亮双眼珠 (白底 + 墨黑瞳孔 + 高光反光点)
@@ -229,7 +250,7 @@ export default function Board({
         // 蛇身方格：与身后栅栏保持一致的 2.5px 留白与 3px 圆角 (15x15)，具备清爽的方格节奏
         ctx.fillStyle = idx / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
         ctx.beginPath();
-        ctx.roundRect(px + 2.5, py + 2.5, CELL - 5, CELL - 5, 3);
+        drawRoundRect(ctx, px + 2.5, py + 2.5, CELL - 5, CELL - 5, 3);
         ctx.fill();
       }
     });
