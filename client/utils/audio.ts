@@ -9,10 +9,17 @@ class SoundManager {
   private currentMode: BgmMode = 'NONE';
   private activeJingleAudio: HTMLAudioElement | null = null;
   public muted = false;
+  public bgmVolume = 0.8; // 0.0 ~ 1.0
+  public sfxVolume = 0.8; // 0.0 ~ 1.0
 
   constructor() {
     if (typeof window !== 'undefined') {
       this.muted = localStorage.getItem('tanchishe_muted') === 'true';
+      const savedBgm = localStorage.getItem('tanchishe_bgm_vol');
+      if (savedBgm !== null) this.bgmVolume = Math.max(0, Math.min(1, parseFloat(savedBgm) || 0));
+      const savedSfx = localStorage.getItem('tanchishe_sfx_vol');
+      if (savedSfx !== null) this.sfxVolume = Math.max(0, Math.min(1, parseFloat(savedSfx) || 0));
+
       this.initAudios();
 
       // 页面切到后台自动暂停音频，切回前台自动恢复当前模式 BGM
@@ -39,13 +46,13 @@ class SoundManager {
       if (!this.menuBgmAudio) {
         this.menuBgmAudio = new Audio('/audio/menu_bgm.mp3');
         this.menuBgmAudio.loop = true;
-        this.menuBgmAudio.volume = 0.24;
+        this.menuBgmAudio.volume = 0.24 * this.bgmVolume;
         this.menuBgmAudio.preload = 'auto';
       }
       if (!this.inGameBgmAudio) {
         this.inGameBgmAudio = new Audio('/audio/bgm.mp3');
         this.inGameBgmAudio.loop = true;
-        this.inGameBgmAudio.volume = 0.28;
+        this.inGameBgmAudio.volume = 0.28 * this.bgmVolume;
         this.inGameBgmAudio.preload = 'auto';
       }
     } catch {}
@@ -64,6 +71,30 @@ class SoundManager {
       this.ctx.resume().catch(() => {});
     }
     this.initAudios();
+  }
+
+  // 独立调节 BGM 音乐音量 (0.0 ~ 1.0)
+  setBgmVolume(val: number) {
+    const clamped = Math.max(0, Math.min(1, val));
+    this.bgmVolume = clamped;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tanchishe_bgm_vol', String(clamped));
+    }
+    if (this.menuBgmAudio) {
+      this.menuBgmAudio.volume = 0.24 * clamped;
+    }
+    if (this.inGameBgmAudio) {
+      this.inGameBgmAudio.volume = 0.28 * clamped;
+    }
+  }
+
+  // 独立调节 SFX 音效音量 (0.0 ~ 1.0)
+  setSfxVolume(val: number) {
+    const clamped = Math.max(0, Math.min(1, val));
+    this.sfxVolume = clamped;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tanchishe_sfx_vol', String(clamped));
+    }
   }
 
   // 切换全局静音
@@ -96,7 +127,7 @@ class SoundManager {
       this.inGameBgmAudio.currentTime = 0;
     }
     if (this.menuBgmAudio) {
-      this.menuBgmAudio.volume = 0.24;
+      this.menuBgmAudio.volume = 0.24 * this.bgmVolume;
       this.menuBgmAudio.play().catch(() => {});
     }
   }
@@ -111,7 +142,7 @@ class SoundManager {
     }
     if (this.inGameBgmAudio) {
       this.inGameBgmAudio.currentTime = 0;
-      this.inGameBgmAudio.volume = 0.28;
+      this.inGameBgmAudio.volume = 0.28 * this.bgmVolume;
       this.inGameBgmAudio.play().catch(() => {});
     }
   }
@@ -164,7 +195,7 @@ class SoundManager {
       }
 
       const audio = new Audio(url);
-      audio.volume = volume;
+      audio.volume = Math.max(0, Math.min(1, volume * this.sfxVolume));
       this.activeJingleAudio = audio;
       audio.play().catch(() => {});
 
@@ -217,6 +248,8 @@ class SoundManager {
   // 底层 Web Audio API 原生声卡实时合成器 (0ms 零延迟、不卡顿、动态升调)
   private playNotes(type: OscillatorType, freqs: number[], noteDur: number, gap: number, vol: number) {
     if (this.muted) return;
+    const effectiveVol = vol * this.sfxVolume;
+    if (effectiveVol <= 0.001) return;
     this.unlockAudio();
     if (!this.ctx) return;
     if (this.ctx.state === 'suspended') {
@@ -230,7 +263,7 @@ class SoundManager {
         const start = now + idx * gap;
         osc.type = type;
         osc.frequency.setValueAtTime(freq, start);
-        gain.gain.setValueAtTime(vol, start);
+        gain.gain.setValueAtTime(effectiveVol, start);
         gain.gain.linearRampToValueAtTime(0.001, start + noteDur);
         osc.connect(gain);
         gain.connect(this.ctx!.destination);
