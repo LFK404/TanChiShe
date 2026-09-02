@@ -59,7 +59,6 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const fenceRef = useRef<Set<string>>(new Set());
   const foodRef = useRef<Point>({ x: 16, y: 12 });
   const bonusRef = useRef<Point | null>(null);
-  const bonusTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dirRef = useRef<Direction>('RIGHT');
   const queueRef = useRef<Direction[]>([]);
   const stateRef = useRef({ playing: false, over: false, paused: false, score: 0, start: 0 });
@@ -93,13 +92,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const replayInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
 
   // 清除金色幸运果与其超时计时器
+  const bonusTimersRef = useRef<NodeJS.Timeout[]>([]);
   const clearBonus = useCallback(() => {
     bonusRef.current = null;
     setHasBonus(false);
-    if (bonusTimerRef.current) {
-      clearTimeout(bonusTimerRef.current);
-      bonusTimerRef.current = null;
-    }
+    bonusTimersRef.current.forEach((t) => clearTimeout(t));
+    bonusTimersRef.current = [];
   }, []);
 
   // 确定性独立双果生成算法 (保证与 Go 后端 PRNG 消费序列绝对一致)
@@ -131,11 +129,22 @@ export function useSnake(onGameOver?: GameOverCallback) {
         bonusRef.current = remainingEmpty[Math.floor(r3 * remainingEmpty.length)];
         setBonusKey((prev) => prev + 1);
         setHasBonus(true);
-        if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
-        bonusTimerRef.current = setTimeout(() => {
+
+        bonusTimersRef.current.forEach((t) => clearTimeout(t));
+        bonusTimersRef.current = [];
+
+        // 5秒、6秒、7秒时触发清脆紧迫的倒计时警报音
+        const t5 = setTimeout(() => { if (bonusRef.current) sound.playCountdownTick(); }, 5000);
+        const t6 = setTimeout(() => { if (bonusRef.current) sound.playCountdownTick(); }, 6000);
+        const t7 = setTimeout(() => { if (bonusRef.current) sound.playCountdownTick(); }, 7000);
+
+        // 8秒金果彻底消失
+        const t8 = setTimeout(() => {
           bonusRef.current = null;
           setHasBonus(false);
         }, 8000);
+
+        bonusTimersRef.current.push(t5, t6, t7, t8);
       }
     }
   }, []);
@@ -433,7 +442,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
   useEffect(() => {
     return () => {
-      if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
+      bonusTimersRef.current.forEach((t) => clearTimeout(t));
+      bonusTimersRef.current = [];
     };
   }, []);
 

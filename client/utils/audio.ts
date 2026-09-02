@@ -147,7 +147,7 @@ class SoundManager {
     }
   }
 
-  // 精准高光短音频播放器 (支持指定最大时长与平滑淡出)
+  // 精准高光短音频播放器 (支持指定最大时长、平滑淡出与智能 BGM 避让 Ducking)
   private playJingleFile(url: string, durationSec: number, volume = 0.35) {
     if (this.muted || typeof window === 'undefined') return;
     try {
@@ -155,10 +155,24 @@ class SoundManager {
         this.activeJingleAudio.pause();
         this.activeJingleAudio = null;
       }
+
+      // 智能音频避让 (Audio Ducking)：将当前正在播放的 BGM 音量临时压低，让高光 Jingle 更加清晰突出
+      const curBgm = this.currentMode === 'INGAME' ? this.inGameBgmAudio : this.menuBgmAudio;
+      const originalBgmVol = this.currentMode === 'INGAME' ? 0.28 : 0.24;
+      if (curBgm && !curBgm.paused) {
+        curBgm.volume = 0.06;
+      }
+
       const audio = new Audio(url);
       audio.volume = volume;
       this.activeJingleAudio = audio;
       audio.play().catch(() => {});
+
+      const restoreBgm = () => {
+        if (curBgm && !curBgm.paused) {
+          curBgm.volume = originalBgmVol;
+        }
+      };
 
       // 到达截止时间前 0.4s 开始音量渐弱淡出
       const fadeTimer = setTimeout(() => {
@@ -168,12 +182,14 @@ class SoundManager {
           } else {
             clearInterval(fadeInterval);
             audio.pause();
+            restoreBgm();
           }
         }, 50);
       }, Math.max(100, (durationSec - 0.4) * 1000));
 
       audio.onended = () => {
         clearTimeout(fadeTimer);
+        restoreBgm();
       };
     } catch {}
   }

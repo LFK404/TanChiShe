@@ -12,7 +12,7 @@ interface Props {
 }
 
 // 页面顶部导航栏：承载品牌标识、当前玩家身份高分徽标、规则指南、8-bit 音效开关与注销退出
-export default function Header({ user, onLogout, onOpenTutorial }: Props) {
+export default function Header({ user, onLogout, onOpenTutorial, onOpenAchievements }: Props) {
   const [isMuted, setIsMuted] = useState(sound.muted);
 
   const toggleSound = () => {
