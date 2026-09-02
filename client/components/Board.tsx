@@ -70,6 +70,27 @@ export default function Board({
   const shakeRef = useRef({ frames: 0, intensity: 0 });
   const prevScoreRef = useRef(score);
   const prevGameOverRef = useRef(isGameOver);
+  const offscreenBgRef = useRef<HTMLCanvasElement | null>(null);
+
+  // 初始化预烘焙柔白底板与极细网格 (O(1) 纹理贴图，消除每帧 50 次重绘计算)
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const off = document.createElement('canvas');
+    off.width = GRID * CELL;
+    off.height = GRID * CELL;
+    const offCtx = off.getContext('2d');
+    if (offCtx) {
+      offCtx.fillStyle = '#F8FAFC';
+      offCtx.fillRect(0, 0, GRID * CELL, GRID * CELL);
+      offCtx.strokeStyle = 'rgba(226, 232, 240, 0.65)';
+      offCtx.lineWidth = 0.5;
+      for (let i = 0; i <= GRID; i++) {
+        offCtx.beginPath(); offCtx.moveTo(i * CELL, 0); offCtx.lineTo(i * CELL, GRID * CELL); offCtx.stroke();
+        offCtx.beginPath(); offCtx.moveTo(0, i * CELL); offCtx.lineTo(GRID * CELL, i * CELL); offCtx.stroke();
+      }
+    }
+    offscreenBgRef.current = off;
+  }, []);
 
   // 吃到苹果/金果时向四周发射微粒子爆发
   const emitParticles = useCallback((gridX: number, gridY: number, type: 'apple' | 'bonus') => {
@@ -176,14 +197,12 @@ export default function Board({
       shakeRef.current.frames--;
     }
 
-    // 2. 柔白底板与极细隐形网格
-    ctx.fillStyle = '#F8FAFC';
-    ctx.fillRect(0, 0, GRID * CELL, GRID * CELL);
-    ctx.strokeStyle = 'rgba(226, 232, 240, 0.65)';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i <= GRID; i++) {
-      ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, GRID * CELL); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(GRID * CELL, i * CELL); ctx.stroke();
+    // 2. 柔白底板与极细隐形网格 (O(1) 离屏贴图)
+    if (offscreenBgRef.current) {
+      ctx.drawImage(offscreenBgRef.current, 0, 0);
+    } else {
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(0, 0, GRID * CELL, GRID * CELL);
     }
 
     // 3. 绘制身后残留栅栏
