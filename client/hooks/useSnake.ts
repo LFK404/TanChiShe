@@ -80,8 +80,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [speedMs, setSpeedMs] = useState(BASE_SPEED_MS);
   const [hasBonus, setHasBonus] = useState(false);
   const [bonusKey, setBonusKey] = useState(0);
-  const [steps, setSteps] = useState(0);
   const [bonusCount, setBonusCount] = useState(0);
+  const durationRef = useRef<number>(0);
   const stepsRef = useRef<number>(0);
   const bonusCountRef = useRef<number>(0);
 
@@ -224,10 +224,10 @@ export function useSnake(onGameOver?: GameOverCallback) {
       queueRef.current = [];
       stateRef.current = { playing: true, over: false, paused: false, score: 0, start: Date.now() };
 
+      durationRef.current = 0;
       setScore(0);
       setDuration(0);
       setLength(3);
-      setSteps(0);
       setBonusCount(0);
       setSpeedMs(BASE_SPEED_MS);
       setIsGameOver(false);
@@ -286,10 +286,10 @@ export function useSnake(onGameOver?: GameOverCallback) {
       queueRef.current = [];
       stateRef.current = { playing: true, over: false, paused: false, score: 0, start: Date.now() };
 
+      durationRef.current = 0;
       setScore(0);
       setDuration(0);
       setLength(3);
-      setSteps(0);
       setBonusCount(0);
       setSpeedMs(BASE_SPEED_MS);
       setIsGameOver(false);
@@ -357,7 +357,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
     const { playing, over, paused, start } = stateRef.current;
     if (!playing || over || paused) return;
 
-    setDuration(Math.max(0, Math.floor((Date.now() - start - pausedMsRef.current) / 1000)));
+    const currentDur = Math.max(0, Math.floor((Date.now() - start - pausedMsRef.current) / 1000));
+    if (currentDur !== durationRef.current) {
+      durationRef.current = currentDur;
+      setDuration(currentDur);
+    }
 
     // 如果处于电竞对局回放模式，从录像映射表中消费当前 tick 的转向输入
     if (isReplayRef.current) {
@@ -436,9 +440,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       clearBonus();
     }
 
-    // 8. 正常移动：蛇头前进，蛇尾留下残留栅栏
+    // 8. 正常移动：蛇头前进，蛇尾留下残留栅栏 (纯 Ref 高速步进，零 React 状态调度开销)
     stepsRef.current += 1;
-    setSteps(stepsRef.current);
     const nextSnake = [head, ...snakeRef.current];
     const tail = nextSnake.pop()!;
     fenceRef.current.add(toKey(tail.x, tail.y));
@@ -483,7 +486,6 @@ export function useSnake(onGameOver?: GameOverCallback) {
     duration,
     length,
     speedMs,
-    steps,
     bonusCount,
     isPlaying,
     isGameOver,

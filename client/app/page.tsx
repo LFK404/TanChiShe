@@ -163,7 +163,6 @@ export default function Home() {
     duration,
     length,
     speedMs,
-    steps,
     bonusCount,
     isPlaying,
     isGameOver,
@@ -239,14 +238,14 @@ export default function Home() {
       maxCombo: 1,
       bonusCount,
       speedMs,
-      steps,
+      steps: 0,
     });
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
       addToast(`解锁成就: [${ach.name}]`, ach.tier);
     });
-  }, [isPlaying, isGameOver, score, length, duration, bonusCount, speedMs, steps, addToast]);
+  }, [isPlaying, isGameOver, score, length, duration, bonusCount, speedMs, addToast]);
 
   // 开始新对局 (优先命中预取 Token，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {

@@ -594,67 +594,55 @@ export default function Board({
       ctx.lineWidth = 0.8;
       ctx.stroke();
 
-      // 计算双眼在蛇头上的朝向偏移与视线追踪
-      let eyeOffset1 = { x: 4, y: 4 };
-      let eyeOffset2 = { x: CELL - 4, y: 4 };
-      let pupilOffset = { x: 0, y: 0 };
+      // 计算双眼在蛇头上的朝向偏移与视线追踪 (采用标量计算，零 GC 对象分配)
+      let e1x = 4, e1y = 4;
+      let e2x = CELL - 4, e2y = 4;
+      let px = 0, py = 0;
 
       if (snake.length > 1) {
         const next = snake[1];
         const dx = head.x - next.x;
         const dy = head.y - next.y;
         if (dx === 1) {
-          eyeOffset1 = { x: CELL - 5, y: 4 };
-          eyeOffset2 = { x: CELL - 5, y: CELL - 4 };
-          pupilOffset = { x: 0.8, y: 0 };
+          e1x = CELL - 5; e1y = 4;
+          e2x = CELL - 5; e2y = CELL - 4;
+          px = 0.8; py = 0;
         } else if (dx === -1) {
-          eyeOffset1 = { x: 5, y: 4 };
-          eyeOffset2 = { x: 5, y: CELL - 4 };
-          pupilOffset = { x: -0.8, y: 0 };
+          e1x = 5; e1y = 4;
+          e2x = 5; e2y = CELL - 4;
+          px = -0.8; py = 0;
         } else if (dy === 1) {
-          eyeOffset1 = { x: 4, y: CELL - 5 };
-          eyeOffset2 = { x: CELL - 4, y: CELL - 5 };
-          pupilOffset = { x: 0, y: 0.8 };
+          e1x = 4; e1y = CELL - 5;
+          e2x = CELL - 4; e2y = CELL - 5;
+          px = 0; py = 0.8;
         } else {
-          eyeOffset1 = { x: 4, y: 5 };
-          eyeOffset2 = { x: CELL - 4, y: 5 };
-          pupilOffset = { x: 0, y: -0.8 };
+          e1x = 4; e1y = 5;
+          e2x = CELL - 4; e2y = 5;
+          px = 0; py = -0.8;
         }
       }
 
       // 灵动视线预瞄：若缓冲队列中有下一个待执行指令，瞳孔提前向目标方向瞥视预瞄
       const nextQueued = queueRef?.current && queueRef.current.length > 0 ? queueRef.current[0] : null;
       if (nextQueued) {
-        if (nextQueued === 'UP') pupilOffset = { x: 0, y: -1.2 };
-        else if (nextQueued === 'DOWN') pupilOffset = { x: 0, y: 1.2 };
-        else if (nextQueued === 'LEFT') pupilOffset = { x: -1.2, y: 0 };
-        else if (nextQueued === 'RIGHT') pupilOffset = { x: 1.2, y: 0 };
+        if (nextQueued === 'UP') { px = 0; py = -1.2; }
+        else if (nextQueued === 'DOWN') { px = 0; py = 1.2; }
+        else if (nextQueued === 'LEFT') { px = -1.2; py = 0; }
+        else if (nextQueued === 'RIGHT') { px = 1.2; py = 0; }
       }
 
       // 眼白
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.arc(head.x * CELL + eyeOffset1.x, head.y * CELL + eyeOffset1.y, 2.4, 0, Math.PI * 2);
-      ctx.arc(head.x * CELL + eyeOffset2.x, head.y * CELL + eyeOffset2.y, 2.4, 0, Math.PI * 2);
+      ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.4, 0, Math.PI * 2);
+      ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.4, 0, Math.PI * 2);
       ctx.fill();
 
       // 瞳孔
       ctx.fillStyle = '#0F172A';
       ctx.beginPath();
-      ctx.arc(
-        head.x * CELL + eyeOffset1.x + pupilOffset.x,
-        head.y * CELL + eyeOffset1.y + pupilOffset.y,
-        1.2,
-        0,
-        Math.PI * 2
-      );
-      ctx.arc(
-        head.x * CELL + eyeOffset2.x + pupilOffset.x,
-        head.y * CELL + eyeOffset2.y + pupilOffset.y,
-        1.2,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.2, 0, Math.PI * 2);
+      ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.2, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -872,31 +860,35 @@ export default function Board({
     touchStartPosRef.current = null;
   };
 
-  // 物理时序主循环 (支持回放倍速调整)
+  // 电竞级 Delta-Time 累加物理积分时钟引擎 (统一 rAF 单时钟驱动，彻底消灭 setInterval 抖动与顿挫)
   useEffect(() => {
-    render();
     let animFrame: number;
-    const animate = () => {
-      if (particlesRef.current.length > 0 || floatingTextsRef.current.length > 0 || shakeRef.current.frames > 0 || isPlaying) {
-        render();
+    let lastTime = performance.now();
+    let accumulator = 0;
+
+    const loop = (currentTime: number) => {
+      // 100ms 保护门限，防止切后台标签页恢复时由于时间过大产生连续冲撞
+      const delta = Math.min(currentTime - lastTime, 100);
+      lastTime = currentTime;
+
+      if (isPlaying && !isPaused && !isGameOver) {
+        const effectiveSpeed = isReplay ? speedMs / (replaySpeedRate || 1) : speedMs;
+        accumulator += delta;
+
+        // 物理走步时序积分：达到一个步进周期时触发物理判定
+        while (accumulator >= effectiveSpeed) {
+          onTick();
+          accumulator -= effectiveSpeed;
+        }
       }
-      animFrame = requestAnimationFrame(animate);
-    };
-    animFrame = requestAnimationFrame(animate);
 
-    if (!isPlaying || isPaused || isGameOver) return () => cancelAnimationFrame(animFrame);
-
-    const effectiveSpeed = isReplay ? speedMs / (replaySpeedRate || 1) : speedMs;
-
-    const timer = setInterval(() => {
-      onTick();
+      // 无论游戏是否暂停，统一按屏幕刷新率 (60Hz/120Hz) 平滑渲染 Canvas 与粒子光效
       render();
-    }, effectiveSpeed);
-
-    return () => {
-      clearInterval(timer);
-      cancelAnimationFrame(animFrame);
+      animFrame = requestAnimationFrame(loop);
     };
+
+    animFrame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animFrame);
   }, [isPlaying, isPaused, isGameOver, speedMs, isReplay, replaySpeedRate, onTick, render]);
 
   // 顶部四段式复合胶囊数据配置
