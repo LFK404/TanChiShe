@@ -81,6 +81,18 @@ interface FloatingText {
   alpha: number; scale: number; life: number; maxLife: number;
 }
 
+// 欢庆四色彩纸微特效实体
+interface Confetti {
+  x: number; y: number; vx: number; vy: number;
+  rot: number; vRot: number;
+  color: string; size: number; alpha: number; life: number; maxLife: number;
+}
+
+// 蛇身吞咽物理传导波
+interface DigestionWave {
+  startTime: number;
+}
+
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
   score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
@@ -93,12 +105,20 @@ export default function Board({
   const shockwavesRef = useRef<Shockwave[]>([]);
   const motionTrailsRef = useRef<{ x: number; y: number; alpha: number }[]>([]);
   const floatingTextsRef = useRef<FloatingText[]>([]);
+  const confettiRef = useRef<Confetti[]>([]);
+  const digestionWavesRef = useRef<DigestionWave[]>([]);
   const comboRef = useRef({ count: 0, lastTime: 0 });
   const shakeRef = useRef({ frames: 0, intensity: 0 });
   const prevScoreRef = useRef(score);
   const prevGameOverRef = useRef(isGameOver);
   const offscreenBgRef = useRef<HTMLCanvasElement | null>(null);
   const bonusSpawnTimeRef = useRef<number>(0);
+  const foodSpawnTimeRef = useRef<number>(0);
+
+  // 监听开局与吃果得分，触发红果果冻微弹跳
+  useEffect(() => {
+    foodSpawnTimeRef.current = Date.now();
+  }, [score, isPlaying]);
 
   // 监听金果生成时间用于临期急速频闪判定
   useEffect(() => {
@@ -200,12 +220,57 @@ export default function Board({
     });
   };
 
-  // 监听得分变化，精确捕捉连击与音效反馈
+  // 吃到红苹果清空栅栏时爆发浅灰粉尘消散粒子
+  const spawnCrumbleParticles = (gridX: number, gridY: number) => {
+    const centerX = gridX * CELL + CELL / 2;
+    const centerY = gridY * CELL + CELL / 2;
+    for (let i = 0; i < 3; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.4 + Math.random() * 1.2;
+      particlesRef.current.push({
+        x: centerX + (Math.random() - 0.5) * 6,
+        y: centerY + (Math.random() - 0.5) * 6,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: '#CBD5E1',
+        size: 1.2 + Math.random() * 1.2,
+        alpha: 0.8,
+        life: 0,
+        maxLife: 14 + Math.floor(Math.random() * 6),
+      });
+    }
+  };
+
+  // 破纪录 / 高分加冕时屏幕两侧喷射南大家园四色彩纸礼花
+  const spawnConfetti = () => {
+    const colors = ['#66CCFF', '#10B981', '#EF4444', '#F59E0B', '#8B5CF6'];
+    for (let i = 0; i < 36; i++) {
+      const fromLeft = i % 2 === 0;
+      confettiRef.current.push({
+        x: fromLeft ? 8 + Math.random() * 15 : GRID * CELL - 8 - Math.random() * 15,
+        y: GRID * CELL - 10,
+        vx: (fromLeft ? 1 : -1) * (1.8 + Math.random() * 3.8),
+        vy: -(4.5 + Math.random() * 5.2),
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.25,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 3.5 + Math.random() * 3.5,
+        alpha: 1,
+        life: 0,
+        maxLife: 65 + Math.floor(Math.random() * 20),
+      });
+    }
+  };
+
+  // 监听得分变化，精确捕捉连击、吞咽波、粉尘瓦解与音效反馈
   useEffect(() => {
     if (score > prevScoreRef.current) {
       const diff = score - prevScoreRef.current;
       const head = snakeRef.current[0] || { x: 10, y: 12 };
       const now = Date.now();
+
+      // 触发蛇身物理吞咽传导波
+      digestionWavesRef.current.push({ startTime: now });
 
       // 3 秒内连续吃果判定为连击 Combo
       if (now - comboRef.current.lastTime <= 3000) {
@@ -233,9 +298,14 @@ export default function Board({
           lineWidth: 2,
         });
       } else {
-        // 普通红苹果
+        // 普通红苹果 (清空栅栏并触发粉尘瓦解)
         triggerShake(4, 1.8);
         spawnParticles(head.x, head.y, '#EF4444', 10);
+        fenceRef.current.forEach((k) => {
+          const [fx, fy] = k.split(',').map(Number);
+          spawnCrumbleParticles(fx, fy);
+        });
+
         shockwavesRef.current.push({
           x: head.x * CELL + CELL / 2,
           y: head.y * CELL + CELL / 2,
@@ -253,9 +323,9 @@ export default function Board({
       }
     }
     prevScoreRef.current = score;
-  }, [score, snakeRef]);
+  }, [score, snakeRef, fenceRef]);
 
-  // 监听游戏结束，触发死亡震屏与微红粒子消散
+  // 监听游戏结束，触发死亡震屏、粒子消散与高光礼花
   useEffect(() => {
     if (isGameOver && !prevGameOverRef.current) {
       triggerShake(12, 5.0);
@@ -263,9 +333,12 @@ export default function Board({
       if (head) {
         spawnParticles(head.x, head.y, '#EF4444', 24);
       }
+      if (score >= 100) {
+        spawnConfetti();
+      }
     }
     prevGameOverRef.current = isGameOver;
-  }, [isGameOver, snakeRef]);
+  }, [isGameOver, snakeRef, score]);
 
   // 主渲染流程 (Canvas 2D 极简现代主义绘制引擎)
   const render = useCallback(() => {
@@ -302,12 +375,20 @@ export default function Board({
       ctx.fill();
     });
 
-    // 3. 绘制普通红苹果 (纯净扁平无脏阴影 + 棕色果梗与翠绿果叶细节)
+    // 3. 绘制普通红苹果 (果冻弹性微弹跳 + 纯净扁平无脏阴影 + 棕色果梗与翠绿果叶细节)
     const food = foodRef.current;
     if (food) {
+      const elapsedFood = Date.now() - foodSpawnTimeRef.current;
+      let fScale = 1;
+      if (elapsedFood < 220 && elapsedFood > 0) {
+        const p = elapsedFood / 220;
+        fScale = 1 + 0.32 * Math.sin(p * Math.PI) * (1 - p * 0.4);
+      }
+      const foodR = Math.max(1, (CELL / 2 - 1.5) * fScale);
+
       ctx.fillStyle = '#EF4444';
       ctx.beginPath();
-      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 1.5, 0, Math.PI * 2);
+      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, foodR, 0, Math.PI * 2);
       ctx.fill();
 
       // 果梗与果叶
@@ -319,14 +400,19 @@ export default function Board({
       ctx.fill();
     }
 
-    // 4. 绘制金色幸运果 (双态光晕：常态呼吸 / 临期 5~8s 急速红金频闪)
+    // 4. 绘制金色幸运果 (双态光晕：常态呼吸 / 临期 5~8s 急速红金频闪 + 果冻弹跳)
     const bonus = bonusRef.current;
     if (bonus) {
       const bx = bonus.x * CELL + CELL / 2;
       const by = bonus.y * CELL + CELL / 2;
       const elapsed = Date.now() - bonusSpawnTimeRef.current;
       const isExpiring = elapsed >= 5000;
-      const pulse = 1 + Math.sin(Date.now() / 150) * 0.08;
+      let bScale = 1;
+      if (elapsed < 220 && elapsed > 0) {
+        const p = elapsed / 220;
+        bScale = 1 + 0.32 * Math.sin(p * Math.PI) * (1 - p * 0.4);
+      }
+      const pulse = (1 + Math.sin(Date.now() / 150) * 0.08) * bScale;
 
       let glowColor = 'rgba(245, 158, 11, 0.22)';
       let fruitColor = '#F59E0B';
@@ -353,8 +439,11 @@ export default function Board({
       ctx.fill();
     }
 
-    // 5. 绘制蛇身 (多巴胺晶体平滑渐变)
+    // 5. 绘制蛇身 (多巴胺晶体平滑渐变 + 物理吞咽传导波)
     const snake = snakeRef.current;
+    const nowTime = Date.now();
+    digestionWavesRef.current = digestionWavesRef.current.filter((w) => nowTime - w.startTime < 750);
+
     if (snake.length > 1) {
       const len = snake.length;
       for (let i = len - 1; i >= 1; i--) {
@@ -362,9 +451,31 @@ export default function Board({
         const ratio = 1 - i / len;
         const color = ratio > 0.6 ? '#38BDF8' : ratio > 0.3 ? '#7DD3FC' : '#BAE6FD';
 
+        // 计算物理吞咽波传导到当前节时的微隆起弹性形变
+        let bulge = 0;
+        digestionWavesRef.current.forEach((w) => {
+          const waveElapsed = nowTime - w.startTime;
+          const targetIdx = waveElapsed / 35;
+          const dist = Math.abs(i - targetIdx);
+          if (dist < 1.2) {
+            bulge = Math.max(bulge, (1 - dist / 1.2) * 0.24);
+          }
+        });
+
+        const scaleFactor = 1 + bulge;
+        const segSize = (CELL - 2) * scaleFactor;
+        const offset = ((CELL - 2) * (scaleFactor - 1)) / 2;
+
         ctx.fillStyle = color;
         ctx.beginPath();
-        drawRoundRect(ctx, seg.x * CELL + 1, seg.y * CELL + 1, CELL - 2, CELL - 2, 4);
+        drawRoundRect(
+          ctx,
+          seg.x * CELL + 1 - offset,
+          seg.y * CELL + 1 - offset,
+          segSize,
+          segSize,
+          4
+        );
         ctx.fill();
       }
     }
@@ -401,7 +512,7 @@ export default function Board({
       drawRoundRect(ctx, head.x * CELL + 1, head.y * CELL + 1, CELL - 2, CELL - 2, 5);
       ctx.fill();
 
-      // 计算双眼在蛇头上的朝向偏移
+      // 计算双眼在蛇头上的朝向偏移与视线追踪
       let eyeOffset1 = { x: 4, y: 4 };
       let eyeOffset2 = { x: CELL - 4, y: 4 };
       let pupilOffset = { x: 0, y: 0 };
@@ -411,22 +522,18 @@ export default function Board({
         const dx = head.x - next.x;
         const dy = head.y - next.y;
         if (dx === 1) {
-          // 向右
           eyeOffset1 = { x: CELL - 5, y: 4 };
           eyeOffset2 = { x: CELL - 5, y: CELL - 4 };
           pupilOffset = { x: 0.8, y: 0 };
         } else if (dx === -1) {
-          // 向左
           eyeOffset1 = { x: 5, y: 4 };
           eyeOffset2 = { x: 5, y: CELL - 4 };
           pupilOffset = { x: -0.8, y: 0 };
         } else if (dy === 1) {
-          // 向下
           eyeOffset1 = { x: 4, y: CELL - 5 };
           eyeOffset2 = { x: CELL - 4, y: CELL - 5 };
           pupilOffset = { x: 0, y: 0.8 };
         } else {
-          // 向上
           eyeOffset1 = { x: 4, y: 5 };
           eyeOffset2 = { x: CELL - 4, y: 5 };
           pupilOffset = { x: 0, y: -0.8 };
@@ -460,7 +567,7 @@ export default function Board({
       ctx.fill();
     }
 
-    // 7. 更新并绘制粒子微特效
+    // 8. 更新并绘制粒子微特效
     const activeParticles: Particle[] = [];
     particlesRef.current.forEach((p) => {
       p.x += p.vx;
@@ -479,7 +586,7 @@ export default function Board({
     particlesRef.current = activeParticles;
     ctx.globalAlpha = 1;
 
-    // 8. 更新并绘制冲击波扩散光环
+    // 9. 更新并绘制冲击波扩散光环
     const activeShockwaves: Shockwave[] = [];
     shockwavesRef.current.forEach((sw) => {
       sw.radius += 1.4;
@@ -498,19 +605,46 @@ export default function Board({
     });
     shockwavesRef.current = activeShockwaves;
 
-    // 9. 更新并绘制飘字特效
+    // 10. 更新并绘制四色彩纸欢庆礼花 (重力加速度与空气阻力)
+    const activeConfetti: Confetti[] = [];
+    confettiRef.current.forEach((c) => {
+      c.x += c.vx;
+      c.y += c.vy;
+      c.vy += 0.16; // 柔和重力加速度
+      c.vx *= 0.98; // 空气阻力
+      c.rot += c.vRot;
+      c.life += 1;
+      c.alpha = Math.max(0, 1 - c.life / c.maxLife);
+      if (c.life < c.maxLife) {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate(c.rot);
+        ctx.fillStyle = c.color;
+        ctx.globalAlpha = c.alpha;
+        ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
+        ctx.restore();
+        activeConfetti.push(c);
+      }
+    });
+    confettiRef.current = activeConfetti;
+
+    // 11. 更新并绘制连击飘字特效 (带果冻弹性缩放回弹)
     const activeTexts: FloatingText[] = [];
     floatingTextsRef.current.forEach((ft) => {
-      ft.y -= 0.6;
+      ft.y -= 0.65;
       ft.life += 1;
       ft.alpha = Math.max(0, 1 - ft.life / ft.maxLife);
       if (ft.life < ft.maxLife) {
+        const p = Math.min(1, ft.life / 7);
+        const scale = ft.life < 7 ? 1.4 - 0.4 * p : 1.0;
         ctx.save();
+        ctx.translate(ft.x, ft.y);
+        ctx.scale(scale, scale);
         ctx.fillStyle = ft.color;
         ctx.globalAlpha = ft.alpha;
         ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.fillText(ft.text, 0, 0);
         ctx.restore();
         activeTexts.push(ft);
       }
