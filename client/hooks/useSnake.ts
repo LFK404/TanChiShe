@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Direction, Point, InputRecord } from '@/types';
 import { sound } from '@/utils/audio';
+import { haptics, HapticType } from '@/utils/haptics';
 import { Mulberry32 } from '@/utils/prng';
 
 // 游戏物理网格常量 (24x24 格子，单格 20px)
@@ -91,12 +92,14 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const isReplayRef = useRef<boolean>(false);
   const replayInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
 
-  // 移动端振动触觉反馈 (智能联动静音设置，静音态或音效为0时不震动)
-  const vibrate = useCallback((pattern: number | number[]) => {
+  // 移动端振动触觉反馈 (智能接入多层级触觉管理器)
+  const vibrate = useCallback((type: HapticType | number | number[], combo = 1) => {
     if (sound.muted || sound.sfxVolume <= 0) return;
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+    if (typeof type === 'string') {
+      haptics.trigger(type, combo);
+    } else if (typeof window !== 'undefined' && 'vibrate' in navigator) {
       try {
-        navigator.vibrate(pattern);
+        navigator.vibrate(type);
       } catch {}
     }
   }, []);
@@ -147,19 +150,19 @@ export function useSnake(onGameOver?: GameOverCallback) {
         const t5 = setTimeout(() => {
           if (bonusRef.current) {
             sound.playCountdownTick();
-            vibrate(8);
+            vibrate('countdown');
           }
         }, 5000);
         const t6 = setTimeout(() => {
           if (bonusRef.current) {
             sound.playCountdownTick();
-            vibrate(8);
+            vibrate('countdown');
           }
         }, 6000);
         const t7 = setTimeout(() => {
           if (bonusRef.current) {
             sound.playCountdownTick();
-            vibrate(8);
+            vibrate('countdown');
           }
         }, 7000);
 
@@ -183,7 +186,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     clearBonus();
     sound.stopBgm();
     sound.playGameOver();
-    vibrate([45, 50, 60]);
+    vibrate('gameover');
     // 局后平滑切回温馨大厅 BGM
     setTimeout(() => {
       sound.startMenuBgm();
@@ -233,7 +236,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       clearBonus();
       sound.playReadyGo();
       sound.startInGameBgm();
-      vibrate(10);
+      vibrate('ui');
       spawnFood();
     },
     [spawnFood, clearBonus, vibrate]
@@ -324,7 +327,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       q.push(t);
       inputsRef.current.push({ tick: tickCountRef.current, dir: t });
       sound.playMove();
-      vibrate(8);
+      vibrate('move');
     }
   }, [vibrate]);
 
@@ -345,7 +348,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
         sound.resumeBgm();
       }
       sound.playToggle();
-      vibrate(10);
+      vibrate('ui');
     }
   }, [vibrate]);
 
@@ -403,7 +406,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setScore(stateRef.current.score);
       setLength(nextSnake.length);
       sound.playEat();
-      vibrate(12);
+      vibrate('eat');
       fenceRef.current.clear();
       const nextSpeed = Math.max(
         MIN_SPEED_MS,
@@ -429,7 +432,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setScore(stateRef.current.score);
       setBonusCount(bonusCountRef.current);
       sound.playBonus();
-      vibrate([15, 30, 20, 30, 25]);
+      vibrate('bonus');
       clearBonus();
     }
 

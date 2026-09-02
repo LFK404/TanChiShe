@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { User } from '@/types';
-import { LogOut, Volume2, VolumeX, Trophy, HelpCircle, Award, Music, Sparkles } from 'lucide-react';
+import { LogOut, Volume2, VolumeX, Trophy, Award, HelpCircle, Music, Sparkles, Smartphone } from 'lucide-react';
 import { sound } from '@/utils/audio';
+import { haptics, HapticMode } from '@/utils/haptics';
 
 interface Props {
   user: User;
@@ -11,11 +12,12 @@ interface Props {
   onOpenAchievements?: () => void;
 }
 
-// 页面顶部导航栏：承载品牌标识、当前玩家身份高分徽标、规则指南、分轨音量调节微浮层与注销退出
+// 页面顶部导航栏：承载品牌标识、当前玩家身份高分徽标、规则指南、分轨音量与触感控制中心
 export default function Header({ user, onLogout, onOpenTutorial, onOpenAchievements }: Props) {
   const [isMuted, setIsMuted] = useState(sound.muted);
   const [bgmVol, setBgmVol] = useState(Math.round(sound.bgmVolume * 100));
   const [sfxVol, setSfxVol] = useState(Math.round(sound.sfxVolume * 100));
+  const [hapticMode, setHapticMode] = useState<HapticMode>(() => haptics.mode);
   const [showAudioPopover, setShowAudioPopover] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +37,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
   const handleToggleMute = () => {
     const nextMuted = sound.toggleMute();
     setIsMuted(nextMuted);
+    haptics.trigger('ui');
   };
 
   const handleBgmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +46,9 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
     sound.setBgmVolume(val / 100);
     if (isMuted && val > 0) {
       setIsMuted(sound.toggleMute());
+    }
+    if (val === 0 || val === 100) {
+      haptics.trigger('ui');
     }
   };
 
@@ -53,8 +59,16 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
     if (isMuted && val > 0) {
       setIsMuted(sound.toggleMute());
     }
+    if (val === 0 || val === 100) {
+      haptics.trigger('ui');
+    }
     // 试听音效反馈
     sound.playEat();
+  };
+
+  const handleHapticChange = (mode: HapticMode) => {
+    setHapticMode(mode);
+    haptics.setMode(mode);
   };
 
   return (
@@ -184,6 +198,50 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
                   onChange={handleSfxChange}
                   className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#8B5CF6]"
                 />
+              </div>
+
+              {/* 触觉反馈 (Haptics) 三档模式切换 */}
+              <div className="mt-3 pt-2.5 border-t border-slate-100">
+                <div className="flex items-center justify-between text-[11px] text-[#475569] mb-1.5">
+                  <span className="flex items-center gap-1 font-medium">
+                    <Smartphone size={12} className="text-[#10B981]" /> 触觉反馈
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {hapticMode === 'STRONG' ? '强力' : hapticMode === 'SOFT' ? '轻柔' : '关闭'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 bg-slate-100/80 p-0.5 rounded-lg text-[10.5px]">
+                  <button
+                    onClick={() => handleHapticChange('STRONG')}
+                    className={`py-1 rounded-md font-medium transition-all ${
+                      hapticMode === 'STRONG'
+                        ? 'bg-white text-[#0099FF] shadow-[0_1px_2px_rgba(0,0,0,0.05)] font-bold'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    强力
+                  </button>
+                  <button
+                    onClick={() => handleHapticChange('SOFT')}
+                    className={`py-1 rounded-md font-medium transition-all ${
+                      hapticMode === 'SOFT'
+                        ? 'bg-white text-[#10B981] shadow-[0_1px_2px_rgba(0,0,0,0.05)] font-bold'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    轻柔
+                  </button>
+                  <button
+                    onClick={() => handleHapticChange('OFF')}
+                    className={`py-1 rounded-md font-medium transition-all ${
+                      hapticMode === 'OFF'
+                        ? 'bg-white text-slate-600 shadow-[0_1px_2px_rgba(0,0,0,0.05)] font-bold'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    关闭
+                  </button>
+                </div>
               </div>
             </div>
           )}

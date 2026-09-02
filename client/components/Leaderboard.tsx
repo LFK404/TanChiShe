@@ -20,7 +20,7 @@ const BADGE_STYLES: Record<number, string> = {
 };
 
 // 全服 Top 10 竞技风云榜组件
-export default function Leaderboard({ items, currentUser, onRefresh }: Props) {
+export default function Leaderboard({ items, currentUser, onRefresh, onWatchReplay }: Props) {
   // 计算当前登录玩家排名与战胜全服玩家百分比
   let beatPercent = 0;
   if (currentUser && currentUser.highScore > 0 && items.length > 0) {

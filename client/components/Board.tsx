@@ -69,6 +69,12 @@ interface Particle {
   color: string; size: number; alpha: number; life: number; maxLife: number;
 }
 
+// 冲击波扩散光环实体
+interface Shockwave {
+  x: number; y: number; radius: number; maxRadius: number;
+  color: string; alpha: number; lineWidth: number;
+}
+
 // 浮空得分/连击微文字实体
 interface FloatingText {
   x: number; y: number; text: string; color: string;
@@ -84,12 +90,22 @@ export default function Board({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const particlesRef = useRef<Particle[]>([]);
+  const shockwavesRef = useRef<Shockwave[]>([]);
+  const motionTrailsRef = useRef<{ x: number; y: number; alpha: number }[]>([]);
   const floatingTextsRef = useRef<FloatingText[]>([]);
   const comboRef = useRef({ count: 0, lastTime: 0 });
   const shakeRef = useRef({ frames: 0, intensity: 0 });
   const prevScoreRef = useRef(score);
   const prevGameOverRef = useRef(isGameOver);
   const offscreenBgRef = useRef<HTMLCanvasElement | null>(null);
+  const bonusSpawnTimeRef = useRef<number>(0);
+
+  // 监听金果生成时间用于临期急速频闪判定
+  useEffect(() => {
+    if (hasBonus) {
+      bonusSpawnTimeRef.current = Date.now();
+    }
+  }, [hasBonus, bonusKey]);
 
   // 混合输入设备 (平板/iPad/Surface/触屏电脑) 智能触控能力探测与偏好持久化
   const [showDpad, setShowDpad] = useState<boolean>(() => {
@@ -207,10 +223,28 @@ export default function Board({
         triggerShake(8, 3.5);
         spawnParticles(head.x, head.y, '#F59E0B', 18);
         spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
+        shockwavesRef.current.push({
+          x: head.x * CELL + CELL / 2,
+          y: head.y * CELL + CELL / 2,
+          radius: CELL / 2,
+          maxRadius: CELL * 2.2,
+          color: '#F59E0B',
+          alpha: 0.85,
+          lineWidth: 2,
+        });
       } else {
         // 普通红苹果
         triggerShake(4, 1.8);
         spawnParticles(head.x, head.y, '#EF4444', 10);
+        shockwavesRef.current.push({
+          x: head.x * CELL + CELL / 2,
+          y: head.y * CELL + CELL / 2,
+          radius: CELL / 2,
+          maxRadius: CELL * 1.6,
+          color: '#0099FF',
+          alpha: 0.75,
+          lineWidth: 1.5,
+        });
         if (comboRef.current.count > 1) {
           spawnFloatingText(head.x, head.y, `+10 ${comboRef.current.count}连击!`, '#0099FF');
         } else {
@@ -285,19 +319,29 @@ export default function Board({
       ctx.fill();
     }
 
-    // 4. 绘制金色幸运果 (金黄色微呼吸律动光晕)
+    // 4. 绘制金色幸运果 (双态光晕：常态呼吸 / 临期 5~8s 急速红金频闪)
     const bonus = bonusRef.current;
     if (bonus) {
       const bx = bonus.x * CELL + CELL / 2;
       const by = bonus.y * CELL + CELL / 2;
+      const elapsed = Date.now() - bonusSpawnTimeRef.current;
+      const isExpiring = elapsed >= 5000;
       const pulse = 1 + Math.sin(Date.now() / 150) * 0.08;
 
-      ctx.fillStyle = 'rgba(245, 158, 11, 0.22)';
+      let glowColor = 'rgba(245, 158, 11, 0.22)';
+      let fruitColor = '#F59E0B';
+      if (isExpiring) {
+        const strobe = Math.sin(Date.now() / 60) > 0;
+        glowColor = strobe ? 'rgba(239, 68, 68, 0.45)' : 'rgba(245, 158, 11, 0.35)';
+        fruitColor = strobe ? '#EF4444' : '#F59E0B';
+      }
+
+      ctx.fillStyle = glowColor;
       ctx.beginPath();
-      ctx.arc(bx, by, (CELL / 2 + 1) * pulse, 0, Math.PI * 2);
+      ctx.arc(bx, by, (CELL / 2 + (isExpiring ? 3 : 1)) * pulse, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#F59E0B';
+      ctx.fillStyle = fruitColor;
       ctx.beginPath();
       ctx.arc(bx, by, (CELL / 2 - 1.5) * pulse, 0, Math.PI * 2);
       ctx.fill();
@@ -325,8 +369,32 @@ export default function Board({
       }
     }
 
-    // 6. 绘制蛇头 (南大家园天青蓝 #66CCFF + 灵动双眼视线追踪)
+    // 6. 极速狂飙运动残影 (speedMs <= 75 时)
     const head = snake[0];
+    if (speedMs <= 75 && isPlaying && !isPaused && !isGameOver && head) {
+      const lastTrail = motionTrailsRef.current[0];
+      if (!lastTrail || lastTrail.x !== head.x || lastTrail.y !== head.y) {
+        motionTrailsRef.current.unshift({ x: head.x, y: head.y, alpha: 0.35 });
+        if (motionTrailsRef.current.length > 3) motionTrailsRef.current.pop();
+      }
+    } else {
+      motionTrailsRef.current = [];
+    }
+
+    motionTrailsRef.current.forEach((tr, idx) => {
+      const trAlpha = Math.max(0, tr.alpha - idx * 0.1);
+      if (trAlpha > 0.02) {
+        ctx.save();
+        ctx.fillStyle = '#66CCFF';
+        ctx.globalAlpha = trAlpha;
+        ctx.beginPath();
+        drawRoundRect(ctx, tr.x * CELL + 1, tr.y * CELL + 1, CELL - 2, CELL - 2, 5);
+        ctx.fill();
+        ctx.restore();
+      }
+    });
+
+    // 7. 绘制蛇头 (南大家园天青蓝 #66CCFF + 灵动双眼视线追踪)
     if (head) {
       ctx.fillStyle = '#66CCFF';
       ctx.beginPath();
@@ -411,7 +479,26 @@ export default function Board({
     particlesRef.current = activeParticles;
     ctx.globalAlpha = 1;
 
-    // 8. 更新并绘制飘字特效
+    // 8. 更新并绘制冲击波扩散光环
+    const activeShockwaves: Shockwave[] = [];
+    shockwavesRef.current.forEach((sw) => {
+      sw.radius += 1.4;
+      sw.alpha *= 0.88;
+      if (sw.alpha > 0.03 && sw.radius < sw.maxRadius) {
+        ctx.save();
+        ctx.strokeStyle = sw.color;
+        ctx.globalAlpha = sw.alpha;
+        ctx.lineWidth = sw.lineWidth;
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        activeShockwaves.push(sw);
+      }
+    });
+    shockwavesRef.current = activeShockwaves;
+
+    // 9. 更新并绘制飘字特效
     const activeTexts: FloatingText[] = [];
     floatingTextsRef.current.forEach((ft) => {
       ft.y -= 0.6;
@@ -431,7 +518,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver]);
 
   // 全屏滑屏手势判定 (Swipe)
   const handleTouchStart = (e: React.TouchEvent) => {

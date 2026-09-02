@@ -1,4 +1,5 @@
 // Web Audio API 原生 8-bit 复古音效与双轨沉浸式音乐系统 (大厅温馨 BGM + 局内元气 BGM + 专属高光 Jingle)
+import { haptics } from './haptics';
 
 type BgmMode = 'MENU' | 'INGAME' | 'NONE';
 
@@ -144,8 +145,9 @@ class SoundManager {
         this.stopHeartbeat();
         return;
       }
-      // 收缩音 (55Hz)
+      // 收缩音 (55Hz) + 生理级微触感
       this.playNotes('sine', [55], 0.08, 0, 0.12);
+      haptics.trigger('heartbeat');
       // 舒张音 (45Hz, 延后 120ms)
       setTimeout(() => {
         if (this.currentMode === 'INGAME' && !this.muted) {
