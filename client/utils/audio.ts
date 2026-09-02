@@ -117,9 +117,59 @@ class SoundManager {
     return this.muted;
   }
 
+  private heartbeatTimer: NodeJS.Timeout | null = null;
+
+  // 根据当前移速动态加速 BGM 并联动低频心跳脉冲
+  updateGameSpeed(speedMs: number) {
+    if (!this.inGameBgmAudio) return;
+    if (speedMs > 95) {
+      this.inGameBgmAudio.playbackRate = 1.0;
+      this.stopHeartbeat();
+    } else if (speedMs > 75) {
+      this.inGameBgmAudio.playbackRate = 1.06;
+      this.stopHeartbeat();
+    } else {
+      // <= 75ms 满速狂飙
+      this.inGameBgmAudio.playbackRate = 1.12;
+      this.startHeartbeat();
+    }
+  }
+
+  // 启动深沉 55Hz 低频心跳脉冲 (模拟收缩-舒张 ba-dum 律动)
+  private startHeartbeat() {
+    if (this.heartbeatTimer || this.muted || this.sfxVolume <= 0) return;
+    const playBeat = () => {
+      if (this.currentMode !== 'INGAME' || this.muted || this.sfxVolume <= 0) {
+        this.stopHeartbeat();
+        return;
+      }
+      // 收缩音 (55Hz)
+      this.playNotes('sine', [55], 0.08, 0, 0.12);
+      // 舒张音 (45Hz, 延后 120ms)
+      setTimeout(() => {
+        if (this.currentMode === 'INGAME' && !this.muted) {
+          this.playNotes('sine', [45], 0.09, 0, 0.09);
+        }
+      }, 120);
+    };
+    playBeat();
+    this.heartbeatTimer = setInterval(playBeat, 750);
+  }
+
+  stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
   // 播放大厅/登录待机温馨吉他田园 BGM
   startMenuBgm() {
     this.currentMode = 'MENU';
+    this.stopHeartbeat();
+    if (this.inGameBgmAudio) {
+      this.inGameBgmAudio.playbackRate = 1.0;
+    }
     if (this.muted) return;
     this.initAudios();
     if (this.inGameBgmAudio && !this.inGameBgmAudio.paused) {
@@ -135,6 +185,9 @@ class SoundManager {
   // 播放局内对局元气 Future Chiptune BGM
   startInGameBgm() {
     this.currentMode = 'INGAME';
+    if (this.inGameBgmAudio) {
+      this.inGameBgmAudio.playbackRate = 1.0;
+    }
     if (this.muted) return;
     this.initAudios();
     if (this.menuBgmAudio && !this.menuBgmAudio.paused) {
@@ -153,6 +206,7 @@ class SoundManager {
   }
 
   pauseBgm() {
+    this.stopHeartbeat();
     if (this.inGameBgmAudio && !this.inGameBgmAudio.paused) this.inGameBgmAudio.pause();
     if (this.menuBgmAudio && !this.menuBgmAudio.paused) this.menuBgmAudio.pause();
   }
@@ -168,7 +222,9 @@ class SoundManager {
 
   stopBgm() {
     this.currentMode = 'NONE';
+    this.stopHeartbeat();
     if (this.inGameBgmAudio) {
+      this.inGameBgmAudio.playbackRate = 1.0;
       this.inGameBgmAudio.pause();
       this.inGameBgmAudio.currentTime = 0;
     }

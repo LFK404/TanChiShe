@@ -388,9 +388,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
       sound.playEat();
       vibrate(12);
       fenceRef.current.clear();
-      setSpeedMs(
-        Math.max(MIN_SPEED_MS, BASE_SPEED_MS - Math.floor(stateRef.current.score / 40) * 4)
+      const nextSpeed = Math.max(
+        MIN_SPEED_MS,
+        BASE_SPEED_MS - Math.floor(stateRef.current.score / 40) * 4
       );
+      setSpeedMs(nextSpeed);
+      sound.updateGameSpeed(nextSpeed);
       snakeRef.current = nextSnake;
       spawnFood();
       return;
