@@ -13,9 +13,9 @@
       <stop offset="100%" stop-color="#EF4444" />
     </linearGradient>
 
-    <!-- 蛇身方块微阴影 (强化叠层立体感) -->
+    <!-- 蛇身方块微阴影 (强化层叠立体感) -->
     <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#0099FF" flood-opacity="0.18" />
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#0099FF" flood-opacity="0.2" />
     </filter>
   </defs>
 
@@ -23,45 +23,45 @@
   <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
 
   <!-- 2. 南大家园四色微点 (左上角标志) -->
-  <circle cx="8" cy="8" r="1.4" fill="#0099FF" />
-  <circle cx="12" cy="8" r="1.4" fill="#F59E0B" />
-  <circle cx="16" cy="8" r="1.4" fill="#10B981" />
-  <circle cx="20" cy="8" r="1.4" fill="#EC4899" />
+  <circle cx="8" cy="7.5" r="1.4" fill="#0099FF" />
+  <circle cx="12" cy="7.5" r="1.4" fill="#F59E0B" />
+  <circle cx="16" cy="7.5" r="1.4" fill="#10B981" />
+  <circle cx="20" cy="7.5" r="1.4" fill="#EC4899" />
 
-  <!-- 3. 经典 Z 字型重叠方块贪吃蛇 (自尾部至蛇头层层压叠，走位灵动) -->
-  <!-- 节0: 蛇尾 (浅淡冰蓝方块) -->
-  <rect x="7.5" y="27" width="8.5" height="8.5" rx="2.5" fill="#BAE6FD" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 3. 反 Z 字型重叠方块贪吃蛇 (左上起步 ➔ 沿对角斜折 ➔ 右下昂首冲刺) -->
+  <!-- 节0: 蛇尾 (左上段浅淡冰蓝) -->
+  <rect x="8" y="14.5" width="8.5" height="8.5" rx="2.5" fill="#BAE6FD" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节1: 下段水平中节 (天青柔蓝) -->
-  <rect x="13.5" y="27" width="8.5" height="8.5" rx="2.5" fill="#7DD3FC" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节1: 左上段水平向右 (柔和天青蓝，微重叠压在节0上) -->
+  <rect x="14" y="14.5" width="8.5" height="8.5" rx="2.5" fill="#7DD3FC" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节2: Z字形斜向中枢折角节 (清澈亮蓝) -->
-  <rect x="17.5" y="19" width="8.5" height="8.5" rx="2.5" fill="#38BDF8" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节2: 反 Z 字斜向中枢折角节 (清澈亮蓝，向下微移压叠) -->
+  <rect x="18" y="22.5" width="8.5" height="8.5" rx="2.5" fill="#38BDF8" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节3: 上段水平转角节 (深邃天蓝) -->
-  <rect x="21.5" y="12" width="8.5" height="8.5" rx="2.5" fill="#0284C7" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <!-- 节3: 右下段水平转折节 (深邃天蓝) -->
+  <rect x="22" y="30.5" width="8.5" height="8.5" rx="2.5" fill="#0284C7" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
   <!-- 节4: 蛇头 (南大家园天青渐变方块，压叠在最顶层) -->
-  <rect x="27.5" y="12" width="9.2" height="9.2" rx="2.8" fill="url(#headGrad)" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
+  <rect x="28" y="30.5" width="9.2" height="9.2" rx="2.8" fill="url(#headGrad)" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 蛇头灵动双眸 (专注直视正前方目标红苹果) -->
+  <!-- 蛇头灵动双眸 (专注注视右方目标红苹果) -->
   <!-- 上眼 -->
-  <circle cx="33.5" cy="14.6" r="1.4" fill="#FFFFFF" />
-  <circle cx="34.0" cy="14.6" r="0.75" fill="#0F172A" />
-  <circle cx="33.7" cy="14.2" r="0.3" fill="#FFFFFF" />
+  <circle cx="34" cy="33.1" r="1.4" fill="#FFFFFF" />
+  <circle cx="34.5" cy="33.1" r="0.75" fill="#0F172A" />
+  <circle cx="34.2" cy="32.7" r="0.3" fill="#FFFFFF" />
   <!-- 下眼 -->
-  <circle cx="33.5" cy="18.6" r="1.4" fill="#FFFFFF" />
-  <circle cx="34.0" cy="18.6" r="0.75" fill="#0F172A" />
-  <circle cx="33.7" cy="18.2" r="0.3" fill="#FFFFFF" />
+  <circle cx="34" cy="37.1" r="1.4" fill="#FFFFFF" />
+  <circle cx="34.5" cy="37.1" r="0.75" fill="#0F172A" />
+  <circle cx="34.2" cy="36.7" r="0.3" fill="#FFFFFF" />
 
-  <!-- 4. 经典多巴胺红苹果与翠绿果叶 (位于 Z 字右上蛇头前方) -->
-  <circle cx="40.5" cy="22" r="3.8" fill="url(#appleGrad)" />
-  <circle cx="39.2" cy="20.5" r="1.1" fill="#FFFFFF" opacity="0.65" />
+  <!-- 4. 经典多巴胺红苹果与翠绿果叶 (位于蛇头正前方) -->
+  <circle cx="41" cy="35" r="3.6" fill="url(#appleGrad)" />
+  <circle cx="39.8" cy="33.6" r="1.0" fill="#FFFFFF" opacity="0.65" />
   <!-- 果梗 -->
-  <rect x="40.0" y="16.5" width="1.0" height="2.0" rx="0.5" fill="#78350F" />
+  <rect x="40.5" y="29.8" width="0.9" height="1.8" rx="0.4" fill="#78350F" />
   <!-- 翠绿嫩叶 -->
-  <path d="M40.5 17.5 C42.2 15.8 43.5 16.5 43.0 18.0 C41.8 18.5 41.0 17.8 40.5 17.5 Z" fill="#10B981" />
+  <path d="M41 30.6 C42.6 29.2 43.8 29.8 43.4 31.0 C42.2 31.5 41.5 30.9 41 30.6 Z" fill="#10B981" />
 
-  <!-- 5. 金色幸运星闪烁 (右下角平衡构图) -->
-  <path d="M38.5 32 L39.3 34.0 L41.5 34.2 L39.8 35.5 L40.4 37.5 L38.5 36.4 L36.6 37.5 L37.2 35.5 L35.5 34.2 L37.7 34.0 Z" fill="#F59E0B" />
+  <!-- 5. 金色幸运星闪烁点缀 (右上角呼应，达成黄金分割平衡) -->
+  <path d="M37.5 12 L38.3 14.0 L40.5 14.2 L38.8 15.5 L39.4 17.5 L37.5 16.4 L35.6 17.5 L36.2 15.5 L34.5 14.2 L36.7 14.0 Z" fill="#F59E0B" />
 </svg>
