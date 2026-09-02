@@ -114,7 +114,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
           <button
             onClick={() => setShowAudioPopover(!showAudioPopover)}
             title={isMuted ? '音频已静音 (点击展开分轨调节)' : '音频设置 (点击展开分轨调节)'}
-            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer relative z-50 ${
               showAudioPopover
                 ? 'bg-[#0099FF] text-white shadow-sm'
                 : isMuted
@@ -124,6 +124,14 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
           >
             {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
+
+          {/* 全屏无感透明遮罩 (移动端与PC端点击任意空白处无感秒关) */}
+          {showAudioPopover && (
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={() => setShowAudioPopover(false)}
+            />
+          )}
 
           {/* 南大家园极简风音频分轨调节浮层卡片 */}
           {showAudioPopover && (

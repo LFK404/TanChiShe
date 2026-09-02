@@ -22,9 +22,10 @@ class SoundManager {
 
       this.initAudios();
 
-      // 页面切到后台自动暂停音频，切回前台自动恢复当前模式 BGM
+      // 页面切到后台自动暂停音频与心跳脉冲，切回前台自动恢复当前模式 BGM
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
+          this.stopHeartbeat();
           if (this.menuBgmAudio && !this.menuBgmAudio.paused) this.menuBgmAudio.pause();
           if (this.inGameBgmAudio && !this.inGameBgmAudio.paused) this.inGameBgmAudio.pause();
           if (this.activeJingleAudio && !this.activeJingleAudio.paused) this.activeJingleAudio.pause();

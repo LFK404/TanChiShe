@@ -91,8 +91,9 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const isReplayRef = useRef<boolean>(false);
   const replayInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
 
-  // 移动端振动触觉反馈
+  // 移动端振动触觉反馈 (智能联动静音设置，静音态或音效为0时不震动)
   const vibrate = useCallback((pattern: number | number[]) => {
+    if (sound.muted || sound.sfxVolume <= 0) return;
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate(pattern);
