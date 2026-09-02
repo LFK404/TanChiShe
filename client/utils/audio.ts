@@ -126,6 +126,24 @@ class SoundManager {
 
   // 暂停/继续交互气泡音 (A4 -> E5 双音)
   playToggle() { this.playNotes('triangle', [440, 659.25], 0.05, 0.03, 0.20); }
+
+  // 连击动态升调音阶 (Combo 1x: C4, 2x: E4, 3x: G4, 4x: C5, 5x+: E5/G5)
+  playCombo(count: number) {
+    const scales = [
+      [261.63, 329.63],         // Combo 1: C4 -> E4
+      [329.63, 392.00],         // Combo 2: E4 -> G4
+      [392.00, 523.25],         // Combo 3: G4 -> C5
+      [523.25, 659.25],         // Combo 4: C5 -> E5
+      [659.25, 783.99, 1046.5], // Combo 5+: E5 -> G5 -> C6
+    ];
+    const idx = Math.min(Math.max(count - 1, 0), scales.length - 1);
+    this.playNotes('triangle', scales[idx], 0.08, 0.035, 0.30);
+  }
+
+  // 解锁成就/登榜大捷庆祝和弦 (C5 -> E5 -> G5 -> C6 闪耀大三和弦琶音)
+  playAchievement() {
+    this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.12, 0.06, 0.32);
+  }
 }
 
 export const sound = new SoundManager();

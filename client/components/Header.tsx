@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { User } from '@/types';
-import { LogOut, Volume2, VolumeX, Trophy, HelpCircle } from 'lucide-react';
+import { LogOut, Volume2, VolumeX, Trophy, HelpCircle, Award } from 'lucide-react';
 import { sound } from '@/utils/audio';
 
 interface Props {
   user: User;
   onLogout: () => void;
   onOpenTutorial: () => void;
+  onOpenAchievements?: () => void;
 }
 
 // 页面顶部导航栏：承载品牌标识、当前玩家身份高分徽标、规则指南、8-bit 音效开关与注销退出
@@ -50,8 +51,18 @@ export default function Header({ user, onLogout, onOpenTutorial }: Props) {
         </div>
       </div>
 
-      {/* 右侧：指南弹窗、音效切换与退出按钮 */}
+      {/* 右侧：成就殿堂、指南弹窗、音效切换与退出按钮 */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1">
+        {onOpenAchievements && (
+          <button
+            onClick={onOpenAchievements}
+            title="成就殿堂"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
+          >
+            <Award size={16} />
+          </button>
+        )}
+
         <button
           onClick={onOpenTutorial}
           title="游戏规则与新手指南"

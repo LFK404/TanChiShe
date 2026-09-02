@@ -10,15 +10,34 @@ import Board from '@/components/Board';
 import Leaderboard from '@/components/Leaderboard';
 import Login from '@/components/Login';
 import Tutorial from '@/components/Tutorial';
+import Achievements from '@/components/Achievements';
+import InGameToast, { ToastItem } from '@/components/InGameToast';
+import { checkAndUnlockAchievements } from '@/utils/achievements';
+import { sound } from '@/utils/audio';
 
 export default function Home() {
   const isClient = useIsClient();
   const { user, form, error, setForm, login, logout, updateUser } = useAuth();
   const [board, setBoard] = useState<User[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [showAchievements, setShowAchievements] = useState(false);
+
+  // 添加局中即时微弹窗
+  const addToast = useCallback((text: string, icon?: string, color?: string) => {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    setToasts((prev) => [...prev.slice(-3), { id, text, icon, color }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // 当前对局防伪 Token 与种子 (支持后台预取，实现 0ms 瞬间开局)
   const sessionRef = useRef<{ sessionToken: string; seed: number } | null>(null);
   const isFetchingSession = useRef(false);
+
+  // 记录本局已触发的局中里程碑集合，避免同局重复弹窗
+  const firedMilestonesRef = useRef<Set<string>>(new Set());
 
   // 首次访问自动唤起新手指南
   const [showTutorial, setShowTutorial] = useState(() => {
@@ -89,11 +108,33 @@ export default function Home() {
       if (res.ok && res.data) {
         if (res.isNewRecord && res.data.user) {
           updateUser(res.data.user);
+          addToast('刷新个人历史最佳纪录！', '🎉', '#F59E0B');
         }
       }
-      refreshBoard();
+
+      // 刷新排行榜并校验榜单成就
+      const newBoard = await apiLeaderboard();
+      setBoard(newBoard);
+      const userRank = newBoard.findIndex((u) => u.username === user.username) + 1;
+      if (userRank > 0 && userRank <= 10) {
+        addToast(`荣登全服风云榜第 ${userRank} 名！`, '🏆', '#0099FF');
+        const rankAch = checkAndUnlockAchievements({
+          score: _finalScore,
+          length: 3,
+          duration: _finalDur,
+          maxCombo: 1,
+          bonusCount: 0,
+          speedMs: 122,
+          steps: 0,
+          rank: userRank,
+        });
+        rankAch.forEach((ach) => {
+          sound.playAchievement();
+          addToast(`解锁成就: [${ach.name}]`, '🏅', ach.color);
+        });
+      }
     },
-    [user, updateUser, refreshBoard, prefetchSession]
+    [user, updateUser, prefetchSession, addToast, refreshBoard]
   );
 
   // 贪吃蛇游戏核心状态机
@@ -108,6 +149,8 @@ export default function Home() {
     duration,
     length,
     speedMs,
+    steps,
+    bonusCount,
     isPlaying,
     isGameOver,
     isPaused,
@@ -117,8 +160,64 @@ export default function Home() {
     tick,
   } = useSnake(handleGameOver);
 
+  // 局中即时高光与成就达成监听
+  useEffect(() => {
+    if (!isPlaying || isGameOver) return;
+
+    const checkMilestone = (key: string, fn: () => void) => {
+      if (!firedMilestonesRef.current.has(key)) {
+        firedMilestonesRef.current.add(key);
+        fn();
+      }
+    };
+
+    // 1. 得分高光弹窗
+    if (score >= 100) checkMilestone('score_100', () => addToast('得分突破 100 分!', '🌱', '#10B981'));
+    if (score >= 200) checkMilestone('score_200', () => addToast('得分突破 200 分!', '🌟', '#66CCFF'));
+    if (score >= 300) checkMilestone('score_300', () => addToast('得分突破 300 分!', '⚡', '#0099FF'));
+    if (score >= 500) checkMilestone('score_500', () => addToast('得分突破 500 分 (宗师境界)!', '👑', '#EC4899'));
+    if (score >= 800) checkMilestone('score_800', () => addToast('得分突破 800 分 (旷世奇才)!', '🌌', '#9333EA'));
+
+    // 2. 身长高光弹窗
+    if (length >= 15) checkMilestone('len_15', () => addToast('蛇身突破 15 节 (灵动巨蟒)', '🐍', '#0D9488'));
+    if (length >= 25) checkMilestone('len_25', () => addToast('蛇身突破 25 节 (深海潜龙)', '🐉', '#0284C7'));
+    if (length >= 35) checkMilestone('len_35', () => addToast('蛇身突破 35 节 (万象苍龙)', '🐲', '#1D4ED8'));
+
+    // 3. 存活时长高光弹窗
+    if (duration >= 60) checkMilestone('dur_60', () => addToast('稳健存活 1 分钟!', '⏱️', '#8B5CF6'));
+    if (duration >= 120) checkMilestone('dur_120', () => addToast('沉着坚守 2 分钟!', '⏳', '#7C3AED'));
+    if (duration >= 180) checkMilestone('dur_180', () => addToast('长青传奇 3 分钟!', '⌛', '#334155'));
+    if (duration >= 300) checkMilestone('dur_300', () => addToast('不朽长生 5 分钟!', '⏳', '#0F172A'));
+
+    // 4. 金果高光弹窗
+    if (bonusCount >= 1) checkMilestone('bonus_1', () => addToast('斩获金色幸运果 +30分!', '✨', '#F59E0B'));
+    if (bonusCount >= 5) checkMilestone('bonus_5', () => addToast('连收 5 颗金果 (金果饕餮)!', '💰', '#D97706'));
+    if (bonusCount >= 8) checkMilestone('bonus_8', () => addToast('连收 8 颗金果 (金玉满堂)!', '✨', '#CA8A04'));
+
+    // 5. 极速高光弹窗
+    if (speedMs <= 85 && score >= 250) checkMilestone('spd_15', () => addToast('速度突破 1.5x (极速掌控)!', '🚀', '#F97316'));
+    if (speedMs <= 65 && score >= 600) checkMilestone('spd_20', () => addToast('达到极限速度 2.0x (极限狂飙)!', '⚡', '#6D28D9'));
+
+    // 6. 检查 24 枚成就系统是否点亮
+    const newlyUnlocked = checkAndUnlockAchievements({
+      score,
+      length,
+      duration,
+      maxCombo: 1,
+      bonusCount,
+      speedMs,
+      steps,
+    });
+
+    newlyUnlocked.forEach((ach) => {
+      sound.playAchievement();
+      addToast(`解锁成就: [${ach.name}]`, '🏅', ach.color);
+    });
+  }, [isPlaying, isGameOver, score, length, duration, bonusCount, speedMs, steps, addToast]);
+
   // 开始新对局 (优先命中预取 Token，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {
+    firedMilestonesRef.current.clear();
     if (!user) {
       startGame(Date.now());
       return;
@@ -188,7 +287,12 @@ export default function Home() {
       ) : (
         /* 已登录态：游戏主界面 */
         <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4 relative z-10">
-          <Header user={user} onLogout={logout} onOpenTutorial={handleOpenTutorial} />
+          <Header
+            user={user}
+            onLogout={logout}
+            onOpenTutorial={handleOpenTutorial}
+            onOpenAchievements={() => setShowAchievements(true)}
+          />
 
           {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
@@ -255,7 +359,10 @@ export default function Home() {
             <span>贪吃蛇</span>
           </footer>
 
+          {/* 局中即时高光微弹窗与弹窗交互层 */}
+          <InGameToast toasts={toasts} onRemove={removeToast} />
           <Tutorial isOpen={showTutorial} onClose={handleCloseTutorial} />
+          <Achievements isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
         </div>
       )}
     </main>

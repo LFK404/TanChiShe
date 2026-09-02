@@ -80,6 +80,10 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [speedMs, setSpeedMs] = useState(BASE_SPEED_MS);
   const [hasBonus, setHasBonus] = useState(false);
   const [bonusKey, setBonusKey] = useState(0);
+  const [steps, setSteps] = useState(0);
+  const [bonusCount, setBonusCount] = useState(0);
+  const stepsRef = useRef<number>(0);
+  const bonusCountRef = useRef<number>(0);
 
   // 清除金色幸运果与其超时计时器
   const clearBonus = useCallback(() => {
@@ -161,6 +165,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       inputsRef.current = [];
       pausedMsRef.current = 0;
       pauseStartRef.current = 0;
+      stepsRef.current = 0;
+      bonusCountRef.current = 0;
 
       snakeRef.current = [
         { x: 10, y: 12 },
@@ -175,6 +181,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setScore(0);
       setDuration(0);
       setLength(3);
+      setSteps(0);
+      setBonusCount(0);
       setSpeedMs(BASE_SPEED_MS);
       setIsGameOver(false);
       setIsPaused(false);
@@ -279,13 +287,17 @@ export function useSnake(onGameOver?: GameOverCallback) {
     // 7. 吃到金色幸运果 (+30 分，保留栅栏)
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
       stateRef.current.score += 30;
+      bonusCountRef.current += 1;
       setScore(stateRef.current.score);
+      setBonusCount(bonusCountRef.current);
       sound.playBonus();
       vibrate([15, 30, 15]);
       clearBonus();
     }
 
     // 8. 正常移动：蛇头前进，蛇尾留下残留栅栏
+    stepsRef.current += 1;
+    setSteps(stepsRef.current);
     const nextSnake = [head, ...snakeRef.current];
     const tail = nextSnake.pop()!;
     fenceRef.current.add(toKey(tail.x, tail.y));
@@ -328,6 +340,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     duration,
     length,
     speedMs,
+    steps,
+    bonusCount,
     isPlaying,
     isGameOver,
     isPaused,

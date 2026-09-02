@@ -175,8 +175,13 @@ export default function Board({
 
         // 3秒内连续吃果判定为连击 Combo
         const now = Date.now();
-        comboRef.current.count = now - comboRef.current.lastTime < 3000 ? comboRef.current.count + 1 : 1;
+        const isCombo = now - comboRef.current.lastTime < 3000;
+        comboRef.current.count = isCombo ? comboRef.current.count + 1 : 1;
         comboRef.current.lastTime = now;
+
+        if (comboRef.current.count > 1) {
+          sound.playCombo(comboRef.current.count);
+        }
 
         const label = `${isBonus ? '+30' : '+10'}${comboRef.current.count > 1 ? ` x${comboRef.current.count}` : ''}`;
         emitFloatingText(head.x, head.y, label, isBonus ? '#D97706' : '#EF4444');
