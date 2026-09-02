@@ -16,8 +16,9 @@ export default function Home() {
   const { user, form, error, setForm, login, logout, updateUser } = useAuth();
   const [board, setBoard] = useState<User[]>([]);
 
-  // 当前对局的防伪会话凭证与确定性随机种子
+  // 当前对局防伪 Token 与种子 (支持后台预取，实现 0ms 瞬间开局)
   const sessionRef = useRef<{ sessionToken: string; seed: number } | null>(null);
+  const isFetchingSession = useRef(false);
 
   // 首次访问自动唤起新手指南
   const [showTutorial, setShowTutorial] = useState(() => {
@@ -29,12 +30,34 @@ export default function Home() {
     }
   });
 
+  // 静默预拉取下一局对局 Token (消除开局网络延迟)
+  const prefetchSession = useCallback(async () => {
+    if (!user || isFetchingSession.current || sessionRef.current) return;
+    isFetchingSession.current = true;
+    try {
+      const res = await apiStartGame(user.token);
+      if (res.ok && res.data) {
+        sessionRef.current = {
+          sessionToken: res.data.sessionToken,
+          seed: res.data.seed,
+        };
+      }
+    } catch {} finally {
+      isFetchingSession.current = false;
+    }
+  }, [user]);
+
+  // 登录态就绪时自动预取
+  useEffect(() => {
+    if (user) prefetchSession();
+  }, [user, prefetchSession]);
+
   // 刷新全服 Top 10 排行榜
   const refreshBoard = useCallback(async () => {
     setBoard(await apiLeaderboard());
   }, []);
 
-  // 游戏结束回调：自动上报玩家操作输入流由 Go 后端 1ms 无头重放验算
+  // 游戏结束回调：自动上报操作轨迹由 Go 后端 1ms 无头重放验算
   const handleGameOver = useCallback(
     async (
       _finalScore: number,
@@ -44,20 +67,24 @@ export default function Home() {
     ) => {
       if (!user) return;
       const currentSession = sessionRef.current;
-      sessionRef.current = null;
+      sessionRef.current = null; // 消费当前 session
+
+      // 静默为下一局预取新 session
+      prefetchSession();
 
       if (!currentSession) {
         refreshBoard();
         return;
       }
 
-      const res = await apiSettleGame({
-        username: user.username,
-        password: form.password.trim(),
-        sessionToken: currentSession.sessionToken,
-        inputs,
-        totalTicks,
-      });
+      const res = await apiSettleGame(
+        {
+          sessionToken: currentSession.sessionToken,
+          inputs,
+          totalTicks,
+        },
+        user.token
+      );
 
       if (res.ok && res.data) {
         if (res.isNewRecord && res.data.user) {
@@ -66,7 +93,7 @@ export default function Home() {
       }
       refreshBoard();
     },
-    [user, form.password, updateUser, refreshBoard]
+    [user, updateUser, refreshBoard, prefetchSession]
   );
 
   // 贪吃蛇游戏核心状态机
@@ -90,15 +117,22 @@ export default function Home() {
     tick,
   } = useSnake(handleGameOver);
 
-  // 开始新对局：开局向服务端握手申请确定性种子与会话 Token
+  // 开始新对局 (优先命中预取 Token，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {
     if (!user) {
       startGame(Date.now());
       return;
     }
 
+    if (sessionRef.current) {
+      const { seed } = sessionRef.current;
+      startGame(seed);
+      return;
+    }
+
+    // 若未命中预取，快速即时拉取
     try {
-      const res = await apiStartGame(user.username, form.password.trim());
+      const res = await apiStartGame(user.token);
       if (res.ok && res.data) {
         sessionRef.current = {
           sessionToken: res.data.sessionToken,
@@ -106,15 +140,12 @@ export default function Home() {
         };
         startGame(res.data.seed);
       } else {
-        // 离线/网络故障时平滑降级为本地时间戳随机
-        sessionRef.current = null;
         startGame(Date.now());
       }
     } catch {
-      sessionRef.current = null;
       startGame(Date.now());
     }
-  }, [user, form.password, startGame]);
+  }, [user, startGame]);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);

@@ -3,15 +3,20 @@ import { User, GameStartResponse, GameSettleRequest, GameSettleResponse } from '
 // 后端 API 服务基地址 (支持环境变量动态注入与本地调试回退)
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
 
-// 通用 POST 请求封装
+// 通用 POST 请求封装 (自动挂载 Bearer Token)
 async function post<T>(
   path: string,
-  body: unknown
+  body: unknown,
+  token?: string
 ): Promise<{ ok: boolean; data?: T; isNewRecord?: boolean; msg?: string }> {
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     });
     const json = await res.json();
@@ -26,17 +31,17 @@ async function post<T>(
   }
 }
 
-// 玩家登录/自动注册
+// 玩家登录/自动注册 (仅登录阶段传递一次凭据)
 export const apiAuth = (username: string, password: string) =>
   post<User>('/api/auth', { username, password });
 
-// 开局申请会话与确定性随机种子
-export const apiStartGame = (username?: string, password?: string) =>
-  post<GameStartResponse>('/api/game/start', { username, password });
+// 开局申请会话与确定性随机种子 (基于 Token 鉴权)
+export const apiStartGame = (token?: string) =>
+  post<GameStartResponse>('/api/game/start', {}, token);
 
-// 结算上报对局轨迹与验算
-export const apiSettleGame = (req: GameSettleRequest) =>
-  post<GameSettleResponse>('/api/game/settle', req);
+// 结算上报对局轨迹与验算 (基于 Token 鉴权)
+export const apiSettleGame = (req: GameSettleRequest, token?: string) =>
+  post<GameSettleResponse>('/api/game/settle', req, token);
 
 // 获取 Top 10 排行榜
 export async function apiLeaderboard(): Promise<User[]> {

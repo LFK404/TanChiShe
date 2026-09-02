@@ -13,6 +13,7 @@ export interface User {
   highScore: number;
   bestDuration: number;
   updatedAt?: string;
+  token?: string;
 }
 
 // 玩家操作输入流帧记录
@@ -29,8 +30,6 @@ export interface GameStartResponse {
 
 // 战绩结算请求实体
 export interface GameSettleRequest {
-  username?: string;
-  password?: string;
   sessionToken: string;
   inputs: InputRecord[];
   totalTicks: number;

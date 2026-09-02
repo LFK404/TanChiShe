@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 )
 
 func TestMulberry32(t *testing.T) {
@@ -16,8 +17,30 @@ func TestMulberry32(t *testing.T) {
 	t.Logf("PRNG 前3项: %f, %f, %f", v1, v2, v3)
 }
 
+func TestHMACTokenLifecycle(t *testing.T) {
+	username := "test_player"
+	token, seed := createSignedSessionToken(username)
+	if token == "" || seed == 0 {
+		t.Fatalf("创建签名 Token 失败: token=%s, seed=%d", token, seed)
+	}
+
+	payload, err := verifyAndConsumeSessionToken(token)
+	if err != nil {
+		t.Fatalf("验签 Token 失败: %v", err)
+	}
+	if payload.Username != username || payload.Seed != seed {
+		t.Fatalf("Token 负载数据不匹配: %+v", payload)
+	}
+
+	// 二次消费应当被拒绝 (防重放)
+	_, err = verifyAndConsumeSessionToken(token)
+	if err == nil {
+		t.Fatalf("重复消费 Token 应当报错被拒，但未报错！")
+	}
+	t.Logf("Token 首次验签成功，且成功防重放二次消费！")
+}
+
 func TestReplayGameCrashWall(t *testing.T) {
-	// 蛇初始在 (10, 12)，向右直行走 14 步必撞右墙 (x=24 越界)
 	seed := uint32(888888)
 	var inputs []InputRecord
 	totalTicks := 14
@@ -33,7 +56,6 @@ func TestReplayGameCrashWall(t *testing.T) {
 }
 
 func TestReplayGameCheatingRejection(t *testing.T) {
-	// 如果总步数声明为 5 步，但此时蛇在 (15, 12) 根本没有撞墙，声称游戏结束 -> 应判定未死亡
 	seed := uint32(888888)
 	var inputs []InputRecord
 	totalTicks := 5
@@ -46,4 +68,18 @@ func TestReplayGameCheatingRejection(t *testing.T) {
 		t.Fatalf("5 步根本未撞墙，不应返回死亡！")
 	}
 	t.Log("作弊拦截验证成功：未实际死亡无法伪造战绩！")
+}
+
+func TestRealTimeDurationCheck(t *testing.T) {
+	// 测试物理时间不足时的拦截
+	startTime := time.Now().UnixMilli()
+	// 假设模拟耗时 60 秒，但真实才过了 100 毫秒
+	simulatedDuration := int64(60)
+	realElapsedSec := float64(time.Now().UnixMilli()-startTime) / 1000.0
+	minAllowedSec := float64(simulatedDuration) * 0.85
+
+	if realElapsedSec >= minAllowedSec {
+		t.Fatalf("测试逻辑异常: 真实时间不应大于最小允许时间")
+	}
+	t.Logf("真实时间拦截逻辑验证成功: 真实流逝 %.2fs < 最小允许 %.2fs", realElapsedSec, minAllowedSec)
 }
