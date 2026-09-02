@@ -1,46 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" version="1.1">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" version="1.1">
   <defs>
-    <!-- 天青蓝渐变 (#66CCFF -> #0099FF) -->
-    <linearGradient id="ncuCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#66CCFF" />
+    <!-- 南大家园天青微渐变底座 (#38BDF8 -> #0099FF) -->
+    <linearGradient id="ncuBaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
       <stop offset="100%" stop-color="#0099FF" />
     </linearGradient>
 
-    <!-- 珊瑚红苹果渐变 -->
-    <linearGradient id="appleRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- 柔和微底光阴影 -->
+    <filter id="ncuSoftShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#0099FF" flood-opacity="0.32" />
+    </filter>
+
+    <!-- 苹果鲜活微渐变 -->
+    <linearGradient id="appleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#F87171" />
       <stop offset="100%" stop-color="#EF4444" />
     </linearGradient>
   </defs>
 
-  <!-- 1. 纯白极简圆角底板与浅灰细边线 -->
-  <rect width="32" height="32" rx="7.5" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
+  <!-- 1. 南大家园 28% 超椭圆圆角饱满底座 -->
+  <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#ncuBaseGrad)" filter="url(#ncuSoftShadow)" />
 
-  <!-- 2. 南大家园四色多巴胺微徽标 (左上角) -->
-  <circle cx="6.5" cy="6.5" r="0.9" fill="#66CCFF" />
-  <circle cx="9.0" cy="6.5" r="0.9" fill="#F59E0B" />
-  <circle cx="11.5" cy="6.5" r="0.9" fill="#10B981" />
-  <circle cx="14.0" cy="6.5" r="0.9" fill="#EC4899" />
+  <!-- 2. 南大家园极简四色微光点 (左上角) -->
+  <circle cx="10" cy="10" r="1.5" fill="#FFFFFF" opacity="0.9" />
+  <circle cx="14" cy="10" r="1.3" fill="#FBBF24" opacity="0.95" />
+  <circle cx="18" cy="10" r="1.3" fill="#34D399" opacity="0.95" />
+  <circle cx="22" cy="10" r="1.3" fill="#F472B6" opacity="0.95" />
 
-  <!-- 3. 几何蛇身 (渐次天青蓝骨骼) -->
-  <rect x="6.0" y="20.5" width="5.0" height="5.0" rx="1.6" fill="#BAE6FD" />
-  <rect x="6.0" y="14.0" width="5.0" height="5.0" rx="1.6" fill="#7DD3FC" />
-  <rect x="12.5" y="14.0" width="5.0" height="5.0" rx="1.6" fill="#38BDF8" />
+  <!-- 3. 不规则自然灵动小蛇 (纯白温润饱满剪影) -->
+  <!-- 蛇身回环 S 形平滑贝塞尔曲线 -->
+  <path d="M12 33 C12 37, 21 38, 26 35 C31 32, 33 26, 28 22 C23 18, 17 21, 17 26 C17 30, 22 31, 25 30" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="5.5" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
 
-  <!-- 4. 天青蓝蛇头 (#66CCFF 主色 + 灵动双眸) -->
-  <rect x="12.5" y="20.5" width="5.5" height="5.5" rx="1.8" fill="url(#ncuCyanGrad)" />
-  <!-- 双眸 -->
-  <circle cx="16.0" cy="22.5" r="1.1" fill="#FFFFFF" />
-  <circle cx="16.3" cy="22.5" r="0.55" fill="#0F172A" />
-  <circle cx="15.8" cy="22.1" r="0.25" fill="#FFFFFF" />
+  <!-- 灵动蛇头微椭圆饱满轮廓 -->
+  <ellipse cx="29" cy="22" rx="5" ry="4.5" fill="#FFFFFF" />
 
-  <!-- 5. 珊瑚红苹果与极简嫩叶芽 -->
-  <circle cx="23.5" cy="16.5" r="2.8" fill="url(#appleRedGrad)" />
-  <ellipse cx="22.5" cy="15.3" rx="1.0" ry="0.5" fill="#FFFFFF" opacity="0.6" transform="rotate(-30 22.5 15.3)" />
-  <path d="M23.5 13.8 C24.5 12.8 25.4 13.2 25.1 14.1 C24.4 14.3 23.8 14.0 23.5 13.8 Z" fill="#10B981" />
+  <!-- 呆萌大眼睛 (黑曜石深邃瞳孔 + 纯白高光) -->
+  <circle cx="29.8" cy="20.5" r="1.5" fill="#0F172A" />
+  <circle cx="29.4" cy="20.0" r="0.6" fill="#FFFFFF" />
 
-  <!-- 6. 金色幸运星闪烁点缀 (右上角) -->
-  <circle cx="23.5" cy="8.0" r="1.1" fill="#F59E0B" />
+  <!-- 温暖多巴胺粉微腮红 -->
+  <ellipse cx="28.0" cy="23.5" rx="1.3" ry="0.8" fill="#F43F5E" opacity="0.55" />
+
+  <!-- 4. 晶莹多巴胺小红果与翠绿嫩叶 (右侧焦点) -->
+  <circle cx="37" cy="23" r="3.2" fill="url(#appleGrad)" />
+  <circle cx="36" cy="21.8" r="1.0" fill="#FFFFFF" opacity="0.6" />
+  <!-- 嫩芽 -->
+  <path d="M37 19.5 C38.5 18, 40 18.5, 39.5 19.8 C38.5 20.2, 37.8 19.8, 37 19.5 Z" fill="#34D399" />
 </svg>
-

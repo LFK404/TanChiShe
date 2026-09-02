@@ -3,36 +3,12 @@
 import React, { useState } from 'react';
 import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
 import {
-  X,
-  Trophy,
-  Award,
-  Lock,
-  CheckCircle2,
-  Sparkles,
-  Shield,
-  Flame,
-  Crown,
-  Gem,
-  Sprout,
-  Star,
-  Apple,
-  Activity,
-  Zap,
-  Timer,
-  TrendingUp,
-  Waves,
-  Hourglass,
-  Coins,
-  Gauge,
-  Medal,
-  Compass,
-  Clock,
-  Sparkle,
-  Rocket,
-  Milestone,
-  Infinity as InfinityIcon,
-  Footprints,
-} from 'lucide-react';
+  BronzeCrestIcon,
+  SilverCrestIcon,
+  GoldCrestIcon,
+  DiamondCrestIcon,
+  NCUTrophyIcon,
+} from './NCUIcon';
 
 interface Props {
   isOpen: boolean;
@@ -41,67 +17,58 @@ interface Props {
 
 const TIER_CONFIG: Record<
   AchievementTier,
-  { name: string; subtitle: string; color: string; bgLight: string; icon: React.ReactNode }
+  { name: string; subtitle: string; color: string; bgLight: string }
 > = {
   BRONZE: {
-    name: '青铜·初出茅庐',
-    subtitle: '方寸探索',
+    name: '青铜·方寸探索',
+    subtitle: '自然初生',
     color: '#10B981',
     bgLight: '#ECFDF5',
-    icon: <Shield size={14} />,
   },
   SILVER: {
-    name: '白银·进阶掌控',
-    subtitle: '技巧渐熟',
-    color: '#0099FF',
-    bgLight: '#EBF8FF',
-    icon: <Flame size={14} />,
+    name: '白银·技巧渐熟',
+    subtitle: '行云流水',
+    color: '#64748B',
+    bgLight: '#F1F5F9',
   },
   GOLD: {
     name: '黄金·登峰造极',
-    subtitle: '宗师微操',
+    subtitle: '星曜土星',
     color: '#F59E0B',
     bgLight: '#FEF3C7',
-    icon: <Crown size={14} />,
   },
   DIAMOND: {
-    name: '钻石·荣耀巅峰',
-    subtitle: '巅峰王座',
-    color: '#9333EA',
-    bgLight: '#FAF5FF',
-    icon: <Gem size={14} />,
+    name: '钻石·超凡殿堂',
+    subtitle: '极光晶星',
+    color: '#0099FF',
+    bgLight: '#EBF8FF',
   },
 };
 
-// 24 枚专属成就矢量图标字典 (全矢量无 emoji 纯净设计)
-const ACHIEVEMENT_VECTOR_ICONS: Record<string, React.ReactNode> = {
-  Sprout: <Sprout size={20} />,
-  Star: <Star size={20} />,
-  Apple: <Apple size={20} />,
-  Activity: <Activity size={20} />,
-  Zap: <Zap size={20} />,
-  Timer: <Timer size={20} />,
-  TrendingUp: <TrendingUp size={20} />,
-  Waves: <Waves size={20} />,
-  Hourglass: <Hourglass size={20} />,
-  Flame: <Flame size={20} />,
-  Coins: <Coins size={20} />,
-  Gauge: <Gauge size={20} />,
-  Medal: <Medal size={20} />,
-  Compass: <Compass size={20} />,
-  Clock: <Clock size={20} />,
-  Sparkles: <Sparkles size={20} />,
-  Sparkle: <Sparkle size={20} />,
-  Rocket: <Rocket size={20} />,
-  Milestone: <Milestone size={20} />,
-  Trophy: <Trophy size={20} />,
-  Award: <Award size={20} />,
-  Crown: <Crown size={20} />,
-  Infinity: <InfinityIcon size={20} />,
-  Footprints: <Footprints size={20} />,
-};
+// 渲染对应段位的南大家园微拟态勋章
+function RenderTierCrest({
+  tier,
+  unlocked = false,
+  size = 40,
+}: {
+  tier: AchievementTier;
+  unlocked?: boolean;
+  size?: number;
+}) {
+  switch (tier) {
+    case 'BRONZE':
+      return <BronzeCrestIcon unlocked={unlocked} size={size} />;
+    case 'SILVER':
+      return <SilverCrestIcon unlocked={unlocked} size={size} />;
+    case 'GOLD':
+      return <GoldCrestIcon unlocked={unlocked} size={size} />;
+    case 'DIAMOND':
+      return <DiamondCrestIcon unlocked={unlocked} size={size} />;
+    default:
+      return <BronzeCrestIcon unlocked={unlocked} size={size} />;
+  }
+}
 
-// 成就殿堂弹窗 (精细打磨：24枚四字专属多巴胺纯矢量勋章与达成进度仪表盘)
 export default function Achievements({ isOpen, onClose }: Props) {
   const [activeTier, setActiveTier] = useState<AchievementTier | 'ALL'>('ALL');
 
@@ -126,22 +93,22 @@ export default function Achievements({ isOpen, onClose }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
       >
         {/* 顶部荣耀仪表盘 */}
         <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-gradient-to-b from-[#F8FAFC] to-white relative">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#EBF8FF] to-[#E0F2FE] text-[#0099FF] flex items-center justify-center shadow-xs">
-                <Trophy size={20} />
+              <div className="w-10 h-10 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center shadow-xs">
+                <NCUTrophyIcon size={22} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-black text-slate-900 text-base sm:text-lg tracking-tight">
                     成就殿堂
                   </h3>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] text-[#0099FF]">
-                    <Sparkles size={10} /> 24 勋章
+                  <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] text-[#0099FF]">
+                    24 勋章
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -152,9 +119,9 @@ export default function Achievements({ isOpen, onClose }: Props) {
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer shrink-0"
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer shrink-0 text-sm font-bold"
             >
-              <X size={16} />
+              ✕
             </button>
           </div>
 
@@ -198,7 +165,6 @@ export default function Achievements({ isOpen, onClose }: Props) {
                     backgroundColor: isSelected ? cfg.color : undefined,
                   }}
                 >
-                  <span>{cfg.icon}</span>
                   <span>{cfg.name.split('·')[0]}</span>
                   <span className="opacity-80 font-mono text-[10px]">
                     ({unCount}/{list.length})
@@ -217,66 +183,58 @@ export default function Achievements({ isOpen, onClose }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {displayedAchievements.map((ach) => {
                 const isUnlocked = unlockedSet.has(ach.id);
-                const tierCfg = TIER_CONFIG[ach.tier];
-                const vectorIcon = ACHIEVEMENT_VECTOR_ICONS[ach.iconName] || <Award size={20} />;
 
                 return (
                   <div
                     key={ach.id}
-                    className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 relative overflow-hidden group ${
+                    className={`p-3 rounded-2xl border transition-all flex items-start gap-3 relative overflow-hidden group ${
                       isUnlocked
                         ? 'bg-white border-slate-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:border-[#66CCFF]/60 hover:shadow-md'
                         : 'bg-slate-50/50 border-dashed border-slate-200 opacity-60'
                     }`}
                   >
-                    {/* 左侧 24 种专属差异化纯矢量图案底座 */}
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-2xs"
-                      style={{
-                        backgroundColor: isUnlocked ? `${ach.color}15` : '#F1F5F9',
-                        color: isUnlocked ? ach.color : '#94A3B8',
-                      }}
-                    >
-                      {isUnlocked ? vectorIcon : <Lock size={18} />}
+                    {/* 左侧：南大家园多巴胺微拟态专属勋章 */}
+                    <div className="shrink-0 pt-0.5">
+                      <RenderTierCrest tier={ach.tier} unlocked={isUnlocked} size={42} />
                     </div>
 
-                    {/* 中间文字排版 */}
-                    <div className="flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-1.5">
+                    {/* 右侧：成就名称、说明、段位代号 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
                         <h4
-                          className={`text-xs font-black tracking-tight ${
-                            isUnlocked ? 'text-slate-900' : 'text-slate-600'
+                          className={`text-xs font-bold truncate ${
+                            isUnlocked ? 'text-slate-900' : 'text-slate-500'
                           }`}
                         >
                           {ach.name}
                         </h4>
                         <span
-                          className="text-[9px] font-bold px-1.5 py-0.2 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: tierCfg.bgLight,
-                            color: tierCfg.color,
-                          }}
+                          className={`text-[9.5px] font-mono font-bold px-1.5 py-0.2 rounded-md shrink-0 ${
+                            isUnlocked
+                              ? 'bg-slate-100 text-slate-700'
+                              : 'bg-slate-100 text-slate-400'
+                          }`}
                         >
-                          {tierCfg.subtitle}
+                          {ach.code}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
                         {ach.description}
                       </p>
 
-                      <p className="text-[10px] text-slate-400 italic mt-0.5 line-clamp-1">
-                        &ldquo;{ach.flavor}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* 右上角达成状态微章 */}
-                    <div className="absolute top-3 right-3">
-                      {isUnlocked ? (
-                        <CheckCircle2 size={16} className="text-emerald-500" />
-                      ) : (
-                        <span className="w-2 h-2 rounded-full bg-slate-300 block" />
-                      )}
+                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100/80">
+                        <span className="text-[10px] text-slate-400 italic truncate max-w-[130px]">
+                          {ach.flavor}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold shrink-0 ${
+                            isUnlocked ? 'text-[#10B981]' : 'text-slate-400'
+                          }`}
+                        >
+                          {isUnlocked ? '已点亮' : '未解锁'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -285,9 +243,14 @@ export default function Achievements({ isOpen, onClose }: Props) {
           )}
         </div>
 
-        {/* 底部极简寄语 */}
-        <div className="px-5 py-2.5 border-t border-slate-100 bg-slate-50/60 text-center text-[11px] text-slate-400 select-none">
-          方寸之间，重温经典 · 达成成就自动记录至本地
+        {/* 底部关闭按钮 */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/60 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            完成
+          </button>
         </div>
       </div>
     </div>

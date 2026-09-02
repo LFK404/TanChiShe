@@ -10,11 +10,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  Gamepad2,
-  Keyboard,
-  Film,
-  LogOut,
 } from 'lucide-react';
 
 interface Props {
@@ -724,7 +719,7 @@ export default function Board({
       {isReplay && (
         <div className="w-full mb-3 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-[#EBF8FF] to-[#E0F2FE] border border-[#66CCFF]/40 text-[#0099FF] flex items-center justify-between text-xs font-bold animate-in fade-in">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Film size={14} className="text-[#0099FF] shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-[#0099FF] shrink-0 animate-pulse" />
             <span className="truncate">观摩走位中：<strong className="text-slate-900">{replayUser}</strong></span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -733,9 +728,9 @@ export default function Board({
             </span>
             <button
               onClick={onExitReplay}
-              className="text-[11px] text-slate-500 hover:text-rose-500 flex items-center gap-0.5 transition-colors cursor-pointer"
+              className="text-[11px] text-slate-500 hover:text-rose-500 transition-colors cursor-pointer"
             >
-              <LogOut size={12} /> 退出
+              退出
             </button>
           </div>
         </div>
@@ -748,8 +743,8 @@ export default function Board({
             <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
             <strong className={`${st.valColor} text-sm font-mono font-black`}>{st.val}</strong>
             {st.isBonus && (
-              <span className="absolute top-0.5 right-1 flex items-center text-[#D97706] font-extrabold text-[9px] animate-pulse">
-                <Sparkles size={9} /> +30
+              <span className="absolute top-0.5 right-1 text-[#D97706] font-mono font-extrabold text-[9px] animate-pulse">
+                +30
               </span>
             )}
           </div>
@@ -849,9 +844,8 @@ export default function Board({
                 </button>
                 <button
                   onClick={onExitReplay}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs"
                 >
-                  <LogOut size={14} />
                   <span>退出观摩</span>
                 </button>
               </div>
@@ -911,9 +905,8 @@ export default function Board({
               {/* 退出观摩 */}
               <button
                 onClick={onExitReplay}
-                className="px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer active:scale-95"
+                className="px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold transition-all cursor-pointer active:scale-95"
               >
-                <LogOut size={13} />
                 <span>退出观摩</span>
               </button>
             </div>
@@ -988,19 +981,9 @@ export default function Board({
             <button
               onClick={toggleDpad}
               title="切换触控十字键或纯净键盘模式"
-              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-2 py-0.5 rounded-full flex items-center gap-1 transition-all cursor-pointer"
+              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-2.5 py-0.5 rounded-full transition-all cursor-pointer"
             >
-              {showDpad ? (
-                <>
-                  <Keyboard size={12} />
-                  <span>切为纯键盘</span>
-                </>
-              ) : (
-                <>
-                  <Gamepad2 size={12} />
-                  <span>开启触控键</span>
-                </>
-              )}
+              {showDpad ? '切为键盘' : '开启十字键'}
             </button>
           </div>
         )}
