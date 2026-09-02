@@ -69,6 +69,7 @@ interface Props {
   replaySpeedRate?: number;
   onSetReplaySpeed?: (speed: number) => void;
   onExitReplay?: () => void;
+  onRestartReplay?: () => void;
   onStart: () => void;
   onTick: () => void;
   onDirection: (d: Direction) => void;
@@ -142,7 +143,7 @@ export default function Board({
   queueRef,
   score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
   isWaitingStart = false,
-  isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay,
+  isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -261,10 +262,10 @@ export default function Board({
     }
   };
 
-  // 在吃果位置生成飘字反馈
+  // 在吃果位置生成飘字反馈 (延长寿命并强化视觉存在感)
   const spawnFloatingText = (gridX: number, gridY: number, text: string, color: string) => {
     const px = gridX * CELL + CELL / 2;
-    const py = gridY * CELL - 4;
+    const py = gridY * CELL - 6;
     floatingTextsRef.current.push({
       x: px,
       y: py,
@@ -273,7 +274,7 @@ export default function Board({
       alpha: 1,
       scale: 0.8,
       life: 0,
-      maxLife: 28,
+      maxLife: 38,
     });
   };
 
@@ -721,10 +722,17 @@ export default function Board({
         ctx.save();
         ctx.translate(ft.x, ft.y);
         ctx.scale(scale, scale);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = ft.text.includes('30')
+          ? 'bold 14px system-ui, sans-serif'
+          : 'bold 12px system-ui, sans-serif';
+        // 纯白晶体微描边，消除画布杂色干扰
+        ctx.strokeStyle = `rgba(255, 255, 255, ${ft.alpha * 0.9})`;
+        ctx.lineWidth = 2.2;
+        ctx.strokeText(ft.text, 0, 0);
         ctx.fillStyle = ft.color;
         ctx.globalAlpha = ft.alpha;
-        ctx.font = 'bold 11px sans-serif';
-        ctx.textAlign = 'center';
         ctx.fillText(ft.text, 0, 0);
         ctx.restore();
         activeTexts.push(ft);
@@ -1052,7 +1060,7 @@ export default function Board({
             {isReplay ? (
               <div className="flex items-center gap-2.5">
                 <button
-                  onClick={onStart}
+                  onClick={onRestartReplay || onStart}
                   className="px-5 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <RotateCcw size={14} />
@@ -1068,7 +1076,7 @@ export default function Board({
             ) : (
               <button
                 onClick={onStart}
-                className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow-md"
+                className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <RotateCcw size={15} />
                 <span>再来一局</span>

@@ -143,7 +143,7 @@ export default function Home() {
           speedMs: 122,
           steps: totalTicks,
           rank: userRank,
-        });
+        }, user.username);
         rankAch.forEach((ach) => {
           sound.playGrandAchievement();
           addToast(`加冕至高成就: [${ach.name}]`, ach.tier);
@@ -183,6 +183,9 @@ export default function Home() {
     tick,
   } = useSnake(handleGameOver);
 
+  // 记录最近观摩的高手录像元数据，支持回放结算时一键「重新观摩」
+  const lastReplayRef = useRef<{ seed: number; inputs: InputRecord[] | string; username: string } | null>(null);
+
   // 观摩排行榜高手通关微操录像
   const handleWatchReplay = useCallback(
     (targetUser: User) => {
@@ -190,15 +193,37 @@ export default function Home() {
         addToast('该记录未包含操作录像轨迹', 'SILVER');
         return;
       }
+      lastReplayRef.current = {
+        seed: targetUser.replaySeed,
+        inputs: targetUser.replayInputs,
+        username: targetUser.username,
+      };
       startReplay(targetUser.replaySeed, targetUser.replayInputs, targetUser.username);
       addToast(`正在观摩 [${targetUser.username}] 的通关走位`, 'DIAMOND');
     },
     [startReplay, addToast]
   );
 
-  // 局中即时高光与成就达成监听 (南大家园微拟态勋章体系)
+  // 回放结束后重新观摩
+  const handleRestartReplay = useCallback(() => {
+    if (lastReplayRef.current) {
+      const { seed, inputs, username } = lastReplayRef.current;
+      startReplay(seed, inputs, username);
+      addToast(`重新观摩 [${username}] 的通关走位`, 'DIAMOND');
+    }
+  }, [startReplay, addToast]);
+
+  // 安全登出：重置物理对局与背景音乐
+  const handleLogout = useCallback(() => {
+    sound.stopBgm();
+    sound.startMenuBgm();
+    exitReplay();
+    logout();
+  }, [exitReplay, logout]);
+
+  // 局中即时高光与成就达成监听 (严格过滤回放模式，杜绝观摩白嫖他人成就)
   useEffect(() => {
-    if (!isPlaying || isGameOver) return;
+    if (!isPlaying || isGameOver || isReplay) return;
 
     const checkMilestone = (key: string, fn: () => void) => {
       if (!firedMilestonesRef.current.has(key)) {
@@ -234,7 +259,7 @@ export default function Home() {
     if (speedMs <= 85 && score >= 250) checkMilestone('spd_15', () => addToast('速度突破 1.5x (极速掌控)!', 'SILVER'));
     if (speedMs <= 65 && score >= 600) checkMilestone('spd_20', () => addToast('达到极限速度 2.0x (极限狂飙)!', 'GOLD'));
 
-    // 6. 检查 24 枚成就系统是否点亮
+    // 6. 检查 24 枚成就系统是否点亮 (按用户名严格命名空间隔离)
     const newlyUnlocked = checkAndUnlockAchievements({
       score,
       length,
@@ -243,13 +268,13 @@ export default function Home() {
       bonusCount,
       speedMs,
       steps: 0,
-    });
+    }, user?.username);
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
       addToast(`解锁成就: [${ach.name}]`, ach.tier);
     });
-  }, [isPlaying, isGameOver, score, length, duration, bonusCount, speedMs, addToast]);
+  }, [isPlaying, isGameOver, isReplay, score, length, duration, bonusCount, speedMs, user?.username, addToast]);
 
   // 开始新对局 (优先命中预取 Token，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {
@@ -325,7 +350,7 @@ export default function Home() {
         <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4 relative z-10">
           <Header
             user={user}
-            onLogout={logout}
+            onLogout={handleLogout}
             onOpenTutorial={handleOpenTutorial}
             onOpenAchievements={() => {
               sound.playGrandAchievement();
@@ -383,6 +408,7 @@ export default function Home() {
                 replaySpeedRate={replaySpeedRate}
                 onSetReplaySpeed={setReplaySpeedRate}
                 onExitReplay={exitReplay}
+                onRestartReplay={handleRestartReplay}
                 onStart={handleStartGame}
                 onTick={tick}
                 onDirection={changeDirection}
@@ -413,7 +439,7 @@ export default function Home() {
           {/* 局中即时高光微弹窗与弹窗交互层 */}
           <InGameToast toasts={toasts} onRemove={removeToast} />
           <Tutorial isOpen={showTutorial} onClose={handleCloseTutorial} />
-          <Achievements isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
+          <Achievements isOpen={showAchievements} onClose={() => setShowAchievements(false)} username={user?.username} />
         </div>
       )}
     </main>

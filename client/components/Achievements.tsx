@@ -8,6 +8,7 @@ import { NCUCrestBadge } from './NCUIcon';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  username?: string;
 }
 
 const TIER_CONFIG: Record<
@@ -42,12 +43,12 @@ const TIER_CONFIG: Record<
 
 
 
-export default function Achievements({ isOpen, onClose }: Props) {
+export default function Achievements({ isOpen, onClose, username }: Props) {
   const [activeTier, setActiveTier] = useState<AchievementTier | 'ALL'>('ALL');
 
   if (!isOpen) return null;
 
-  const unlockedSet = getUnlockedAchievements();
+  const unlockedSet = getUnlockedAchievements(username);
   const totalCount = ACHIEVEMENTS.length;
   const unlockedCount = ACHIEVEMENTS.filter((a) => unlockedSet.has(a.id)).length;
   const progressPercent = Math.round((unlockedCount / totalCount) * 100);

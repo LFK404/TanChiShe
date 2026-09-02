@@ -274,13 +274,14 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-const STORAGE_KEY = 'tanchishe_achievements_v1';
+const getStorageKey = (username?: string) =>
+  username ? `tanchishe_achievements_v1_${username.trim()}` : 'tanchishe_achievements_v1_guest';
 
-// 读取本地已解锁成就 ID 集合
-export function getUnlockedAchievements(): Set<string> {
+// 读取指定玩家本地已解锁成就 ID 集合 (按用户名严格命名空间隔离)
+export function getUnlockedAchievements(username?: string): Set<string> {
   if (typeof window === 'undefined') return new Set();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(username));
     if (!raw) return new Set();
     const parsed = JSON.parse(raw);
     return new Set(Array.isArray(parsed) ? parsed : []);
@@ -289,9 +290,9 @@ export function getUnlockedAchievements(): Set<string> {
   }
 }
 
-// 检查并记录新解锁的成就，返回本次新点亮的成就列表
-export function checkAndUnlockAchievements(stats: GameStats): Achievement[] {
-  const currentUnlocked = getUnlockedAchievements();
+// 检查并记录指定玩家新解锁的成就，返回本次新点亮的成就列表
+export function checkAndUnlockAchievements(stats: GameStats, username?: string): Achievement[] {
+  const currentUnlocked = getUnlockedAchievements(username);
   const newlyUnlocked: Achievement[] = [];
 
   ACHIEVEMENTS.forEach((ach) => {
@@ -303,7 +304,7 @@ export function checkAndUnlockAchievements(stats: GameStats): Achievement[] {
 
   if (newlyUnlocked.length > 0 && typeof window !== 'undefined') {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(currentUnlocked)));
+      localStorage.setItem(getStorageKey(username), JSON.stringify(Array.from(currentUnlocked)));
     } catch {}
   }
 
