@@ -1,37 +1,61 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Direction, Point } from '@/types';
+import { Direction, Point, InputRecord } from '@/types';
 import { sound } from '@/utils/audio';
+import { Mulberry32 } from '@/utils/prng';
 
 // 游戏物理网格常量 (24x24 格子，单格 20px)
 export const GRID = 24;
 export const CELL = 20;
 export const BASE_SPEED_MS = 122; // 基础速度 (~8.2 格/秒)
-export const MIN_SPEED_MS = 61;   // 极速上限 (2.0x 速度，~16.4 格/秒)
+export const MIN_SPEED_MS = 61; // 极速上限 (2.0x 速度，~16.4 格/秒)
 
 const toKey = (x: number, y: number) => `${x},${y}`;
 
 // 判断两方向是否相反 (防 180 度掉头自杀)
 const isOpp = (d1: Direction, d2: Direction) =>
-  (d1 === 'UP' && d2 === 'DOWN') || (d1 === 'DOWN' && d2 === 'UP') ||
-  (d1 === 'LEFT' && d2 === 'RIGHT') || (d1 === 'RIGHT' && d2 === 'LEFT');
+  (d1 === 'UP' && d2 === 'DOWN') ||
+  (d1 === 'DOWN' && d2 === 'UP') ||
+  (d1 === 'LEFT' && d2 === 'RIGHT') ||
+  (d1 === 'RIGHT' && d2 === 'LEFT');
 
 // 键盘按键映射字典
 const KEY_DIR: Record<string, Direction> = {
-  ArrowUp: 'UP', w: 'UP', W: 'UP',
-  ArrowDown: 'DOWN', s: 'DOWN', S: 'DOWN',
-  ArrowLeft: 'LEFT', a: 'LEFT', A: 'LEFT',
-  ArrowRight: 'RIGHT', d: 'RIGHT', D: 'RIGHT',
+  ArrowUp: 'UP',
+  w: 'UP',
+  W: 'UP',
+  ArrowDown: 'DOWN',
+  s: 'DOWN',
+  S: 'DOWN',
+  ArrowLeft: 'LEFT',
+  a: 'LEFT',
+  A: 'LEFT',
+  ArrowRight: 'RIGHT',
+  d: 'RIGHT',
+  D: 'RIGHT',
 };
 
 // 方向位移向量增量表
 const DIR_DELTAS: Record<Direction, Point> = {
-  UP: { x: 0, y: -1 }, DOWN: { x: 0, y: 1 },
-  LEFT: { x: -1, y: 0 }, RIGHT: { x: 1, y: 0 },
+  UP: { x: 0, y: -1 },
+  DOWN: { x: 0, y: 1 },
+  LEFT: { x: -1, y: 0 },
+  RIGHT: { x: 1, y: 0 },
 };
 
-// 贪吃蛇全套物理时序与状态驱动引擎
-export function useSnake(onGameOver?: (score: number, duration: number) => void) {
-  const snakeRef = useRef<Point[]>([{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }]);
+export type GameOverCallback = (
+  score: number,
+  duration: number,
+  inputs: InputRecord[],
+  totalTicks: number
+) => void;
+
+// 贪吃蛇全套确定性物理时序与状态驱动引擎
+export function useSnake(onGameOver?: GameOverCallback) {
+  const snakeRef = useRef<Point[]>([
+    { x: 10, y: 12 },
+    { x: 9, y: 12 },
+    { x: 8, y: 12 },
+  ]);
   const fenceRef = useRef<Set<string>>(new Set());
   const foodRef = useRef<Point>({ x: 16, y: 12 });
   const bonusRef = useRef<Point | null>(null);
@@ -39,6 +63,11 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
   const dirRef = useRef<Direction>('RIGHT');
   const queueRef = useRef<Direction[]>([]);
   const stateRef = useRef({ playing: false, over: false, paused: false, score: 0, start: 0 });
+
+  // 确定性随机数发生器与按键轨迹记录
+  const rngRef = useRef<Mulberry32 | null>(null);
+  const tickCountRef = useRef<number>(0);
+  const inputsRef = useRef<InputRecord[]>([]);
 
   const [score, setScore] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -60,7 +89,7 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     }
   }, []);
 
-  // 严格的独立双果生成算法 (保证红苹果 100% 存在，金果与红果坐标绝对互斥)
+  // 确定性独立双果生成算法 (保证与 Go 后端 PRNG 消费序列绝对一致)
   const spawnFood = useCallback(() => {
     const snakeKeys = new Set(snakeRef.current.map((p) => toKey(p.x, p.y)));
     const empty: Point[] = [];
@@ -72,15 +101,21 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     }
     if (empty.length === 0) return;
 
-    // 1. 红苹果保底生成
-    const newFood = empty[Math.floor(Math.random() * empty.length)];
+    const rng = rngRef.current;
+
+    // 1. 红苹果保底生成 (消费 1 个随机数)
+    const r1 = rng ? rng.next() : Math.random();
+    const newFood = empty[Math.floor(r1 * empty.length)];
     foodRef.current = newFood;
 
-    // 2. 25% 概率刷出限时金色幸运果 (8 秒限时，+30 分，保留栅栏)
-    if (Math.random() < 0.25 && !bonusRef.current && empty.length > 3) {
+    // 2. 金色幸运果判定 (消费第 2 个随机数判定概率)
+    const r2 = rng ? rng.next() : Math.random();
+    if (r2 < 0.25 && !bonusRef.current && empty.length > 3) {
       const remainingEmpty = empty.filter((p) => p.x !== newFood.x || p.y !== newFood.y);
       if (remainingEmpty.length > 0) {
-        bonusRef.current = remainingEmpty[Math.floor(Math.random() * remainingEmpty.length)];
+        // 消费第 3 个随机数选择坐标
+        const r3 = rng ? rng.next() : Math.random();
+        bonusRef.current = remainingEmpty[Math.floor(r3 * remainingEmpty.length)];
         setBonusKey((prev) => prev + 1);
         setHasBonus(true);
         if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
@@ -95,7 +130,9 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
   // 移动端振动触觉反馈
   const vibrate = (pattern: number | number[]) => {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      try { navigator.vibrate(pattern); } catch {}
+      try {
+        navigator.vibrate(pattern);
+      } catch {}
     }
   };
 
@@ -110,39 +147,51 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     sound.playGameOver();
     vibrate(40);
     const dur = Math.floor((Date.now() - stateRef.current.start) / 1000);
-    onGameOver?.(stateRef.current.score, dur);
+    onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
   }, [onGameOver, clearBonus]);
 
-  // 开始新对局
-  const startGame = useCallback(() => {
-    sound.unlockAudio();
-    snakeRef.current = [{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }];
-    fenceRef.current.clear();
-    dirRef.current = 'RIGHT';
-    queueRef.current = [];
-    stateRef.current = { playing: true, over: false, paused: false, score: 0, start: Date.now() };
+  // 开始新对局 (支持传入服务端下发的确定性 seed)
+  const startGame = useCallback(
+    (seed?: number) => {
+      sound.unlockAudio();
+      rngRef.current = new Mulberry32(seed !== undefined ? seed : Date.now());
+      tickCountRef.current = 0;
+      inputsRef.current = [];
 
-    setScore(0);
-    setDuration(0);
-    setLength(3);
-    setSpeedMs(BASE_SPEED_MS);
-    setIsGameOver(false);
-    setIsPaused(false);
-    setIsPlaying(true);
-    clearBonus();
-    sound.playStart();
-    sound.startBgm();
-    vibrate(10);
-    spawnFood();
-  }, [spawnFood, clearBonus]);
+      snakeRef.current = [
+        { x: 10, y: 12 },
+        { x: 9, y: 12 },
+        { x: 8, y: 12 },
+      ];
+      fenceRef.current.clear();
+      dirRef.current = 'RIGHT';
+      queueRef.current = [];
+      stateRef.current = { playing: true, over: false, paused: false, score: 0, start: Date.now() };
 
-  // 转向指令压入排队缓冲队列 (最大缓冲 2 条指令，杜绝急速掉头自杀)
+      setScore(0);
+      setDuration(0);
+      setLength(3);
+      setSpeedMs(BASE_SPEED_MS);
+      setIsGameOver(false);
+      setIsPaused(false);
+      setIsPlaying(true);
+      clearBonus();
+      sound.playStart();
+      sound.startBgm();
+      vibrate(10);
+      spawnFood();
+    },
+    [spawnFood, clearBonus]
+  );
+
+  // 转向指令压入排队缓冲队列 (最大缓冲 2 条指令，并捕获当前 tick 帧)
   const changeDirection = useCallback((t: Direction) => {
     if (!stateRef.current.playing || stateRef.current.over || stateRef.current.paused) return;
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
     if (t !== last && !isOpp(last, t) && q.length < 2) {
       q.push(t);
+      inputsRef.current.push({ tick: tickCountRef.current, dir: t });
       sound.playMove();
     }
   }, []);
@@ -153,7 +202,8 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
       const nextPaused = !stateRef.current.paused;
       stateRef.current.paused = nextPaused;
       setIsPaused(nextPaused);
-      if (nextPaused) sound.pauseBgm(); else sound.resumeBgm();
+      if (nextPaused) sound.pauseBgm();
+      else sound.resumeBgm();
       sound.playToggle();
       vibrate(10);
     }
@@ -165,7 +215,8 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     if (!playing || over || paused) return;
 
     setDuration(Math.floor((Date.now() - start) / 1000));
-    
+    tickCountRef.current += 1;
+
     // 1. 消费转向队列
     if (queueRef.current.length > 0) {
       const nextDir = queueRef.current.shift()!;
@@ -178,14 +229,16 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
 
     // 3. 边界碰撞
     if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
-      gameOver(); return;
+      gameOver();
+      return;
     }
 
     // 4. 自身身体碰撞
     const isEatingApple = head.x === foodRef.current.x && head.y === foodRef.current.y;
     const bodyToCheck = isEatingApple ? snakeRef.current : snakeRef.current.slice(0, -1);
     if (bodyToCheck.some((p) => p.x === head.x && p.y === head.y)) {
-      gameOver(); return;
+      gameOver();
+      return;
     }
 
     // 5. 吃到普通红苹果 (增长 1 节 + 清空栅栏 + 动态加速)
@@ -197,7 +250,9 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
       sound.playEat();
       vibrate(12);
       fenceRef.current.clear();
-      setSpeedMs(Math.max(MIN_SPEED_MS, BASE_SPEED_MS - Math.floor(stateRef.current.score / 40) * 4));
+      setSpeedMs(
+        Math.max(MIN_SPEED_MS, BASE_SPEED_MS - Math.floor(stateRef.current.score / 40) * 4)
+      );
       snakeRef.current = nextSnake;
       spawnFood();
       return;
@@ -205,7 +260,8 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
 
     // 6. 残留栅栏碰撞检测
     if (fenceRef.current.has(toKey(head.x, head.y))) {
-      gameOver(); return;
+      gameOver();
+      return;
     }
 
     // 7. 吃到金色幸运果 (+30 分，保留栅栏)
@@ -228,10 +284,11 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       sound.unlockAudio();
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key))
+        e.preventDefault();
       if (e.key === 'p' || e.key === 'P') return togglePause();
       if (e.key === ' ') {
-        if (!stateRef.current.playing || stateRef.current.over) return startGame();
+        if (!stateRef.current.playing || stateRef.current.over) return;
         return togglePause();
       }
       const dir = KEY_DIR[e.key];
@@ -239,7 +296,7 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [startGame, changeDirection, togglePause]);
+  }, [changeDirection, togglePause]);
 
   useEffect(() => {
     return () => {
@@ -248,8 +305,23 @@ export function useSnake(onGameOver?: (score: number, duration: number) => void)
   }, []);
 
   return {
-    snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey, dirRef,
-    score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
-    startGame, togglePause, changeDirection, tick,
+    snakeRef,
+    fenceRef,
+    foodRef,
+    bonusRef,
+    hasBonus,
+    bonusKey,
+    dirRef,
+    score,
+    duration,
+    length,
+    speedMs,
+    isPlaying,
+    isGameOver,
+    isPaused,
+    startGame,
+    togglePause,
+    changeDirection,
+    tick,
   };
 }

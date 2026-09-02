@@ -11,7 +11,7 @@
 - **数据库**：Supabase Cloud PostgreSQL (GORM 迁移，`users` & `game_records` 双表)
 - **托管与离线**：腾讯云 EdgeOne Pages (`https://zhixu.online`) + PWA (Service Worker 静态离线缓存)
 - **安全防护**：
-  - **物理防作弊**：严格校验单局耗时与理论极限吃果速率，拦截非法改分与脚本；
+  - **Level 3 物理重放防作弊**：基于确定性伪随机种子 (Mulberry32) + Go 后端 1ms 无头物理重放引擎，客户端仅上报按键轨迹流，服务端亲自演算真实得分，彻底杜绝数据伪造；
   - **并发限流**：Go 原生滑动窗口限流器（单 IP 20次/秒）；
   - **凭证安全**：SHA256 加盐单向哈希，支持明文凭证无感升级；
   - **行级安全**：Supabase 表启用 RLS 防止越权读写。

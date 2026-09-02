@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
 import { useSnake } from '@/hooks/useSnake';
-import { apiSettle, apiLeaderboard } from '@/services/api';
-import { User } from '@/types';
+import { apiStartGame, apiSettleGame, apiLeaderboard } from '@/services/api';
+import { User, InputRecord } from '@/types';
 import Header from '@/components/Header';
 import Board from '@/components/Board';
 import Leaderboard from '@/components/Leaderboard';
@@ -15,7 +15,10 @@ export default function Home() {
   const isClient = useIsClient();
   const { user, form, error, setForm, login, logout, updateUser } = useAuth();
   const [board, setBoard] = useState<User[]>([]);
-  
+
+  // 当前对局的防伪会话凭证与确定性随机种子
+  const sessionRef = useRef<{ sessionToken: string; seed: number } | null>(null);
+
   // 首次访问自动唤起新手指南
   const [showTutorial, setShowTutorial] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -31,12 +34,36 @@ export default function Home() {
     setBoard(await apiLeaderboard());
   }, []);
 
-  // 游戏结束回调：自动上报战绩、破纪录时更新个人高分并刷新排行榜
+  // 游戏结束回调：自动上报玩家操作输入流由 Go 后端 1ms 无头重放验算
   const handleGameOver = useCallback(
-    async (finalScore: number, finalDur: number) => {
+    async (
+      _finalScore: number,
+      _finalDur: number,
+      inputs: InputRecord[],
+      totalTicks: number
+    ) => {
       if (!user) return;
-      const res = await apiSettle(user.username, form.password.trim(), finalScore, finalDur);
-      if (res.ok && res.isNewRecord && res.data) updateUser(res.data);
+      const currentSession = sessionRef.current;
+      sessionRef.current = null;
+
+      if (!currentSession) {
+        refreshBoard();
+        return;
+      }
+
+      const res = await apiSettleGame({
+        username: user.username,
+        password: form.password.trim(),
+        sessionToken: currentSession.sessionToken,
+        inputs,
+        totalTicks,
+      });
+
+      if (res.ok && res.data) {
+        if (res.isNewRecord && res.data.user) {
+          updateUser(res.data.user);
+        }
+      }
       refreshBoard();
     },
     [user, form.password, updateUser, refreshBoard]
@@ -44,14 +71,56 @@ export default function Home() {
 
   // 贪吃蛇游戏核心状态机
   const {
-    snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey,
-    score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
-    startGame, togglePause, changeDirection, tick,
+    snakeRef,
+    fenceRef,
+    foodRef,
+    bonusRef,
+    hasBonus,
+    bonusKey,
+    score,
+    duration,
+    length,
+    speedMs,
+    isPlaying,
+    isGameOver,
+    isPaused,
+    startGame,
+    togglePause,
+    changeDirection,
+    tick,
   } = useSnake(handleGameOver);
+
+  // 开始新对局：开局向服务端握手申请确定性种子与会话 Token
+  const handleStartGame = useCallback(async () => {
+    if (!user) {
+      startGame(Date.now());
+      return;
+    }
+
+    try {
+      const res = await apiStartGame(user.username, form.password.trim());
+      if (res.ok && res.data) {
+        sessionRef.current = {
+          sessionToken: res.data.sessionToken,
+          seed: res.data.seed,
+        };
+        startGame(res.data.seed);
+      } else {
+        // 离线/网络故障时平滑降级为本地时间戳随机
+        sessionRef.current = null;
+        startGame(Date.now());
+      }
+    } catch {
+      sessionRef.current = null;
+      startGame(Date.now());
+    }
+  }, [user, form.password, startGame]);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);
-    try { localStorage.setItem('snake_tutorial_seen', 'true'); } catch {}
+    try {
+      localStorage.setItem('snake_tutorial_seen', 'true');
+    } catch {}
   }, []);
 
   const handleOpenTutorial = useCallback(() => {
@@ -64,7 +133,9 @@ export default function Home() {
     apiLeaderboard().then((data) => {
       if (isMounted) setBoard(data);
     });
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 服务端渲染骨架屏防水合闪烁
@@ -86,17 +157,14 @@ export default function Home() {
       ) : (
         /* 已登录态：游戏主界面 */
         <div className="w-full max-w-4xl flex flex-col gap-3 sm:gap-4 relative z-10">
-          <Header
-            user={user}
-            onLogout={logout}
-            onOpenTutorial={handleOpenTutorial}
-          />
+          <Header user={user} onLogout={logout} onOpenTutorial={handleOpenTutorial} />
 
           {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
-                方寸之<span className="text-[#66CCFF]">间</span>，重温经<span className="text-[#66CCFF]">典</span>
+                方寸之<span className="text-[#66CCFF]">间</span>，重温经
+                <span className="text-[#66CCFF]">典</span>
               </h1>
               <blockquote className="mt-1.5 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
                 在方格与节奏的律动中，探寻每一次转身的从容。
@@ -134,7 +202,7 @@ export default function Home() {
                 isPlaying={isPlaying}
                 isGameOver={isGameOver}
                 isPaused={isPaused}
-                onStart={startGame}
+                onStart={handleStartGame}
                 onTick={tick}
                 onDirection={changeDirection}
                 onTogglePause={togglePause}

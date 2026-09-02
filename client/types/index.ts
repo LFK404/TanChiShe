@@ -14,3 +14,33 @@ export interface User {
   bestDuration: number;
   updatedAt?: string;
 }
+
+// 玩家操作输入流帧记录
+export interface InputRecord {
+  tick: number;
+  dir: Direction;
+}
+
+// 开局握手返回实体
+export interface GameStartResponse {
+  sessionToken: string;
+  seed: number;
+}
+
+// 战绩结算请求实体
+export interface GameSettleRequest {
+  username?: string;
+  password?: string;
+  sessionToken: string;
+  inputs: InputRecord[];
+  totalTicks: number;
+}
+
+// 战绩结算返回实体
+export interface GameSettleResponse {
+  score: number;
+  duration: number;
+  length: number;
+  isNewRecord: boolean;
+  user: User;
+}

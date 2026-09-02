@@ -33,7 +33,7 @@ flowchart LR
 - 🐍 **丝滑物理引擎**：双指令排队缓冲队列防自杀；标准方格晶体圆角（与身后栅栏间距严格统一）+ 灵动双眼。
 - 🍎 **独立双果与动态加速**：保底普通红苹果（吃后清空残留栅栏）+ 25% 概率金色幸运果（8s 倒计时 +30分 保留栅栏）。
 - 🏆 **几何数字排行榜**：1~6 名专属多巴胺等宽几何数字徽标，动态计算超越全服玩家百分比。
-- 🛡️ **高可用与全栈安全**：后端物理防作弊校验、滑动窗口限流（20次/秒）、SHA256 加盐哈希无感升级、RLS 行级安全。
+- 🛡️ **Level 3 商业级防作弊与安全**：确定性随机种子（Mulberry32 PRNG）+ Go 后端 1ms 无头物理仿真重放验算（彻底杜绝外挂改分与时间伪造）、单 IP 20次/秒滑动窗口限流、SHA256 加盐哈希无感升级、RLS 行级安全。
 - 🎵 **8-bit 原生音效 & PWA**：Web Audio API 实时合成音效，支持 PWA 添加到手机主屏幕离线畅玩。
 
 ---
@@ -44,16 +44,18 @@ flowchart LR
 ├── client/                     # 📱 前端 (Next.js 15 App Router)
 │   ├── app/                    # 页面、PWA Manifest 与全局样式
 │   ├── components/             # Board, Header, Leaderboard, Login, Tutorial
-│   ├── hooks/                  # useSnake (物理引擎), useAuth (认证持久化)
-│   ├── services/api.ts         # REST API 封装
+│   ├── hooks/                  # useSnake (确定性物理引擎), useAuth (认证持久化)
+│   ├── services/api.ts         # REST API 封装 (开局握手 & 轨迹验算)
 │   ├── utils/audio.ts          # Web Audio API 8-bit 原生合成器
+│   ├── utils/prng.ts           # Mulberry32 跨语言 32 位确定性 PRNG
 │   └── public/sw.js            # PWA Service Worker 离线缓存
 │
 ├── server/                     # ⚙️ 后端 (Go 1.22+ Gin)
-│   ├── main.go                 # 接口、限流、防作弊、GORM 与优雅停机
+│   ├── main.go                 # 接口、对局Session、1ms无头物理重放引擎、GORM与优雅停机
+│   ├── replay_test.go          # 重放引擎与防作弊单元测试
 │   └── Dockerfile              # 多阶段容器构建
 │
-├── docs/                       # 📖 设计规范与离线预览
+├── docs/                       # 📖 课程实践报告与架构设计
 ├── supabase/migrations/        # 🗄️ 数据库 SQL 迁移文件
 ├── AGENTS.md                   # 📜 开发宪法与技术规范
 └── README.md                   # 📖 项目说明文档
