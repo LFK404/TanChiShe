@@ -1,5 +1,5 @@
 -- 贪吃蛇数据库初始化脚本 (PostgreSQL / Supabase)
--- 包含用户表、战绩流水表、复合排行榜索引与 RLS 行级安全防护
+-- 包含用户表、战绩流水表、电竞对局录像字段、复合排行榜索引与 RLS 行级安全防护
 
 -- 1. 玩家用户信息表
 CREATE TABLE IF NOT EXISTS users (
@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(100) NOT NULL,
     high_score INTEGER NOT NULL DEFAULT 0,
     best_duration BIGINT NOT NULL DEFAULT 0,
+    replay_seed BIGINT NOT NULL DEFAULT 0,
+    replay_inputs TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -21,6 +23,8 @@ CREATE TABLE IF NOT EXISTS game_records (
     username VARCHAR(50) NOT NULL,
     score INTEGER NOT NULL DEFAULT 0,
     duration BIGINT NOT NULL DEFAULT 0,
+    replay_seed BIGINT NOT NULL DEFAULT 0,
+    replay_inputs TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
