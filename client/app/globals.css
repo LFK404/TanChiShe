@@ -23,12 +23,15 @@
   --shadow-modal: 0 12px 36px rgba(15, 23, 42, 0.16);
 }
 
+html,
 body {
   background-color: var(--bg-workspace);
   color: var(--text-main);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
 }
 
 /* 隐藏滚动条同时保持滚动 */
