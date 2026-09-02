@@ -68,6 +68,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const rngRef = useRef<Mulberry32 | null>(null);
   const tickCountRef = useRef<number>(0);
   const inputsRef = useRef<InputRecord[]>([]);
+  const pausedMsRef = useRef<number>(0);
+  const pauseStartRef = useRef<number>(0);
 
   const [score, setScore] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -136,7 +138,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }
   };
 
-  // 游戏结束结算
+  // 游戏结束结算 (自动剔除中途暂停时长)
   const gameOver = useCallback(() => {
     stateRef.current.over = true;
     stateRef.current.playing = false;
@@ -146,7 +148,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     sound.stopBgm();
     sound.playGameOver();
     vibrate(40);
-    const dur = Math.floor((Date.now() - stateRef.current.start) / 1000);
+    const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
     onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
   }, [onGameOver, clearBonus]);
 
@@ -157,6 +159,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       rngRef.current = new Mulberry32(seed !== undefined ? seed : Date.now());
       tickCountRef.current = 0;
       inputsRef.current = [];
+      pausedMsRef.current = 0;
+      pauseStartRef.current = 0;
 
       snakeRef.current = [
         { x: 10, y: 12 },
@@ -196,25 +200,33 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }
   }, []);
 
-  // 暂停/继续游戏
+  // 暂停/继续游戏 (精准记录暂停时长并自动抵扣)
   const togglePause = useCallback(() => {
     if (stateRef.current.playing && !stateRef.current.over) {
       const nextPaused = !stateRef.current.paused;
       stateRef.current.paused = nextPaused;
       setIsPaused(nextPaused);
-      if (nextPaused) sound.pauseBgm();
-      else sound.resumeBgm();
+      if (nextPaused) {
+        pauseStartRef.current = Date.now();
+        sound.pauseBgm();
+      } else {
+        if (pauseStartRef.current > 0) {
+          pausedMsRef.current += Date.now() - pauseStartRef.current;
+          pauseStartRef.current = 0;
+        }
+        sound.resumeBgm();
+      }
       sound.playToggle();
       vibrate(10);
     }
   }, []);
 
-  // 核心主物理 Tick 时序
+  // 核心主物理 Tick 时序 (净物理用时实时计算)
   const tick = useCallback(() => {
     const { playing, over, paused, start } = stateRef.current;
     if (!playing || over || paused) return;
 
-    setDuration(Math.floor((Date.now() - start) / 1000));
+    setDuration(Math.max(0, Math.floor((Date.now() - start - pausedMsRef.current) / 1000)));
     tickCountRef.current += 1;
 
     // 1. 消费转向队列

@@ -168,6 +168,20 @@ export default function Board({
     prevGameOverRef.current = isGameOver;
   }, [isGameOver, emitShatter]);
 
+  // 游戏未开始或结束后，按空格/回车快速再战一局
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        if (!isPlaying || isGameOver) {
+          e.preventDefault();
+          onStart();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isPlaying, isGameOver, onStart]);
+
   // 移动端全屏滑动手势检测
   const handleTouchStart = (e: React.TouchEvent) => {
     sound.unlockAudio();
