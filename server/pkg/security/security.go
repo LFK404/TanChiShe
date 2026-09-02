@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,13 +21,19 @@ import (
 )
 
 var (
-	hmacSecretKey   = []byte("ncu_snake_hmac_secret_key_2026_level3_security")
 	consumedNonceMu sync.Mutex
 	consumedNonces  = make(map[string]time.Time)
 
 	ipHits   = make(map[string][]time.Time)
 	ipHitsMu sync.Mutex
 )
+
+func getHMACSecret() []byte {
+	if key := os.Getenv("HMAC_SECRET_KEY"); key != "" {
+		return []byte(key)
+	}
+	return []byte("ncu_snake_hmac_secret_key_2026_level3_security")
+}
 
 // SessionPayload 无状态对局令牌数据载荷
 type SessionPayload struct {
@@ -37,7 +44,7 @@ type SessionPayload struct {
 }
 
 func signHMAC(data []byte) string {
-	mac := hmac.New(sha256.New, hmacSecretKey)
+	mac := hmac.New(sha256.New, getHMACSecret())
 	mac.Write(data)
 	return hex.EncodeToString(mac.Sum(nil))
 }
@@ -86,6 +93,11 @@ func VerifyAndConsumeSessionToken(token string) (*SessionPayload, error) {
 	var payload SessionPayload
 	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
 		return nil, errors.New("对局令牌内容解析失败")
+	}
+
+	// 1. 绝对生命周期检查 (开局至结算不得超过 2 小时)
+	if time.Since(time.UnixMilli(payload.StartTime)) > 2*time.Hour {
+		return nil, errors.New("对局令牌已超时失效")
 	}
 
 	consumedNonceMu.Lock()

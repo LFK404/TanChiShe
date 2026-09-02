@@ -150,6 +150,12 @@ func main() {
 				return
 			}
 
+			// 防越权代打漏洞 (IDOR)：严格校验令牌签署用户与当前登录用户的一致性
+			if payload.Username != "" && payload.Username != user.Username {
+				c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": "对局令牌与当前结算用户不匹配，禁止越权提交战绩"})
+				return
+			}
+
 			// 物理重放整个游戏
 			verifiedScore, verifiedLength, verifiedDuration, isDead, err := engine.ReplayGame(payload.Seed, req.Inputs, req.TotalTicks)
 			if err != nil || !isDead {
@@ -178,12 +184,15 @@ func main() {
 				Duration: verifiedDuration,
 			})
 
-			// 判定是否创下个人新纪录
+			// 判定是否创下个人新纪录 (原子化安全条件更新)
 			isNew := verifiedScore > user.HighScore || (verifiedScore == user.HighScore && verifiedScore > 0 && (user.BestDuration == 0 || verifiedDuration < user.BestDuration))
 			if isNew {
 				user.HighScore = verifiedScore
 				user.BestDuration = verifiedDuration
-				database.DB.Save(user)
+				database.DB.Model(user).Where("id = ?", user.ID).Updates(map[string]interface{}{
+					"high_score":    verifiedScore,
+					"best_duration": verifiedDuration,
+				})
 			}
 
 			c.JSON(http.StatusOK, gin.H{
