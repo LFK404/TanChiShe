@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Trophy } from 'lucide-react';
 import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
-import { NCUTrophyIcon, NCUCrestBadge } from './NCUIcon';
+import { NCUCrestBadge } from './NCUIcon';
 
 interface Props {
   isOpen: boolean;
@@ -65,18 +66,18 @@ export default function Achievements({ isOpen, onClose }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
+        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
       >
         {/* 顶部荣耀仪表盘 */}
         <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-gradient-to-b from-[#F8FAFC] to-white relative">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center shadow-xs">
-                <NCUTrophyIcon size={22} />
+              <div className="w-10 h-10 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
+                <Trophy size={20} strokeWidth={2} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-slate-900 text-base sm:text-lg tracking-tight">
+                  <h3 className="font-bold text-slate-900 text-base sm:text-lg tracking-tight">
                     成就殿堂
                   </h3>
                   <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] text-[#0099FF]">
@@ -161,7 +162,7 @@ export default function Achievements({ isOpen, onClose }: Props) {
                     key={ach.id}
                     className={`p-3 rounded-2xl border transition-all flex items-start gap-3 relative overflow-hidden group ${
                       isUnlocked
-                        ? 'bg-white border-slate-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:border-[#66CCFF]/60 hover:shadow-md'
+                        ? 'bg-white border-slate-200/90 shadow-2xs hover:border-[#0099FF]/50'
                         : 'bg-slate-50/50 border-dashed border-slate-200 opacity-60'
                     }`}
                   >

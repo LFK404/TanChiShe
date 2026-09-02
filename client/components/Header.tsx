@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { User } from '@/types';
 import { sound } from '@/utils/audio';
 import { haptics, HapticMode } from '@/utils/haptics';
-import { Trophy, HelpCircle, Volume2, VolumeX } from 'lucide-react';
+import { Trophy, HelpCircle, Volume2, VolumeX, LogOut } from 'lucide-react';
 
 interface Props {
   user: User;
@@ -239,12 +239,13 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
           )}
         </div>
 
-        {/* 极简纯文字退出按钮 */}
+        {/* 规范化矢量退出登录按钮 (与前3个圆形按钮规制完全对称一致) */}
         <button
           onClick={onLogout}
-          className="px-2.5 py-1 text-[#64748B] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer text-xs font-medium"
+          title="退出登录"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-rose-500 hover:bg-rose-50 transition-all cursor-pointer"
         >
-          退出
+          <LogOut size={15} strokeWidth={2} />
         </button>
       </div>
     </header>
