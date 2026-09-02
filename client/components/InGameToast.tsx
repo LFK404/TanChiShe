@@ -1,12 +1,38 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import {
+  Sprout,
+  Star,
+  Apple,
+  Activity,
+  Zap,
+  Timer,
+  TrendingUp,
+  Waves,
+  Hourglass,
+  Flame,
+  Coins,
+  Gauge,
+  Medal,
+  Compass,
+  Clock,
+  Sparkles,
+  Sparkle,
+  Rocket,
+  Milestone,
+  Trophy,
+  Award,
+  Crown,
+  Infinity as InfinityIcon,
+  Footprints,
+} from 'lucide-react';
 
 export interface ToastItem {
   id: string;
   text: string;
   color?: string;
-  icon?: string;
+  iconName?: string;
 }
 
 interface Props {
@@ -14,7 +40,35 @@ interface Props {
   onRemove: (id: string) => void;
 }
 
-// 局中即时高光微弹窗容器 (精细打磨：顶部安全区非侵入式悬浮胶囊，零遮挡视线，事件完全穿透)
+// 纯矢量 Lucide 图标映射字典 (无 emoji 纯净矢量体系)
+export const TOAST_ICONS: Record<string, React.ReactNode> = {
+  Sprout: <Sprout size={14} />,
+  Star: <Star size={14} />,
+  Apple: <Apple size={14} />,
+  Activity: <Activity size={14} />,
+  Zap: <Zap size={14} />,
+  Timer: <Timer size={14} />,
+  TrendingUp: <TrendingUp size={14} />,
+  Waves: <Waves size={14} />,
+  Hourglass: <Hourglass size={14} />,
+  Flame: <Flame size={14} />,
+  Coins: <Coins size={14} />,
+  Gauge: <Gauge size={14} />,
+  Medal: <Medal size={14} />,
+  Compass: <Compass size={14} />,
+  Clock: <Clock size={14} />,
+  Sparkles: <Sparkles size={14} />,
+  Sparkle: <Sparkle size={14} />,
+  Rocket: <Rocket size={14} />,
+  Milestone: <Milestone size={14} />,
+  Trophy: <Trophy size={14} />,
+  Award: <Award size={14} />,
+  Crown: <Crown size={14} />,
+  Infinity: <InfinityIcon size={14} />,
+  Footprints: <Footprints size={14} />,
+};
+
+// 局中即时高光微弹窗 (全矢量线性图标 + 顶部安全区悬浮胶囊，零遮挡视线，事件完全穿透)
 export default function InGameToast({ toasts, onRemove }: Props) {
   return (
     <div className="fixed top-2.5 sm:top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none select-none max-w-[92vw]">
@@ -44,6 +98,7 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
   }, [toast.id, onRemove]);
 
   const dotColor = toast.color || '#66CCFF';
+  const iconNode = toast.iconName ? TOAST_ICONS[toast.iconName] || <Award size={14} /> : null;
 
   return (
     <div
@@ -51,7 +106,7 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
         visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95'
       }`}
     >
-      {/* 多巴胺微呼吸呼吸灯 */}
+      {/* 专属多巴胺微呼吸指示灯 */}
       <span
         className="w-2 h-2 rounded-full shrink-0 shadow-xs"
         style={{
@@ -60,9 +115,13 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
         }}
       />
 
-      {/* 图标与文案 */}
+      {/* 纯矢量线性图标与文字 */}
       <div className="flex items-center gap-1.5 tracking-tight text-[11.5px] sm:text-xs">
-        {toast.icon && <span className="text-sm shrink-0">{toast.icon}</span>}
+        {iconNode && (
+          <span className="shrink-0" style={{ color: dotColor }}>
+            {iconNode}
+          </span>
+        )}
         <span className="font-bold text-slate-800">{toast.text}</span>
       </div>
     </div>

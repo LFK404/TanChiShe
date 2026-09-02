@@ -22,10 +22,10 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [showAchievements, setShowAchievements] = useState(false);
 
-  // 添加局中即时微弹窗
-  const addToast = useCallback((text: string, icon?: string, color?: string) => {
+  // 添加局中即时微弹窗 (全矢量线性图标体系)
+  const addToast = useCallback((text: string, iconName?: string, color?: string) => {
     const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    setToasts((prev) => [...prev.slice(-3), { id, text, icon, color }]);
+    setToasts((prev) => [...prev.slice(-3), { id, text, iconName, color }]);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -108,7 +108,7 @@ export default function Home() {
       if (res.ok && res.data) {
         if (res.isNewRecord && res.data.user) {
           updateUser(res.data.user);
-          addToast('刷新个人历史最佳纪录！', '🎉', '#F59E0B');
+          addToast('刷新个人历史最佳纪录！', 'Trophy', '#F59E0B');
         }
       }
 
@@ -117,7 +117,7 @@ export default function Home() {
       setBoard(newBoard);
       const userRank = newBoard.findIndex((u) => u.username === user.username) + 1;
       if (userRank > 0 && userRank <= 10) {
-        addToast(`荣登全服风云榜第 ${userRank} 名！`, '🏆', '#0099FF');
+        addToast(`荣登全服风云榜第 ${userRank} 名！`, 'Crown', '#0099FF');
         const rankAch = checkAndUnlockAchievements({
           score: _finalScore,
           length: 3,
@@ -130,7 +130,7 @@ export default function Home() {
         });
         rankAch.forEach((ach) => {
           sound.playAchievement();
-          addToast(`解锁成就: [${ach.name}]`, '🏅', ach.color);
+          addToast(`解锁成就: [${ach.name}]`, ach.iconName, ach.color);
         });
       }
     },
@@ -160,7 +160,7 @@ export default function Home() {
     tick,
   } = useSnake(handleGameOver);
 
-  // 局中即时高光与成就达成监听
+  // 局中即时高光与成就达成监听 (全矢量纯净图符)
   useEffect(() => {
     if (!isPlaying || isGameOver) return;
 
@@ -172,31 +172,31 @@ export default function Home() {
     };
 
     // 1. 得分高光弹窗
-    if (score >= 100) checkMilestone('score_100', () => addToast('得分突破 100 分!', '🌱', '#10B981'));
-    if (score >= 200) checkMilestone('score_200', () => addToast('得分突破 200 分!', '🌟', '#66CCFF'));
-    if (score >= 300) checkMilestone('score_300', () => addToast('得分突破 300 分!', '⚡', '#0099FF'));
-    if (score >= 500) checkMilestone('score_500', () => addToast('得分突破 500 分 (宗师境界)!', '👑', '#EC4899'));
-    if (score >= 800) checkMilestone('score_800', () => addToast('得分突破 800 分 (旷世奇才)!', '🌌', '#9333EA'));
+    if (score >= 100) checkMilestone('score_100', () => addToast('得分突破 100 分!', 'Sprout', '#10B981'));
+    if (score >= 200) checkMilestone('score_200', () => addToast('得分突破 200 分!', 'Star', '#66CCFF'));
+    if (score >= 300) checkMilestone('score_300', () => addToast('得分突破 300 分!', 'TrendingUp', '#0099FF'));
+    if (score >= 500) checkMilestone('score_500', () => addToast('得分突破 500 分 (宗师境界)!', 'Medal', '#EC4899'));
+    if (score >= 800) checkMilestone('score_800', () => addToast('得分突破 800 分 (旷世奇才)!', 'Milestone', '#9333EA'));
 
     // 2. 身长高光弹窗
-    if (length >= 15) checkMilestone('len_15', () => addToast('蛇身突破 15 节 (灵动巨蟒)', '🐍', '#0D9488'));
-    if (length >= 25) checkMilestone('len_25', () => addToast('蛇身突破 25 节 (深海潜龙)', '🐉', '#0284C7'));
-    if (length >= 35) checkMilestone('len_35', () => addToast('蛇身突破 35 节 (万象苍龙)', '🐲', '#1D4ED8'));
+    if (length >= 15) checkMilestone('len_15', () => addToast('蛇身突破 15 节 (灵动巨蟒)', 'Activity', '#0D9488'));
+    if (length >= 25) checkMilestone('len_25', () => addToast('蛇身突破 25 节 (深海潜龙)', 'Waves', '#0284C7'));
+    if (length >= 35) checkMilestone('len_35', () => addToast('蛇身突破 35 节 (万象苍龙)', 'Compass', '#1D4ED8'));
 
     // 3. 存活时长高光弹窗
-    if (duration >= 60) checkMilestone('dur_60', () => addToast('稳健存活 1 分钟!', '⏱️', '#8B5CF6'));
-    if (duration >= 120) checkMilestone('dur_120', () => addToast('沉着坚守 2 分钟!', '⏳', '#7C3AED'));
-    if (duration >= 180) checkMilestone('dur_180', () => addToast('长青传奇 3 分钟!', '⌛', '#334155'));
-    if (duration >= 300) checkMilestone('dur_300', () => addToast('不朽长生 5 分钟!', '⏳', '#0F172A'));
+    if (duration >= 60) checkMilestone('dur_60', () => addToast('稳健存活 1 分钟!', 'Timer', '#8B5CF6'));
+    if (duration >= 120) checkMilestone('dur_120', () => addToast('沉着坚守 2 分钟!', 'Hourglass', '#7C3AED'));
+    if (duration >= 180) checkMilestone('dur_180', () => addToast('长青传奇 3 分钟!', 'Clock', '#334155'));
+    if (duration >= 300) checkMilestone('dur_300', () => addToast('不朽长生 5 分钟!', 'Infinity', '#0F172A'));
 
     // 4. 金果高光弹窗
-    if (bonusCount >= 1) checkMilestone('bonus_1', () => addToast('斩获金色幸运果 +30分!', '✨', '#F59E0B'));
-    if (bonusCount >= 5) checkMilestone('bonus_5', () => addToast('连收 5 颗金果 (金果饕餮)!', '💰', '#D97706'));
-    if (bonusCount >= 8) checkMilestone('bonus_8', () => addToast('连收 8 颗金果 (金玉满堂)!', '✨', '#CA8A04'));
+    if (bonusCount >= 1) checkMilestone('bonus_1', () => addToast('斩获金色幸运果 +30分!', 'Apple', '#F59E0B'));
+    if (bonusCount >= 5) checkMilestone('bonus_5', () => addToast('连收 5 颗金果 (金果饕餮)!', 'Coins', '#D97706'));
+    if (bonusCount >= 8) checkMilestone('bonus_8', () => addToast('连收 8 颗金果 (金玉满堂)!', 'Sparkle', '#CA8A04'));
 
     // 5. 极速高光弹窗
-    if (speedMs <= 85 && score >= 250) checkMilestone('spd_15', () => addToast('速度突破 1.5x (极速掌控)!', '🚀', '#F97316'));
-    if (speedMs <= 65 && score >= 600) checkMilestone('spd_20', () => addToast('达到极限速度 2.0x (极限狂飙)!', '⚡', '#6D28D9'));
+    if (speedMs <= 85 && score >= 250) checkMilestone('spd_15', () => addToast('速度突破 1.5x (极速掌控)!', 'Gauge', '#F97316'));
+    if (speedMs <= 65 && score >= 600) checkMilestone('spd_20', () => addToast('达到极限速度 2.0x (极限狂飙)!', 'Rocket', '#6D28D9'));
 
     // 6. 检查 24 枚成就系统是否点亮
     const newlyUnlocked = checkAndUnlockAchievements({
@@ -211,7 +211,7 @@ export default function Home() {
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
-      addToast(`解锁成就: [${ach.name}]`, '🏅', ach.color);
+      addToast(`解锁成就: [${ach.name}]`, ach.iconName, ach.color);
     });
   }, [isPlaying, isGameOver, score, length, duration, bonusCount, speedMs, steps, addToast]);
 

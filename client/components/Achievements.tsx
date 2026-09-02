@@ -2,7 +2,37 @@
 
 import React, { useState } from 'react';
 import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
-import { X, Trophy, Award, Lock, CheckCircle2, Sparkles, Shield, Flame, Crown, Gem } from 'lucide-react';
+import {
+  X,
+  Trophy,
+  Award,
+  Lock,
+  CheckCircle2,
+  Sparkles,
+  Shield,
+  Flame,
+  Crown,
+  Gem,
+  Sprout,
+  Star,
+  Apple,
+  Activity,
+  Zap,
+  Timer,
+  TrendingUp,
+  Waves,
+  Hourglass,
+  Coins,
+  Gauge,
+  Medal,
+  Compass,
+  Clock,
+  Sparkle,
+  Rocket,
+  Milestone,
+  Infinity as InfinityIcon,
+  Footprints,
+} from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -43,7 +73,35 @@ const TIER_CONFIG: Record<
   },
 };
 
-// 成就殿堂弹窗 (精细打磨：极简南大家园美学、24枚四字专属多巴胺勋章与达成进度仪表盘)
+// 24 枚专属成就矢量图标字典 (全矢量无 emoji 纯净设计)
+const ACHIEVEMENT_VECTOR_ICONS: Record<string, React.ReactNode> = {
+  Sprout: <Sprout size={20} />,
+  Star: <Star size={20} />,
+  Apple: <Apple size={20} />,
+  Activity: <Activity size={20} />,
+  Zap: <Zap size={20} />,
+  Timer: <Timer size={20} />,
+  TrendingUp: <TrendingUp size={20} />,
+  Waves: <Waves size={20} />,
+  Hourglass: <Hourglass size={20} />,
+  Flame: <Flame size={20} />,
+  Coins: <Coins size={20} />,
+  Gauge: <Gauge size={20} />,
+  Medal: <Medal size={20} />,
+  Compass: <Compass size={20} />,
+  Clock: <Clock size={20} />,
+  Sparkles: <Sparkles size={20} />,
+  Sparkle: <Sparkle size={20} />,
+  Rocket: <Rocket size={20} />,
+  Milestone: <Milestone size={20} />,
+  Trophy: <Trophy size={20} />,
+  Award: <Award size={20} />,
+  Crown: <Crown size={20} />,
+  Infinity: <InfinityIcon size={20} />,
+  Footprints: <Footprints size={20} />,
+};
+
+// 成就殿堂弹窗 (精细打磨：24枚四字专属多巴胺纯矢量勋章与达成进度仪表盘)
 export default function Achievements({ isOpen, onClose }: Props) {
   const [activeTier, setActiveTier] = useState<AchievementTier | 'ALL'>('ALL');
 
@@ -160,6 +218,7 @@ export default function Achievements({ isOpen, onClose }: Props) {
               {displayedAchievements.map((ach) => {
                 const isUnlocked = unlockedSet.has(ach.id);
                 const tierCfg = TIER_CONFIG[ach.tier];
+                const vectorIcon = ACHIEVEMENT_VECTOR_ICONS[ach.iconName] || <Award size={20} />;
 
                 return (
                   <div
@@ -170,15 +229,15 @@ export default function Achievements({ isOpen, onClose }: Props) {
                         : 'bg-slate-50/50 border-dashed border-slate-200 opacity-60'
                     }`}
                   >
-                    {/* 左侧多巴胺徽章图标底座 */}
+                    {/* 左侧 24 种专属差异化纯矢量图案底座 */}
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 shadow-2xs"
                       style={{
                         backgroundColor: isUnlocked ? `${ach.color}15` : '#F1F5F9',
                         color: isUnlocked ? ach.color : '#94A3B8',
                       }}
                     >
-                      {isUnlocked ? <Award size={22} /> : <Lock size={18} />}
+                      {isUnlocked ? vectorIcon : <Lock size={18} />}
                     </div>
 
                     {/* 中间文字排版 */}

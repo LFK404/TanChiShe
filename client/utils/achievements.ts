@@ -1,4 +1,4 @@
-// 24 枚成就系统核心定义与达成检测引擎
+// 24 枚成就系统核心定义与达成检测引擎 (全矢量无 emoji 纯净设计)
 
 export type AchievementTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
 
@@ -20,6 +20,7 @@ export interface Achievement {
   flavor: string;
   tier: AchievementTier;
   color: string;
+  iconName: string;
   check: (stats: GameStats) => boolean;
 }
 
@@ -32,6 +33,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '方寸之间，迈出坚实第一步',
     tier: 'BRONZE',
     color: '#10B981',
+    iconName: 'Sprout',
     check: (s) => s.score >= 100,
   },
   {
@@ -41,6 +43,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '走位与节奏初步融会',
     tier: 'BRONZE',
     color: '#66CCFF',
+    iconName: 'Star',
     check: (s) => s.score >= 200,
   },
   {
@@ -50,6 +53,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '邂逅 8 秒稍纵即逝的金色机缘',
     tier: 'BRONZE',
     color: '#F59E0B',
+    iconName: 'Apple',
     check: (s) => s.bonusCount >= 1,
   },
   {
@@ -59,6 +63,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '初具规模，盘桓有度',
     tier: 'BRONZE',
     color: '#0D9488',
+    iconName: 'Activity',
     check: (s) => s.length >= 15,
   },
   {
@@ -68,6 +73,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '连续吃果，初露锋芒',
     tier: 'BRONZE',
     color: '#FB923C',
+    iconName: 'Zap',
     check: (s) => s.maxCombo >= 2,
   },
   {
@@ -77,6 +83,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '沉着冷静，稳步向前',
     tier: 'BRONZE',
     color: '#8B5CF6',
+    iconName: 'Timer',
     check: (s) => s.duration >= 60,
   },
 
@@ -88,6 +95,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '节奏渐入佳境，游刃有余',
     tier: 'SILVER',
     color: '#0099FF',
+    iconName: 'TrendingUp',
     check: (s) => s.score >= 300,
   },
   {
@@ -97,6 +105,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '巨龙初醒，盘踞方寸',
     tier: 'SILVER',
     color: '#0284C7',
+    iconName: 'Waves',
     check: (s) => s.length >= 25,
   },
   {
@@ -106,6 +115,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '心如止水，坚守两分钟',
     tier: 'SILVER',
     color: '#7C3AED',
+    iconName: 'Hourglass',
     check: (s) => s.duration >= 120,
   },
   {
@@ -115,6 +125,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '连续吃果，手速爆发',
     tier: 'SILVER',
     color: '#EF4444',
+    iconName: 'Flame',
     check: (s) => s.maxCombo >= 3,
   },
   {
@@ -124,6 +135,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '敏锐嗅觉，财源滚滚',
     tier: 'SILVER',
     color: '#D97706',
+    iconName: 'Coins',
     check: (s) => s.bonusCount >= 5,
   },
   {
@@ -133,6 +145,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '风驰电掣中的从容掌控',
     tier: 'SILVER',
     color: '#F97316',
+    iconName: 'Gauge',
     check: (s) => s.speedMs <= 85 && s.score >= 250,
   },
 
@@ -144,6 +157,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '登峰造极的微操艺术',
     tier: 'GOLD',
     color: '#EC4899',
+    iconName: 'Medal',
     check: (s) => s.score >= 500,
   },
   {
@@ -153,6 +167,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '身长如龙，满屏游走',
     tier: 'GOLD',
     color: '#1D4ED8',
+    iconName: 'Compass',
     check: (s) => s.length >= 35,
   },
   {
@@ -162,6 +177,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '超强耐力，历经风雨考验',
     tier: 'GOLD',
     color: '#334155',
+    iconName: 'Clock',
     check: (s) => s.duration >= 180,
   },
   {
@@ -171,6 +187,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '极限手速，超凡节奏',
     tier: 'GOLD',
     color: '#DC2626',
+    iconName: 'Sparkles',
     check: (s) => s.maxCombo >= 5,
   },
   {
@@ -180,6 +197,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '金光璀璨，福星高照',
     tier: 'GOLD',
     color: '#CA8A04',
+    iconName: 'Sparkle',
     check: (s) => s.bonusCount >= 8,
   },
   {
@@ -189,6 +207,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '突破物理极速的巅峰掌控',
     tier: 'GOLD',
     color: '#6D28D9',
+    iconName: 'Rocket',
     check: (s) => s.speedMs <= 65 && s.score >= 600,
   },
 
@@ -200,6 +219,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '超越凡俗的神级表现',
     tier: 'DIAMOND',
     color: '#9333EA',
+    iconName: 'Milestone',
     check: (s) => s.score >= 800,
   },
   {
@@ -209,6 +229,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '名扬风云榜，跻身全服前列',
     tier: 'DIAMOND',
     color: '#B45309',
+    iconName: 'Trophy',
     check: (s) => s.rank !== undefined && s.rank > 0 && s.rank <= 10,
   },
   {
@@ -218,6 +239,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '傲立群雄之巅，俯瞰全服',
     tier: 'DIAMOND',
     color: '#A16207',
+    iconName: 'Award',
     check: (s) => s.rank !== undefined && s.rank > 0 && s.rank <= 3,
   },
   {
@@ -227,6 +249,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '独孤求败，天下无双',
     tier: 'DIAMOND',
     color: '#EAB308',
+    iconName: 'Crown',
     check: (s) => s.rank === 1,
   },
   {
@@ -236,6 +259,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '定力如磐石，缔造不朽',
     tier: 'DIAMOND',
     color: '#0F172A',
+    iconName: 'Infinity',
     check: (s) => s.duration >= 300,
   },
   {
@@ -245,6 +269,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     flavor: '千步征程，王者独行',
     tier: 'DIAMOND',
     color: '#0891B2',
+    iconName: 'Footprints',
     check: (s) => s.steps >= 1200,
   },
 ];
