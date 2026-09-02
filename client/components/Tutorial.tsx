@@ -44,7 +44,7 @@ export default function Tutorial({ isOpen, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[4px] select-none">
-      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 flex flex-col text-[#0F172A] relative shadow-2xl border border-slate-100">
+      <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 flex flex-col text-[#0F172A] relative border border-slate-200/80 shadow-sm">
         {/* 顶部标题栏 */}
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
@@ -83,9 +83,9 @@ export default function Tutorial({ isOpen, onClose }: Props) {
         {/* 底部确认按钮 */}
         <button
           onClick={onClose}
-          className="w-full bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.99] text-white font-bold py-2.5 rounded-xl transition-all shadow-[0_2px_10px_rgba(0,153,255,0.25)] cursor-pointer text-xs"
+          className="w-full bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.98] text-white font-bold py-2.5 rounded-2xl transition-all cursor-pointer text-xs shadow-xs"
         >
-          我已掌握，开始狂飙！
+          我已了解
         </button>
       </div>
     </div>

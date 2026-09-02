@@ -38,7 +38,7 @@ export default function Leaderboard({ items, currentUser, onRefresh, onWatchRepl
   const getBadgeStyle = (rank: number) => BADGE_STYLES[rank] || 'bg-[#F1F5F9] text-[#64748B]';
 
   return (
-    <div className="bg-white p-5 rounded-3xl flex flex-col select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+    <div className="bg-white p-5 rounded-3xl flex flex-col select-none border border-slate-200/80 shadow-xs">
       {/* 榜单标题与手动刷新 */}
       <div className="flex justify-between items-center pb-2.5">
         <div className="flex items-center gap-2">
@@ -56,7 +56,7 @@ export default function Leaderboard({ items, currentUser, onRefresh, onWatchRepl
       {/* 排行榜名次流水列表 */}
       <div className="space-y-1 my-1">
         {items.length === 0 ? (
-          <div className="text-center py-6 text-xs text-[#94A3B8]">风云初定，虚位以待</div>
+          <div className="text-center py-6 text-xs text-slate-400 font-normal">暂无上榜记录</div>
         ) : (
           items.slice(0, 10).map((u, i) => {
             const rank = i + 1;

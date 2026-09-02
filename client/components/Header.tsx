@@ -85,10 +85,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
             className="w-6 h-6 rounded-lg shrink-0"
             priority
           />
-          <span className="font-black text-[#0F172A] text-xs sm:text-sm tracking-tight">贪吃蛇</span>
-          <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[#EBF8FF] text-[#0099FF]">
-            经典版
-          </span>
+          <span className="font-bold text-[#0F172A] text-xs sm:text-sm tracking-tight">贪吃蛇</span>
         </div>
 
         {/* 玩家用户名与最高分等宽字符胶囊 */}
@@ -150,7 +147,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
 
           {/* 南大家园极简风音频分轨调节浮层卡片 */}
           {showAudioPopover && (
-            <div className="absolute right-0 top-full mt-2 w-56 p-3.5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-100 shadow-[0_10px_25px_rgba(0,0,0,0.08)] z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 top-full mt-2 w-56 p-3.5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <span className="font-bold text-[#0F172A] text-xs">声音与触感</span>
                 <button
