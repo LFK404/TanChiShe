@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { User } from '@/types';
 import { sound } from '@/utils/audio';
 import { haptics, HapticMode } from '@/utils/haptics';
-import { NCUVolumeIcon, NCUTutorialIcon, NCUTrophyIcon } from './NCUIcon';
+import { Trophy, HelpCircle, Volume2, VolumeX } from 'lucide-react';
 
 interface Props {
   user: User;
@@ -109,7 +109,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
             title="成就殿堂"
             className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
           >
-            <NCUTrophyIcon size={16} />
+            <Trophy size={16} strokeWidth={2} />
           </button>
         )}
 
@@ -118,7 +118,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
           title="游戏规则与新手指南"
           className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
         >
-          <NCUTutorialIcon size={16} />
+          <HelpCircle size={16} strokeWidth={2} />
         </button>
 
         {/* 音频设置微浮层触发器 */}
@@ -134,7 +134,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
                 : 'text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF]'
             }`}
           >
-            <NCUVolumeIcon isMuted={isMuted} size={15} />
+            {isMuted ? <VolumeX size={16} strokeWidth={2} /> : <Volume2 size={16} strokeWidth={2} />}
           </button>
 
           {/* 全屏无感透明遮罩 */}

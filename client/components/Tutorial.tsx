@@ -1,44 +1,12 @@
 import React from 'react';
-import { NCUNumberBadge, NCUTutorialIcon } from './NCUIcon';
+import { HelpCircle } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// 核心规则分段条目配置 (南大家园多巴胺微标体系)
-const TUTORIAL_SECTIONS = [
-  {
-    num: '01',
-    color: '#D97706',
-    bg: '#FEF3C7',
-    title: '走过的路不能再踩！',
-    desc: '蛇在移动时尾部会留下灰色残留方格轨迹，走过的路会变成障碍死路，不可再次碰撞折返！',
-  },
-  {
-    num: '02',
-    color: '#EF4444',
-    bg: '#FEE2E2',
-    title: '普通红苹果 (+10分 · 清空身后死路)',
-    desc: '吃掉红苹果后蛇身增长 1 节，并瞬间清除身后所有残留的死路轨迹，让战场重新恢复开阔！',
-  },
-  {
-    num: '03',
-    color: '#F59E0B',
-    bg: '#FEF3C7',
-    title: '金色幸运果 (+30分 · 保留死路考验走位)',
-    desc: '25% 概率出现并开启 8 秒蓝色倒计时消失进度条！吃掉斩获 +30 高分，但残留死路继续保留，极度考验极限走位！',
-  },
-  {
-    num: '04',
-    color: '#0099FF',
-    bg: '#EBF8FF',
-    title: '操控模式与手势反馈',
-    desc: '电脑端支持 方向键 / WASD 转向；手机端支持 全屏连续滑屏（带流光与吸附触感），可一键切换「沉浸滑屏视野」或「经典十字键」。空格 / P 键随时暂停。',
-  },
-];
-
-// 游戏新手规则教学模态弹窗组件 (极简现代排版，零 AI 模板感)
+// 游戏新手规则教学模态弹窗组件 (南大家园极简一体化卡片，零割裂感)
 export default function Tutorial({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
@@ -49,11 +17,11 @@ export default function Tutorial({ isOpen, onClose }: Props) {
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
-              <NCUTutorialIcon size={18} />
+              <HelpCircle size={18} strokeWidth={2} />
             </div>
             <div>
-              <h2 className="text-base font-black text-[#0F172A]">游戏新手指南</h2>
-              <p className="text-[11px] text-[#94A3B8]">30 秒掌握核心生存法则与高分技巧</p>
+              <h2 className="text-base font-bold text-[#0F172A]">游戏新手指南</h2>
+              <p className="text-[11px] text-[#94A3B8]">快速了解核心机制与操控技巧</p>
             </div>
           </div>
           <button
@@ -64,20 +32,39 @@ export default function Tutorial({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        {/* 规则条目卡片流 */}
-        <div className="flex flex-col gap-3 py-4">
-          {TUTORIAL_SECTIONS.map((sec, idx) => (
-            <div
-              key={idx}
-              className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50/70 border border-slate-100"
-            >
-              <NCUNumberBadge num={sec.num} color={sec.color} bg={sec.bg} />
-              <div className="flex-1">
-                <h3 className="text-xs font-bold text-[#0F172A] mb-0.5">{sec.title}</h3>
-                <p className="text-[11px] text-[#64748B] leading-relaxed">{sec.desc}</p>
-              </div>
+        {/* 单一规则整合卡片 (消除4块碎片化卡片，层次浑然一体) */}
+        <div className="my-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-200/70 flex flex-col gap-3">
+          <div className="flex items-start gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D97706] mt-1.5 shrink-0" />
+            <div className="text-xs leading-relaxed">
+              <strong className="text-slate-800 font-bold mr-1">死路机制:</strong>
+              <span className="text-slate-600">蛇移动会留下灰色残留死路，不可再次折返碰撞。</span>
             </div>
-          ))}
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] mt-1.5 shrink-0" />
+            <div className="text-xs leading-relaxed">
+              <strong className="text-slate-800 font-bold mr-1">红苹果 (+10分):</strong>
+              <span className="text-slate-600">蛇身增长 1 节，并立即清空身后所有死路，重获开阔空间。</span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] mt-1.5 shrink-0" />
+            <div className="text-xs leading-relaxed">
+              <strong className="text-slate-800 font-bold mr-1">金苹果 (+30分):</strong>
+              <span className="text-slate-600">限时 8 秒倒计时，高额得分但死路保留，考验极限走位。</span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0099FF] mt-1.5 shrink-0" />
+            <div className="text-xs leading-relaxed">
+              <strong className="text-slate-800 font-bold mr-1">操控方式:</strong>
+              <span className="text-slate-600">支持方向键 / WASD 与全屏滑屏/十字键，按空格或 P 键随时暂停。</span>
+            </div>
+          </div>
         </div>
 
         {/* 底部确认按钮 */}
