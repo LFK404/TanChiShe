@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Direction, Point } from '@/types';
 import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnake';
 import { sound } from '@/utils/audio';
+import { haptics } from '@/utils/haptics';
 import {
   Play,
   Pause,
@@ -19,6 +20,7 @@ interface Props {
   bonusRef: React.MutableRefObject<Point | null>;
   hasBonus: boolean;
   bonusKey?: number;
+  queueRef?: React.MutableRefObject<Direction[]>;
   score: number;
   duration: number;
   length: number;
@@ -61,7 +63,8 @@ const drawRoundRect = (
 // 粒子爆发微特效实体
 interface Particle {
   x: number; y: number; vx: number; vy: number;
-  color: string; size: number; alpha: number; life: number; maxLife: number;
+  color: string; size: number; alpha: number;
+  life: number; maxLife: number;
 }
 
 // 冲击波扩散光环实体
@@ -88,14 +91,27 @@ interface DigestionWave {
   startTime: number;
 }
 
+// 指尖触碰微光涟漪实体
+interface TouchRipple {
+  x: number; y: number; r: number; alpha: number; maxR: number;
+}
+
+// 滑屏流光尾迹点实体
+interface SwipeTrailPoint {
+  x: number; y: number; alpha: number;
+}
+
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
+  queueRef,
   score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchRipplesRef = useRef<TouchRipple[]>([]);
+  const swipeTrailsRef = useRef<SwipeTrailPoint[]>([]);
   const particlesRef = useRef<Particle[]>([]);
   const shockwavesRef = useRef<Shockwave[]>([]);
   const motionTrailsRef = useRef<{ x: number; y: number; alpha: number }[]>([]);
@@ -535,6 +551,15 @@ export default function Board({
         }
       }
 
+      // 灵动视线预瞄：若缓冲队列中有下一个待执行指令，瞳孔提前向目标方向瞥视预瞄
+      const nextQueued = queueRef?.current && queueRef.current.length > 0 ? queueRef.current[0] : null;
+      if (nextQueued) {
+        if (nextQueued === 'UP') pupilOffset = { x: 0, y: -1.2 };
+        else if (nextQueued === 'DOWN') pupilOffset = { x: 0, y: 1.2 };
+        else if (nextQueued === 'LEFT') pupilOffset = { x: -1.2, y: 0 };
+        else if (nextQueued === 'RIGHT') pupilOffset = { x: 1.2, y: 0 };
+      }
+
       // 眼白
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
@@ -646,31 +671,134 @@ export default function Board({
     });
     floatingTextsRef.current = activeTexts;
 
-    ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver]);
+    // 12. 更新并绘制指尖触控微光涟漪
+    touchRipplesRef.current = touchRipplesRef.current.filter((rp) => {
+      rp.r += 1.4;
+      rp.alpha -= 0.045;
+      if (rp.alpha <= 0.01) return false;
+      ctx.save();
+      ctx.strokeStyle = `rgba(0, 153, 255, ${rp.alpha})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return true;
+    });
 
-  // 全屏滑屏手势判定 (Swipe)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length > 0) {
-      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    // 13. 更新并绘制滑屏天青流光尾迹 (平滑贝塞尔光弧)
+    if (swipeTrailsRef.current.length > 1) {
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (let i = 0; i < swipeTrailsRef.current.length - 1; i++) {
+        const pt1 = swipeTrailsRef.current[i];
+        const pt2 = swipeTrailsRef.current[i + 1];
+        pt1.alpha -= 0.045;
+        if (pt1.alpha > 0.02) {
+          ctx.strokeStyle = `rgba(0, 153, 255, ${pt1.alpha})`;
+          ctx.lineWidth = 3.6 * ((i + 1) / swipeTrailsRef.current.length);
+          ctx.beginPath();
+          ctx.moveTo(pt1.x, pt1.y);
+          ctx.lineTo(pt2.x, pt2.y);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+    swipeTrailsRef.current = swipeTrailsRef.current.filter((p) => p.alpha > 0.02);
+
+    ctx.restore();
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef]);
+
+  // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 0) return;
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+
+    // 获取在 Canvas 内部的映射坐标以绘制微光涟漪
+    const cvs = canvasRef.current;
+    if (cvs) {
+      const rect = cvs.getBoundingClientRect();
+      const cvsX = (touch.clientX - rect.left) * ((GRID * CELL) / rect.width);
+      const cvsY = (touch.clientY - rect.top) * ((GRID * CELL) / rect.height);
+      if (cvsX >= 0 && cvsX <= GRID * CELL && cvsY >= 0 && cvsY <= GRID * CELL) {
+        touchRipplesRef.current.push({
+          x: cvsX,
+          y: cvsY,
+          r: 4,
+          alpha: 0.65,
+          maxR: 26,
+        });
+      }
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (e.changedTouches.length === 0) return;
-    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 0 || !touchStartPosRef.current) return;
+    if (isReplay || !isPlaying || isGameOver || isPaused) return;
+
+    const touch = e.touches[0];
+    const cvs = canvasRef.current;
+    if (cvs) {
+      const rect = cvs.getBoundingClientRect();
+      const cvsX = (touch.clientX - rect.left) * ((GRID * CELL) / rect.width);
+      const cvsY = (touch.clientY - rect.top) * ((GRID * CELL) / rect.height);
+      if (cvsX >= 0 && cvsX <= GRID * CELL && cvsY >= 0 && cvsY <= GRID * CELL) {
+        swipeTrailsRef.current.push({
+          x: cvsX,
+          y: cvsY,
+          alpha: 0.6,
+        });
+        if (swipeTrailsRef.current.length > 8) {
+          swipeTrailsRef.current.shift();
+        }
+      }
+    }
+
+    const dx = touch.clientX - touchStartPosRef.current.x;
+    const dy = touch.clientY - touchStartPosRef.current.y;
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
 
-    if (Math.max(absX, absY) > 20) {
+    // 16px 黄金触发门限：既滤除手抖，又实现瞬发 0 延迟转弯
+    if (Math.max(absX, absY) >= 16) {
       sound.unlockAudio();
+      let targetDir: Direction;
       if (absX > absY) {
-        onDirection(dx > 0 ? 'RIGHT' : 'LEFT');
+        targetDir = dx > 0 ? 'RIGHT' : 'LEFT';
       } else {
-        onDirection(dy > 0 ? 'DOWN' : 'UP');
+        targetDir = dy > 0 ? 'DOWN' : 'UP';
+      }
+
+      // 执行转向与机械吸附触感
+      onDirection(targetDir);
+      haptics.trigger('snap');
+
+      // 连续滑行不断触：将当前触点重置为新起点，允许一笔划连续过弯
+      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+
+      // 在转折点激发出微光圈
+      if (cvs) {
+        const rect = cvs.getBoundingClientRect();
+        const cvsX = (touch.clientX - rect.left) * ((GRID * CELL) / rect.width);
+        const cvsY = (touch.clientY - rect.top) * ((GRID * CELL) / rect.height);
+        if (cvsX >= 0 && cvsX <= GRID * CELL && cvsY >= 0 && cvsY <= GRID * CELL) {
+          touchRipplesRef.current.push({
+            x: cvsX,
+            y: cvsY,
+            r: 5,
+            alpha: 0.85,
+            maxR: 30,
+          });
+        }
       }
     }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartPosRef.current = null;
   };
 
   // 物理时序主循环 (支持回放倍速调整)
@@ -711,6 +839,7 @@ export default function Board({
   const handleDirBtn = (d: Direction) => {
     sound.unlockAudio();
     onDirection(d);
+    haptics.trigger('snap');
   };
 
   return (
@@ -751,11 +880,13 @@ export default function Board({
         ))}
       </div>
 
-      {/* Canvas 画布与状态遮罩层 */}
+      {/* Canvas 画布与全屏滑屏手势感应层 */}
       <div
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] border border-slate-200/70 touch-none max-w-full shadow-inner"
+        onTouchCancel={handleTouchEnd}
+        className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] border border-slate-200/70 touch-none max-w-full shadow-inner select-none"
       >
         {/* 限时幸运果 8 秒倒计时条 (GPU 硬件加速丝滑渐变) */}
         {hasBonus && (
@@ -975,15 +1106,15 @@ export default function Board({
 
         {/* 底部微型模式切换条与全屏滑屏说明 (回放模式隐藏) */}
         {!isReplay && (
-          <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#94A3B8] pt-1">
-            <span>全屏滑屏 / 键盘 WASD 随时可用</span>
+          <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#94A3B8] pt-1 select-none">
+            <span>{showDpad ? '屏幕任意处滑屏 / 十字键随时可用' : '全屏滑屏已就绪 · 享受沉浸大视野'}</span>
             <span>•</span>
             <button
               onClick={toggleDpad}
-              title="切换触控十字键或纯净键盘模式"
-              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-2.5 py-0.5 rounded-full transition-all cursor-pointer"
+              title="切换沉浸滑屏视野或经典十字键模式"
+              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-2.5 py-0.5 rounded-full transition-all cursor-pointer shadow-2xs"
             >
-              {showDpad ? '切为键盘' : '开启十字键'}
+              {showDpad ? '切为沉浸滑屏' : '展开十字按键'}
             </button>
           </div>
         )}

@@ -10,6 +10,8 @@ export type HapticType =
   | 'heartbeat'
   | 'gameover'
   | 'move'
+  | 'snap'
+  | 'danger'
   | 'ui';
 
 class HapticManager {
@@ -93,6 +95,14 @@ class HapticManager {
 
       case 'move':
         this.vibrateDirect(isStrong ? 6 : 3);
+        break;
+
+      case 'snap':
+        this.vibrateDirect(isStrong ? 8 : 4);
+        break;
+
+      case 'danger':
+        this.vibrateDirect(isStrong ? [10, 20, 10] : 6);
         break;
 
       case 'ui':

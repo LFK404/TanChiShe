@@ -158,6 +158,7 @@ export default function Home() {
     bonusRef,
     hasBonus,
     bonusKey,
+    queueRef,
     score,
     duration,
     length,
@@ -365,6 +366,7 @@ export default function Home() {
                 bonusRef={bonusRef}
                 hasBonus={hasBonus}
                 bonusKey={bonusKey}
+                queueRef={queueRef}
                 score={score}
                 duration={duration}
                 length={length}

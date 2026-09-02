@@ -478,6 +478,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     hasBonus,
     bonusKey,
     dirRef,
+    queueRef,
     score,
     duration,
     length,
