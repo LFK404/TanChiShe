@@ -451,6 +451,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
   // 全局键盘监听 (方向键 / WASD / 空格 / P)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // 若当前焦点在输入框或文本域内，绝不劫持任何按键 (防止登录输入账号密码被拦截或吞空格)
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
       sound.unlockAudio();
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key))
         e.preventDefault();

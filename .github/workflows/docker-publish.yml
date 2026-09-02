@@ -3,6 +3,9 @@ name: Build and Publish Go Server Docker Image
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
 
 jobs:
