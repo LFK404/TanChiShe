@@ -159,6 +159,10 @@ export function useSnake(onGameOver?: GameOverCallback) {
     sound.stopBgm();
     sound.playGameOver();
     vibrate(40);
+    // 局后平滑切回温馨大厅 BGM
+    setTimeout(() => {
+      sound.startMenuBgm();
+    }, 1200);
     if (!isReplayRef.current) {
       const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
       onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
@@ -202,8 +206,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setIsPaused(false);
       setIsPlaying(true);
       clearBonus();
-      sound.playStart();
-      sound.startBgm();
+      sound.playReadyGo();
+      sound.startInGameBgm();
       vibrate(10);
       spawnFood();
     },
@@ -264,8 +268,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setIsPaused(false);
       setIsPlaying(true);
       clearBonus();
-      sound.playStart();
-      sound.startBgm();
+      sound.playReplayIntro();
+      sound.startInGameBgm();
       spawnFood();
     },
     [spawnFood, clearBonus]
@@ -282,7 +286,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     setIsGameOver(false);
     setIsPaused(false);
     clearBonus();
-    sound.stopBgm();
+    sound.startMenuBgm();
   }, [clearBonus]);
 
   // 转向指令压入排队缓冲队列 (最大缓冲 2 条指令，并捕获当前 tick 帧)

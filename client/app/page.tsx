@@ -66,9 +66,12 @@ export default function Home() {
     }
   }, [user]);
 
-  // 登录态就绪时自动预取
+  // 登录态就绪时自动预取并启动大厅待机温馨 BGM
   useEffect(() => {
-    if (user) prefetchSession();
+    if (user) {
+      prefetchSession();
+      sound.startMenuBgm();
+    }
   }, [user, prefetchSession]);
 
   // 刷新全服 Top 10 排行榜
@@ -108,6 +111,7 @@ export default function Home() {
       if (res.ok && res.data) {
         if (res.isNewRecord && res.data.user) {
           updateUser(res.data.user);
+          sound.playVictory();
           addToast('刷新个人历史最佳纪录！', 'Trophy', '#F59E0B');
         }
       }
@@ -129,7 +133,11 @@ export default function Home() {
           rank: userRank,
         });
         rankAch.forEach((ach) => {
-          sound.playAchievement();
+          if (ach.tier === 'DIAMOND' || ach.tier === 'GOLD') {
+            sound.playGrandAchievement();
+          } else {
+            sound.playAchievement();
+          }
           addToast(`解锁成就: [${ach.name}]`, ach.iconName, ach.color);
         });
       }
@@ -310,7 +318,10 @@ export default function Home() {
             user={user}
             onLogout={logout}
             onOpenTutorial={handleOpenTutorial}
-            onOpenAchievements={() => setShowAchievements(true)}
+            onOpenAchievements={() => {
+              sound.playGrandAchievement();
+              setShowAchievements(true);
+            }}
           />
 
           {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
