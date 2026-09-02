@@ -49,6 +49,8 @@ func extractUser(c *gin.Context) (*database.User, error) {
 }
 
 func main() {
+	security.CheckSecretHealth()
+
 	if err := database.InitDB(); err != nil {
 		fmt.Printf("[WARN] 数据库初始化提示: %v\n", err)
 	}
@@ -182,15 +184,23 @@ func main() {
 			inputsJSON, _ := json.Marshal(req.Inputs)
 			inputsStr := string(inputsJSON)
 
-			// 写入对局流水
+			// 写入对局流水 (内含分布式唯一 Nonce 约束，防止多节点并发二次重放)
 			if database.DB != nil {
-				database.DB.Create(&database.GameRecord{
+				record := database.GameRecord{
 					Username:     user.Username,
+					SessionNonce: payload.Nonce,
 					Score:        verifiedScore,
 					Duration:     verifiedDuration,
 					ReplaySeed:   int64(payload.Seed),
 					ReplayInputs: inputsStr,
-				})
+				}
+				if err := database.DB.Create(&record).Error; err != nil {
+					c.JSON(http.StatusBadRequest, gin.H{
+						"code":    400,
+						"message": "该对局已被结算消费，禁止重复提交战绩",
+					})
+					return
+				}
 			}
 
 			// 判定是否创下个人新纪录 (原子化安全条件更新并保存最高分录像轨迹)

@@ -89,3 +89,44 @@ func TestAudit_SpeedhackInterception(t *testing.T) {
 	}
 	t.Logf("【拦截成功】超速外挂被真实物理流逝时钟拦截 (真实 %.3fs < 门限 %.2fs)", realElapsedSec, minAllowedSec)
 }
+
+// 攻击场景 5：密码加固验证 —— bcrypt 工业级抗彩虹表哈希与老旧 SHA256 账号无缝兼容平滑升级
+func TestAudit_BcryptAndSmoothUpgrade(t *testing.T) {
+	rawPassword := "Secure_Pass_2026!#"
+
+	// 1. 新注册用户使用 bcrypt
+	bcryptHash, err := security.HashPassword(rawPassword)
+	if err != nil {
+		t.Fatalf("bcrypt 哈希生成失败: %v", err)
+	}
+
+	// 验证 bcrypt 正确性
+	matched, needsRehash := security.VerifyPassword(bcryptHash, rawPassword)
+	if !matched || needsRehash {
+		t.Fatalf("bcrypt 密码校验失败，matched=%v, needsRehash=%v", matched, needsRehash)
+	}
+	t.Logf("【验证通过】新用户 bcrypt 工业级哈希生成与比对成功")
+
+	// 2. 模拟老用户的加盐 SHA-256 密码
+	legacyHash := security.LegacyHashPassword(rawPassword)
+	matchedLegacy, needsRehashLegacy := security.VerifyPassword(legacyHash, rawPassword)
+	if !matchedLegacy || !needsRehashLegacy {
+		t.Fatalf("老用户 SHA256 平滑兼容失败，matched=%v, needsRehash=%v", matchedLegacy, needsRehashLegacy)
+	}
+	t.Logf("【验证通过】老用户加盐 SHA256 密码成功通过校验，且被正确标记为需要自动重哈希升级！")
+
+	// 3. 错误密码攻击尝试
+	matchedWrong, _ := security.VerifyPassword(bcryptHash, "Wrong_Password_123")
+	if matchedWrong {
+		t.Fatalf("【严重漏洞】错误密码居然校验通过了！")
+	}
+	t.Logf("【拦截成功】错误密码被正确拒绝")
+}
+
+// 场景 6：HMAC Secret 生产环境自检
+func TestAudit_SecretHealthCheck(t *testing.T) {
+	// 调用健康检查函数验证无 panic
+	security.CheckSecretHealth()
+	t.Logf("【验证通过】Secret 健康自检模块运行正常")
+}
+

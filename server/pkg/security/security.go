@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -27,6 +28,15 @@ var (
 	ipHits   = make(map[string][]time.Time)
 	ipHitsMu sync.Mutex
 )
+
+// CheckSecretHealth 自检 HMAC Secret 强度，若在 Release 模式下使用默认弱密钥则报警
+func CheckSecretHealth() {
+	key := os.Getenv("HMAC_SECRET_KEY")
+	mode := os.Getenv("GIN_MODE")
+	if (key == "" || len(key) < 32) && mode == "release" {
+		fmt.Printf("[SECURITY WARNING] 生产环境检测到 HMAC_SECRET_KEY 为空或弱密钥，强烈建议在环境变量中配置至少 32 字节的高熵随机密钥！\n")
+	}
+}
 
 func getHMACSecret() []byte {
 	if key := os.Getenv("HMAC_SECRET_KEY"); key != "" {
@@ -148,10 +158,37 @@ func ParseUserToken(token string) (string, error) {
 	return chunks[0], nil
 }
 
-// HashPassword SHA256 加盐单向哈希
-func HashPassword(p string) string {
+// HashPassword 使用工业级 bcrypt 生成密码安全散列 (工作因数 cost 10)
+func HashPassword(p string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(p), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+// LegacyHashPassword 向后兼容老用户的 SHA256 加盐单向哈希
+func LegacyHashPassword(p string) string {
 	h := sha256.Sum256([]byte(p + "_ncu_snake_salt_2026"))
 	return hex.EncodeToString(h[:])
+}
+
+// VerifyPassword 密码多态比对与平滑升级探测 (优先 bcrypt，后向兼容老旧 SHA256)
+// 返回参数: (是否匹配成功, 是否需要无感升级重哈希)
+func VerifyPassword(hashedPassword, plainPassword string) (bool, bool) {
+	// 1. 优先尝试 bcrypt 校验
+	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword)); err == nil {
+		return true, false
+	}
+
+	// 2. 向后平滑兼容：尝试老旧加盐 SHA-256 比对
+	if hashedPassword == LegacyHashPassword(plainPassword) {
+		return true, true // 密码正确，但标记需要自动无感重哈希升级为 bcrypt
+	}
+
+	// 3. 容错明文兼容 (仅针对极早期开发脏数据)
+	if hashedPassword == plainPassword {
+		return true, true
+	}
+
+	return false, false
 }
 
 // RateLimitMiddleware 单 IP 20次/秒 滑动窗口并发限流

@@ -33,6 +33,7 @@ type User struct {
 type GameRecord struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Username     string    `gorm:"index;size:50;not null" json:"username"`
+	SessionNonce string    `gorm:"uniqueIndex;size:64" json:"-"`
 	Score        int       `gorm:"default:0" json:"score"`
 	Duration     int64     `gorm:"default:0" json:"duration"`
 	ReplaySeed   int64     `gorm:"default:0" json:"replaySeed,omitempty"`
@@ -79,18 +80,18 @@ func PingDB(ctx context.Context) error {
 }
 
 func checkAndUpgradePassword(user *User, inputPwd string) bool {
-	hashed := security.HashPassword(inputPwd)
-	if user.Password == hashed {
-		return true
+	matched, needsRehash := security.VerifyPassword(user.Password, inputPwd)
+	if !matched {
+		return false
 	}
-	if user.Password == inputPwd {
-		user.Password = hashed
-		if DB != nil {
-			DB.Model(user).Update("password", hashed)
+	// 若匹配成功且检测到老旧哈希 (SHA256 或明文)，无感自动重哈希升级为 bcrypt
+	if needsRehash && DB != nil {
+		if newHashed, err := security.HashPassword(inputPwd); err == nil {
+			user.Password = newHashed
+			_ = DB.Model(user).Update("password", newHashed)
 		}
-		return true
 	}
-	return false
+	return true
 }
 
 // Authenticate 统一鉴权、查库与自动注册逻辑
@@ -110,7 +111,11 @@ func Authenticate(rawU, rawP string, autoReg bool) (*User, int, string) {
 			if !autoReg {
 				return nil, 401, "认证失效"
 			}
-			user = User{Username: u, Password: security.HashPassword(p)}
+			hashed, err := security.HashPassword(p)
+			if err != nil {
+				return nil, 500, "密码加密异常"
+			}
+			user = User{Username: u, Password: hashed}
 			if err := DB.Create(&user).Error; err != nil {
 				return nil, 500, "注册用户失败"
 			}
