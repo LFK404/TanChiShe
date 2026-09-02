@@ -3,10 +3,13 @@ package main
 import (
 	"testing"
 	"time"
+
+	"snake-server/pkg/engine"
+	"snake-server/pkg/security"
 )
 
 func TestMulberry32(t *testing.T) {
-	rng := NewMulberry32(12345)
+	rng := engine.NewMulberry32(12345)
 	v1 := rng.Next()
 	v2 := rng.Next()
 	v3 := rng.Next()
@@ -19,12 +22,12 @@ func TestMulberry32(t *testing.T) {
 
 func TestHMACTokenLifecycle(t *testing.T) {
 	username := "test_player"
-	token, seed := createSignedSessionToken(username)
+	token, seed := security.CreateSignedSessionToken(username)
 	if token == "" || seed == 0 {
 		t.Fatalf("创建签名 Token 失败: token=%s, seed=%d", token, seed)
 	}
 
-	payload, err := verifyAndConsumeSessionToken(token)
+	payload, err := security.VerifyAndConsumeSessionToken(token)
 	if err != nil {
 		t.Fatalf("验签 Token 失败: %v", err)
 	}
@@ -33,7 +36,7 @@ func TestHMACTokenLifecycle(t *testing.T) {
 	}
 
 	// 二次消费应当被拒绝 (防重放)
-	_, err = verifyAndConsumeSessionToken(token)
+	_, err = security.VerifyAndConsumeSessionToken(token)
 	if err == nil {
 		t.Fatalf("重复消费 Token 应当报错被拒，但未报错！")
 	}
@@ -42,10 +45,10 @@ func TestHMACTokenLifecycle(t *testing.T) {
 
 func TestReplayGameCrashWall(t *testing.T) {
 	seed := uint32(888888)
-	var inputs []InputRecord
+	var inputs []engine.InputRecord
 	totalTicks := 14
 
-	score, length, duration, isDead, err := ReplayGame(seed, inputs, totalTicks)
+	score, length, duration, isDead, err := engine.ReplayGame(seed, inputs, totalTicks)
 	if err != nil {
 		t.Fatalf("重放发生意外错误: %v", err)
 	}
@@ -57,10 +60,10 @@ func TestReplayGameCrashWall(t *testing.T) {
 
 func TestReplayGameCheatingRejection(t *testing.T) {
 	seed := uint32(888888)
-	var inputs []InputRecord
+	var inputs []engine.InputRecord
 	totalTicks := 5
 
-	_, _, _, isDead, err := ReplayGame(seed, inputs, totalTicks)
+	_, _, _, isDead, err := engine.ReplayGame(seed, inputs, totalTicks)
 	if err != nil {
 		t.Logf("成功捕获异常: %v", err)
 	}
@@ -71,9 +74,7 @@ func TestReplayGameCheatingRejection(t *testing.T) {
 }
 
 func TestRealTimeDurationCheck(t *testing.T) {
-	// 测试物理时间不足时的拦截
 	startTime := time.Now().UnixMilli()
-	// 假设模拟耗时 60 秒，但真实才过了 100 毫秒
 	simulatedDuration := int64(60)
 	realElapsedSec := float64(time.Now().UnixMilli()-startTime) / 1000.0
 	minAllowedSec := float64(simulatedDuration) * 0.85

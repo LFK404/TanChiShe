@@ -2,581 +2,94 @@ package main
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
+	"snake-server/pkg/database"
+	"snake-server/pkg/engine"
+	"snake-server/pkg/security"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
-
-// -------------------------------------------------------------
-// 1. 数据模型定义 (Supabase PostgreSQL 双表)
-// -------------------------------------------------------------
-
-type User struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	Username     string    `gorm:"uniqueIndex;size:50;not null" json:"username"`
-	Password     string    `gorm:"size:100;not null" json:"-"`
-	HighScore    int       `gorm:"default:0;index:idx_leaderboard,priority:1,sort:desc" json:"highScore"`
-	BestDuration int64     `gorm:"default:0;index:idx_leaderboard,priority:2,sort:asc" json:"bestDuration"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
-	Token        string    `gorm:"-" json:"token,omitempty"`
-}
-
-type GameRecord struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Username  string    `gorm:"index;size:50;not null" json:"username"`
-	Score     int       `gorm:"default:0" json:"score"`
-	Duration  int64     `gorm:"default:0" json:"duration"`
-	CreatedAt time.Time `json:"createdAt"`
-}
 
 type AuthReq struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-type InputRecord struct {
-	Tick int    `json:"tick"`
-	Dir  string `json:"dir"`
-}
-
 type GameSettleReq struct {
-	SessionToken string        `json:"sessionToken" binding:"required"`
-	Inputs       []InputRecord `json:"inputs"`
-	TotalTicks   int           `json:"totalTicks" binding:"required"`
+	SessionToken string               `json:"sessionToken" binding:"required"`
+	Inputs       []engine.InputRecord `json:"inputs"`
+	TotalTicks   int                  `json:"totalTicks" binding:"required"`
 }
 
-var (
-	db            *gorm.DB
-	hmacSecretKey = []byte("ncu_snake_hmac_secret_key_2026_level3_security")
-)
-
-// -------------------------------------------------------------
-// 2. 跨语言 100% 确定性 PRNG 算法 (Mulberry32)
-// -------------------------------------------------------------
-
-type Mulberry32 struct {
-	seed uint32
-}
-
-func NewMulberry32(seed uint32) *Mulberry32 {
-	return &Mulberry32{seed: seed}
-}
-
-func (m *Mulberry32) Next() float64 {
-	m.seed += 0x6D2B79F5
-	t := m.seed ^ (m.seed >> 15)
-	t *= (m.seed | 1)
-	t ^= t + (t ^ (t >> 7))*(t|61)
-	return float64((t^(t>>14))>>0) / 4294967296.0
-}
-
-// -------------------------------------------------------------
-// 3. 无状态 HMAC-SHA256 对局令牌与安全签名
-// -------------------------------------------------------------
-
-type SessionPayload struct {
-	Username  string `json:"u"`
-	Seed      uint32 `json:"s"`
-	StartTime int64  `json:"t"`
-	Nonce     string `json:"n"`
-}
-
-var (
-	consumedNonceMu sync.Mutex
-	consumedNonces  = make(map[string]time.Time)
-)
-
-func signHMAC(data []byte) string {
-	mac := hmac.New(sha256.New, hmacSecretKey)
-	mac.Write(data)
-	return hex.EncodeToString(mac.Sum(nil))
-}
-
-func createSignedSessionToken(username string) (string, uint32) {
-	seedBig, _ := rand.Int(rand.Reader, big.NewInt(0xFFFFFFFF))
-	seed := uint32(seedBig.Uint64())
-
-	nonceBytes := make([]byte, 8)
-	_, _ = rand.Read(nonceBytes)
-	nonce := hex.EncodeToString(nonceBytes)
-
-	payload := SessionPayload{
-		Username:  username,
-		Seed:      seed,
-		StartTime: time.Now().UnixMilli(),
-		Nonce:     nonce,
-	}
-
-	payloadJSON, _ := json.Marshal(payload)
-	payloadB64 := base64.RawURLEncoding.EncodeToString(payloadJSON)
-	signature := signHMAC([]byte(payloadB64))
-
-	return fmt.Sprintf("%s.%s", payloadB64, signature), seed
-}
-
-func verifyAndConsumeSessionToken(token string) (*SessionPayload, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 2 {
-		return nil, errors.New("无效的对局令牌格式")
-	}
-
-	payloadB64, signature := parts[0], parts[1]
-	expectedSig := signHMAC([]byte(payloadB64))
-	if !hmac.Equal([]byte(signature), []byte(expectedSig)) {
-		return nil, errors.New("对局令牌签名校验失败：数据已被篡改")
-	}
-
-	payloadJSON, err := base64.RawURLEncoding.DecodeString(payloadB64)
-	if err != nil {
-		return nil, errors.New("对局令牌解析异常")
-	}
-
-	var payload SessionPayload
-	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
-		return nil, errors.New("对局令牌内容解析失败")
-	}
-
-	// 校验防重放 Nonce (一次性消费)
-	consumedNonceMu.Lock()
-	defer consumedNonceMu.Unlock()
-
-	if _, exists := consumedNonces[payload.Nonce]; exists {
-		return nil, errors.New("该对局令牌已被使用，禁止重复提交战绩")
-	}
-	consumedNonces[payload.Nonce] = time.Now()
-
-	// 清理 2 小时前的过期 Nonce
-	cutoff := time.Now().Add(-2 * time.Hour)
-	for k, v := range consumedNonces {
-		if v.Before(cutoff) {
-			delete(consumedNonces, k)
-		}
-	}
-
-	return &payload, nil
-}
-
-func signUserToken(username string) string {
-	ts := strconv.FormatInt(time.Now().Unix(), 10)
-	raw := fmt.Sprintf("%s:%s", username, ts)
-	b64 := base64.RawURLEncoding.EncodeToString([]byte(raw))
-	sig := signHMAC([]byte(b64))
-	return fmt.Sprintf("%s.%s", b64, sig)
-}
-
-func parseUserToken(token string) (string, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 2 {
-		return "", errors.New("无效的认证令牌")
-	}
-	b64, sig := parts[0], parts[1]
-	if !hmac.Equal([]byte(sig), []byte(signHMAC([]byte(b64)))) {
-		return "", errors.New("认证令牌已失效或被篡改")
-	}
-	raw, err := base64.RawURLEncoding.DecodeString(b64)
-	if err != nil {
-		return "", errors.New("认证令牌解析异常")
-	}
-	chunks := strings.Split(string(raw), ":")
-	if len(chunks) < 2 {
-		return "", errors.New("认证令牌格式异常")
-	}
-	return chunks[0], nil
-}
-
-// -------------------------------------------------------------
-// 4. Go 后端 1ms 无头物理重放引擎 (Headless Replay Engine)
-// -------------------------------------------------------------
-
-const (
-	GRID          = 24
-	BASE_SPEED_MS = 122
-	MIN_SPEED_MS  = 61
-)
-
-type Point struct {
-	X int
-	Y int
-}
-
-func isOpposite(d1, d2 string) bool {
-	return (d1 == "UP" && d2 == "DOWN") || (d1 == "DOWN" && d2 == "UP") ||
-		(d1 == "LEFT" && d2 == "RIGHT") || (d1 == "RIGHT" && d2 == "LEFT")
-}
-
-var dirDeltas = map[string]Point{
-	"UP":    {X: 0, Y: -1},
-	"DOWN":  {X: 0, Y: 1},
-	"LEFT":  {X: -1, Y: 0},
-	"RIGHT": {X: 1, Y: 0},
-}
-
-func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, currentBonus *Point) (*Point, *Point) {
-	snakeKeys := make(map[string]bool)
-	for _, p := range snake {
-		snakeKeys[fmt.Sprintf("%d,%d", p.X, p.Y)] = true
-	}
-
-	var empty []Point
-	for r := 0; r < GRID; r++ {
-		for c := 0; c < GRID; c++ {
-			k := fmt.Sprintf("%d,%d", c, r)
-			if !snakeKeys[k] && !fence[k] {
-				empty = append(empty, Point{X: c, Y: r})
-			}
-		}
-	}
-
-	if len(empty) == 0 {
-		return nil, currentBonus
-	}
-
-	// 1. 红苹果保底生成 (消费 1 个随机数)
-	r1 := rng.Next()
-	foodIdx := int(r1 * float64(len(empty)))
-	newFood := empty[foodIdx]
-
-	// 2. 金色幸运果判定 (消费第 2 个随机数)
-	r2 := rng.Next()
-	newBonus := currentBonus
-	if r2 < 0.25 && currentBonus == nil && len(empty) > 3 {
-		var remainingEmpty []Point
-		for _, p := range empty {
-			if p.X != newFood.X || p.Y != newFood.Y {
-				remainingEmpty = append(remainingEmpty, p)
-			}
-		}
-		if len(remainingEmpty) > 0 {
-			r3 := rng.Next()
-			bonusIdx := int(r3 * float64(len(remainingEmpty)))
-			bp := remainingEmpty[bonusIdx]
-			newBonus = &bp
-		}
-	}
-
-	return &newFood, newBonus
-}
-
-func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, int64, bool, error) {
-	if totalTicks <= 0 || totalTicks > 20000 {
-		return 0, 0, 0, false, errors.New("步数超出合理物理范围")
-	}
-
-	rng := NewMulberry32(seed)
-	snake := []Point{{X: 10, Y: 12}, {X: 9, Y: 12}, {X: 8, Y: 12}}
-	fence := make(map[string]bool)
-	dir := "RIGHT"
-	var queue []string
-	score := 0
-	speedMs := BASE_SPEED_MS
-	var bonusPoint *Point
-	bonusExpireTick := 0
-	totalElapsedMs := 0
-
-	// 初始开局生成第一颗红果与金果
-	food, bp := spawnFoodInReplay(rng, snake, fence, bonusPoint)
-	if food == nil {
-		return 0, 0, 0, false, errors.New("开局网格异常")
-	}
-	bonusPoint = bp
-	if bonusPoint != nil {
-		bonusExpireTick = int(8000 / speedMs)
-	}
-
-	inputsMap := make(map[int][]string)
-	for _, in := range inputs {
-		d := in.Dir
-		if d == "UP" || d == "DOWN" || d == "LEFT" || d == "RIGHT" {
-			inputsMap[in.Tick] = append(inputsMap[in.Tick], d)
-		}
-	}
-
-	isDead := false
-
-	for tick := 0; tick < totalTicks; tick++ {
-		totalElapsedMs += speedMs
-
-		// 1. 消费按键排队 (最大深度 2)
-		if dirs, ok := inputsMap[tick]; ok {
-			for _, d := range dirs {
-				last := dir
-				if len(queue) > 0 {
-					last = queue[len(queue)-1]
-				}
-				if d != last && !isOpposite(last, d) && len(queue) < 2 {
-					queue = append(queue, d)
-				}
-			}
-		}
-
-		// 2. 消费转向队列
-		if len(queue) > 0 {
-			nextDir := queue[0]
-			queue = queue[1:]
-			if !isOpposite(dir, nextDir) {
-				dir = nextDir
-			}
-		}
-
-		// 3. 计算新蛇头坐标
-		delta := dirDeltas[dir]
-		head := Point{X: snake[0].X + delta.X, Y: snake[0].Y + delta.Y}
-
-		// 4. 边界碰撞检测
-		if head.X < 0 || head.X >= GRID || head.Y < 0 || head.Y >= GRID {
-			if tick == totalTicks-1 {
-				isDead = true
-				break
-			}
-			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞墙死亡", tick)
-		}
-
-		// 5. 自身身体碰撞检测
-		isEatingApple := (food != nil && head.X == food.X && head.Y == food.Y)
-		bodyToCheck := snake
-		if !isEatingApple {
-			bodyToCheck = snake[:len(snake)-1]
-		}
-		hitBody := false
-		for _, p := range bodyToCheck {
-			if p.X == head.X && p.Y == head.Y {
-				hitBody = true
-				break
-			}
-		}
-		if hitBody {
-			if tick == totalTicks-1 {
-				isDead = true
-				break
-			}
-			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞自身死亡", tick)
-		}
-
-		// 6. 吃到普通红苹果 (长身子 + 清空栅栏 + 动态加速)
-		if isEatingApple {
-			snake = append([]Point{head}, snake...)
-			score += 10
-			fence = make(map[string]bool)
-			speedMs = max(MIN_SPEED_MS, BASE_SPEED_MS-(score/40)*4)
-			food, bonusPoint = spawnFoodInReplay(rng, snake, fence, bonusPoint)
-			if bonusPoint != nil && bonusExpireTick == 0 {
-				bonusExpireTick = tick + int(8000/speedMs)
-			}
-			continue
-		}
-
-		// 7. 残留栅栏碰撞检测
-		if fence[fmt.Sprintf("%d,%d", head.X, head.Y)] {
-			if tick == totalTicks-1 {
-				isDead = true
-				break
-			}
-			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞栅栏死路", tick)
-		}
-
-		// 8. 吃到金色幸运果 (+30 分，保留栅栏)
-		if bonusPoint != nil && head.X == bonusPoint.X && head.Y == bonusPoint.Y {
-			score += 30
-			bonusPoint = nil
-			bonusExpireTick = 0
-		}
-
-		// 9. 金色幸运果 8 秒倒计时过期
-		if bonusExpireTick > 0 && tick >= bonusExpireTick {
-			bonusPoint = nil
-			bonusExpireTick = 0
-		}
-
-		// 10. 正常移动：蛇头前进，蛇尾留下栅栏
-		nextSnake := append([]Point{head}, snake...)
-		tail := nextSnake[len(nextSnake)-1]
-		nextSnake = nextSnake[:len(nextSnake)-1]
-		fence[fmt.Sprintf("%d,%d", tail.X, tail.Y)] = true
-		snake = nextSnake
-	}
-
-	durationSec := int64(totalElapsedMs / 1000)
-	if durationSec < 1 {
-		durationSec = 1
-	}
-
-	return score, len(snake), durationSec, isDead, nil
-}
-
-// -------------------------------------------------------------
-// 5. 鉴权与中间件
-// -------------------------------------------------------------
-
-var (
-	ipHits   = make(map[string][]time.Time)
-	ipHitsMu sync.Mutex
-)
-
-func RateLimitMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		now := time.Now()
-
-		ipHitsMu.Lock()
-		hits := ipHits[ip]
-		valid := hits[:0]
-		for _, t := range hits {
-			if now.Sub(t) < time.Second {
-				valid = append(valid, t)
-			}
-		}
-		if len(valid) >= 20 {
-			ipHits[ip] = valid
-			ipHitsMu.Unlock()
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"code": 429, "message": "请求过于频繁，请稍候重试"})
-			return
-		}
-		ipHits[ip] = append(valid, now)
-		ipHitsMu.Unlock()
-		c.Next()
-	}
-}
-
-func hashPassword(p string) string {
-	h := sha256.Sum256([]byte(p + "_ncu_snake_salt_2026"))
-	return hex.EncodeToString(h[:])
-}
-
-func checkAndUpgradePassword(user *User, inputPwd string) bool {
-	hashed := hashPassword(inputPwd)
-	if user.Password == hashed {
-		return true
-	}
-	if user.Password == inputPwd {
-		user.Password = hashed
-		if db != nil {
-			db.Model(user).Update("password", hashed)
-		}
-		return true
-	}
-	return false
-}
-
-func authenticate(rawU, rawP string, autoReg bool) (*User, int, string) {
-	u, p := strings.TrimSpace(rawU), strings.TrimSpace(rawP)
-	if u == "" || p == "" {
-		return nil, http.StatusBadRequest, "账号或密码不能为空"
-	}
-	if len(u) > 50 || len(p) > 100 {
-		return nil, http.StatusBadRequest, "账号或密码长度超出限制"
-	}
-
-	var user User
-	err := db.Where("username = ?", u).First(&user).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if !autoReg {
-				return nil, http.StatusUnauthorized, "认证失效"
-			}
-			user = User{Username: u, Password: hashPassword(p)}
-			if err := db.Create(&user).Error; err != nil {
-				return nil, http.StatusInternalServerError, "注册用户失败"
-			}
-			user.Token = signUserToken(user.Username)
-			return &user, http.StatusOK, ""
-		}
-		return nil, http.StatusInternalServerError, "数据库查询异常"
-	}
-
-	if !checkAndUpgradePassword(&user, p) {
-		return nil, http.StatusUnauthorized, "密码错误"
-	}
-	user.Token = signUserToken(user.Username)
-	return &user, http.StatusOK, ""
-}
-
-func extractUserFromHeader(c *gin.Context) (*User, error) {
+func extractUser(c *gin.Context) (*database.User, error) {
 	authHeader := c.GetHeader("Authorization")
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return nil, errors.New("缺少身份认证令牌")
 	}
 	token := strings.TrimPrefix(authHeader, "Bearer ")
-	username, err := parseUserToken(token)
+	username, err := security.ParseUserToken(token)
 	if err != nil {
 		return nil, err
 	}
-	var user User
-	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+	var user database.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
 		return nil, errors.New("用户不存在或登录已过期")
 	}
 	return &user, nil
 }
 
-func initDB() {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		fmt.Println("[WARN] DATABASE_URL 未配置")
-		return
-	}
-	var err error
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Warn)})
-	if err != nil {
-		fmt.Println("[WARN] Supabase 连接失败:", err)
-		return
-	}
-	_ = db.AutoMigrate(&User{}, &GameRecord{})
-	if sqlDB, err := db.DB(); err == nil {
-		sqlDB.SetMaxIdleConns(5)
-		sqlDB.SetMaxOpenConns(20)
-		sqlDB.SetConnMaxLifetime(30 * time.Minute)
-	}
-}
-
-// -------------------------------------------------------------
-// 6. 主路由服务
-// -------------------------------------------------------------
-
 func main() {
-	initDB()
+	if err := database.InitDB(); err != nil {
+		fmt.Printf("[WARN] 数据库初始化提示: %v\n", err)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	r.GET("/", func(c *gin.Context) {
-		st := "connected"
-		if db == nil {
-			st = "disconnected"
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "Snake Go API (Level 3 AntiCheat)", "database": st})
-	})
-
+	// 跨域与全局限流中间件
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowMethods:    []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:    []string{"*"},
 	}))
-	r.Use(RateLimitMiddleware())
+	r.Use(security.RateLimitMiddleware())
+
+	// 1. 云原生健康与就绪探针 (Liveness & Readiness Probe)
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ok",
+			"service": "Snake Go API (Level 3 AntiCheat & Modular Clean Architecture)",
+		})
+	})
+
+	r.GET("/healthz", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := database.PingDB(ctx); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "healthy", "database": "connected"})
+	})
+
+	r.GET("/readyz", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+	})
 
 	api := r.Group("/api")
 	{
 		// 1. 用户登录/自动注册
 		api.POST("/auth", func(c *gin.Context) {
-			if db == nil {
+			if database.DB == nil {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库未就绪"})
 				return
 			}
@@ -585,7 +98,7 @@ func main() {
 				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数不完整"})
 				return
 			}
-			user, status, msg := authenticate(req.Username, req.Password, true)
+			user, status, msg := database.Authenticate(req.Username, req.Password, true)
 			if user == nil {
 				c.JSON(status, gin.H{"code": status, "message": msg})
 				return
@@ -595,14 +108,13 @@ func main() {
 
 		// 2. 对局握手开局：下发 HMAC 签名无状态会话 Token 与确定性随机种子
 		api.POST("/game/start", func(c *gin.Context) {
-			user, err := extractUserFromHeader(c)
+			user, err := extractUser(c)
 			username := ""
 			if err == nil && user != nil {
 				username = user.Username
 			}
 
-			sessionToken, seed := createSignedSessionToken(username)
-
+			sessionToken, seed := security.CreateSignedSessionToken(username)
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
 				"data": gin.H{
@@ -612,9 +124,9 @@ func main() {
 			})
 		})
 
-		// 3. 终极战绩结算：Go 后端 1ms 内存物理重放 + 真实流逝时间双重拦截
+		// 3. 战绩结算：Go 后端 1ms 物理重放 + 真实流逝时间双重拦截
 		api.POST("/game/settle", func(c *gin.Context) {
-			if db == nil {
+			if database.DB == nil {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"code": 503, "message": "数据库未就绪"})
 				return
 			}
@@ -624,22 +136,22 @@ func main() {
 				return
 			}
 
-			// 验签并消费对局 Token (一次性消费，防重放)
-			payload, err := verifyAndConsumeSessionToken(req.SessionToken)
+			// 验签并消费对局 Token
+			payload, err := security.VerifyAndConsumeSessionToken(req.SessionToken)
 			if err != nil {
 				c.JSON(http.StatusForbidden, gin.H{"code": 403, "message": err.Error()})
 				return
 			}
 
 			// 鉴权用户
-			user, err := extractUserFromHeader(c)
+			user, err := extractUser(c)
 			if err != nil || user == nil {
 				c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "身份认证失效，请重新登录"})
 				return
 			}
 
 			// 物理重放整个游戏
-			verifiedScore, verifiedLength, verifiedDuration, isDead, err := ReplayGame(payload.Seed, req.Inputs, req.TotalTicks)
+			verifiedScore, verifiedLength, verifiedDuration, isDead, err := engine.ReplayGame(payload.Seed, req.Inputs, req.TotalTicks)
 			if err != nil || !isDead {
 				c.JSON(http.StatusBadRequest, gin.H{
 					"code":    400,
@@ -648,7 +160,7 @@ func main() {
 				return
 			}
 
-			// 防线 2：真实物理流逝时间校验 (防离线脚本 0.1 秒瞬间上传 20 分钟对局)
+			// 防线 2：真实物理流逝时间校验
 			realElapsedSec := float64(time.Now().UnixMilli()-payload.StartTime) / 1000.0
 			minAllowedSec := float64(verifiedDuration) * 0.85
 			if realElapsedSec < minAllowedSec {
@@ -659,8 +171,8 @@ func main() {
 				return
 			}
 
-			// 写入对局流水 (只以服务端验算出的真实战绩为准！)
-			db.Create(&GameRecord{
+			// 写入对局流水
+			database.DB.Create(&database.GameRecord{
 				Username: user.Username,
 				Score:    verifiedScore,
 				Duration: verifiedDuration,
@@ -671,7 +183,7 @@ func main() {
 			if isNew {
 				user.HighScore = verifiedScore
 				user.BestDuration = verifiedDuration
-				db.Save(user)
+				database.DB.Save(user)
 			}
 
 			c.JSON(http.StatusOK, gin.H{
@@ -687,7 +199,7 @@ func main() {
 			})
 		})
 
-		// 4. 历史遗留 settle 接口降级拦截 (防止老脚本直接调用)
+		// 4. 历史遗留 settle 接口拦截
 		api.POST("/settle", func(c *gin.Context) {
 			c.JSON(http.StatusUpgradeRequired, gin.H{
 				"code":    426,
@@ -697,9 +209,9 @@ func main() {
 
 		// 5. 获取 Top 10 全服排行榜
 		api.GET("/leaderboard", func(c *gin.Context) {
-			var list []User
-			if db != nil {
-				_ = db.Where("high_score > 0 OR best_duration > 0").
+			var list []database.User
+			if database.DB != nil {
+				_ = database.DB.Where("high_score > 0 OR best_duration > 0").
 					Order("high_score DESC, best_duration ASC").
 					Limit(10).
 					Find(&list).Error
