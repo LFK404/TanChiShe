@@ -254,60 +254,104 @@ export default function Board({
       ctx.fill();
     });
 
-    // 4. 绘制食物 (普通红苹果 / 限时金色幸运果)
+    // 4. 绘制食物 (精致红苹果 / 呼吸律动金色幸运果)
     const fx = foodRef.current.x * CELL + CELL / 2, fy = foodRef.current.y * CELL + CELL / 2;
+    // 红苹果本体
     ctx.fillStyle = '#EF4444';
-    ctx.beginPath(); ctx.arc(fx, fy, CELL / 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(fx, fy + 0.5, CELL / 2.6, 0, Math.PI * 2); ctx.fill();
+    // 高光反光点
     ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath(); ctx.arc(fx - 2, fy - 2.5, 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(fx - 2, fy - 2, 1.2, 0, Math.PI * 2); ctx.fill();
+    // 顶部小果梗
+    ctx.fillStyle = '#78350F';
+    ctx.beginPath(); ctx.rect(fx - 0.5, fy - 6.2, 1.0, 2.0); ctx.fill();
+    // 翠绿果叶
     ctx.fillStyle = '#22C55E';
-    ctx.beginPath(); ctx.ellipse(fx + 2.5, fy - 5.5, 2.2, 1.2, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(fx + 2.6, fy - 5.0, 2.4, 1.3, Math.PI / 4, 0, Math.PI * 2); ctx.fill();
 
+    // 限时金色幸运果 (带微脉冲呼吸律动)
     if (bonusRef.current) {
       const bx = bonusRef.current.x * CELL + CELL / 2, by = bonusRef.current.y * CELL + CELL / 2;
+      const pulse = 1 + Math.sin(Date.now() / 150) * 0.08;
       ctx.fillStyle = '#FEF3C7';
-      ctx.beginPath(); ctx.arc(bx, by, CELL / 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by, (CELL / 1.8) * pulse, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#F59E0B';
-      ctx.beginPath(); ctx.arc(bx, by, CELL / 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by, (CELL / 2.4) * pulse, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#FEF08A';
-      ctx.beginPath(); ctx.arc(bx, by, CELL / 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by, (CELL / 5) * pulse, 0, Math.PI * 2); ctx.fill();
     }
 
-    // 5. 绘制蛇身 (经典方格间隔 + 纯净圆角晶体 + 丝滑渐变)
+    // 5. 绘制蛇身 (灵动视线追踪蛇头 + 多巴胺晶体平滑流光渐变)
     const snake = snakeRef.current;
     const snakeLen = snake.length;
+
+    // 判定蛇头当前朝向 (用于眼睛视线方向追踪)
+    let curDir: Direction = 'RIGHT';
+    if (snakeLen > 1) {
+      const h = snake[0], n = snake[1];
+      if (h.x > n.x) curDir = 'RIGHT';
+      else if (h.x < n.x) curDir = 'LEFT';
+      else if (h.y > n.y) curDir = 'DOWN';
+      else if (h.y < n.y) curDir = 'UP';
+    }
 
     snake.forEach((pt, idx) => {
       const px = pt.x * CELL, py = pt.y * CELL;
 
       if (idx === 0) {
-        // 蛇头：天青蓝主色 (#66CCFF) + 3.5px 几何圆角，略微饱满 (16x16)
+        // 蛇头：天青蓝主色 (#66CCFF) + 3.5px 几何圆角 (16x16)
         ctx.fillStyle = '#66CCFF';
         ctx.beginPath();
         drawRoundRect(ctx, px + 2, py + 2, CELL - 4, CELL - 4, 3.5);
         ctx.fill();
 
-        // 灵动明亮双眼珠 (白底 + 墨黑瞳孔 + 高光反光点)
+        // 根据朝向计算双眼中心与瞳孔偏移
+        let e1x = px + 6.5, e1y = py + 7, e2x = px + 13.5, e2y = py + 7;
+        let pdx = 0, pdy = 0;
+
+        if (curDir === 'RIGHT') {
+          e1x = px + 12.5; e1y = py + 6.2;
+          e2x = px + 12.5; e2y = py + 13.8;
+          pdx = 0.6; pdy = 0;
+        } else if (curDir === 'LEFT') {
+          e1x = px + 7.5; e1y = py + 6.2;
+          e2x = px + 7.5; e2y = py + 13.8;
+          pdx = -0.6; pdy = 0;
+        } else if (curDir === 'DOWN') {
+          e1x = px + 6.2; e1y = py + 12.5;
+          e2x = px + 13.8; e2y = py + 12.5;
+          pdx = 0; pdy = 0.6;
+        } else if (curDir === 'UP') {
+          e1x = px + 6.2; e1y = py + 7.5;
+          e2x = px + 13.8; e2y = py + 7.5;
+          pdx = 0; pdy = -0.6;
+        }
+
+        // 灵动明亮双眼珠 (眼白)
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(px + 6.5, py + 7, 2.3, 0, Math.PI * 2);
-        ctx.arc(px + 13.5, py + 7, 2.3, 0, Math.PI * 2);
+        ctx.arc(e1x, e1y, 2.3, 0, Math.PI * 2);
+        ctx.arc(e2x, e2y, 2.3, 0, Math.PI * 2);
         ctx.fill();
 
+        // 视线瞳孔
         ctx.fillStyle = '#0F172A';
         ctx.beginPath();
-        ctx.arc(px + 6.5, py + 7, 1.2, 0, Math.PI * 2);
-        ctx.arc(px + 13.5, py + 7, 1.2, 0, Math.PI * 2);
+        ctx.arc(e1x + pdx, e1y + pdy, 1.2, 0, Math.PI * 2);
+        ctx.arc(e2x + pdx, e2y + pdy, 1.2, 0, Math.PI * 2);
         ctx.fill();
 
+        // 高光微反光点
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(px + 6.0, py + 6.5, 0.5, 0, Math.PI * 2);
-        ctx.arc(px + 13.0, py + 6.5, 0.5, 0, Math.PI * 2);
+        ctx.arc(e1x + pdx - 0.4, e1y + pdy - 0.4, 0.5, 0, Math.PI * 2);
+        ctx.arc(e2x + pdx - 0.4, e2y + pdy - 0.4, 0.5, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // 蛇身方格：与身后栅栏保持一致的 2.5px 留白与 3px 圆角 (15x15)，具备清爽的方格节奏
-        ctx.fillStyle = idx / snakeLen < 0.5 ? '#38BDF8' : '#7DD3FC';
+        // 蛇身方格：天青蓝平滑过渡到浅天蓝晶体 (#38BDF8 -> #BAE6FD)
+        const ratio = idx / Math.max(snakeLen - 1, 1);
+        const lightness = 60 + Math.round(ratio * 20);
+        ctx.fillStyle = `hsl(199, 88%, ${lightness}%)`;
         ctx.beginPath();
         drawRoundRect(ctx, px + 2.5, py + 2.5, CELL - 5, CELL - 5, 3);
         ctx.fill();
