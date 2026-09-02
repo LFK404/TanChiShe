@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Direction, Point } from '@/types';
 import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnake';
 import { sound } from '@/utils/audio';
-import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Gamepad2, Keyboard } from 'lucide-react';
 
 interface Props {
   snakeRef: React.MutableRefObject<Point[]>;
@@ -71,6 +71,32 @@ export default function Board({
   const prevScoreRef = useRef(score);
   const prevGameOverRef = useRef(isGameOver);
   const offscreenBgRef = useRef<HTMLCanvasElement | null>(null);
+
+  // 混合输入设备 (平板/iPad/Surface/触屏电脑) 智能触控能力探测与偏好持久化
+  const [showDpad, setShowDpad] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const saved = localStorage.getItem('snake_show_dpad');
+      if (saved !== null) return saved === 'true';
+      const hasTouch =
+        navigator.maxTouchPoints > 0 ||
+        'ontouchstart' in window ||
+        window.matchMedia('(any-pointer: coarse)').matches;
+      return hasTouch || window.innerWidth < 1024;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleDpad = useCallback(() => {
+    setShowDpad((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('snake_show_dpad', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // 初始化预烘焙柔白底板与极细网格 (O(1) 纹理贴图，消除每帧 50 次重绘计算)
   useEffect(() => {
@@ -450,61 +476,91 @@ export default function Board({
         )}
       </div>
 
-      {/* 移动端十字按键控制台 (加大尺寸与间隔，提升拇指操控舒适度) */}
-      <div className="mt-5 flex flex-col items-center gap-3 sm:hidden touch-manipulation select-none">
-        <button
-          onClick={() => handleDirBtn('UP')}
-          className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
-        >
-          <ChevronUp size={28} />
-        </button>
+      {/* 自适应操控区：手机/平板/PC 无缝兼容 (支持触控十字键与键盘模式自由切换) */}
+      <div className="mt-4 flex flex-col items-center gap-3 select-none">
+        {showDpad ? (
+          /* 触控十字按键控制台 (手机/平板/触屏二合一设备默认可用) */
+          <div className="flex flex-col items-center gap-2.5 touch-manipulation">
+            <button
+              onClick={() => handleDirBtn('UP')}
+              className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
+            >
+              <ChevronUp size={28} />
+            </button>
 
-        <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleDirBtn('LEFT')}
+                className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
+              >
+                <ChevronLeft size={28} />
+              </button>
+              <button
+                onClick={() => {
+                  sound.unlockAudio();
+                  onTogglePause?.();
+                }}
+                disabled={!isPlaying || isGameOver}
+                className={`w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] rounded-2xl flex items-center justify-center transition-all shadow-xs ${
+                  isPaused ? 'bg-[#0099FF] text-white' : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
+                } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+              >
+                {isPaused ? <Play size={20} /> : <Pause size={20} />}
+              </button>
+              <button
+                onClick={() => handleDirBtn('RIGHT')}
+                className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
+              >
+                <ChevronRight size={28} />
+              </button>
+            </div>
+
+            <button
+              onClick={() => handleDirBtn('DOWN')}
+              className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
+            >
+              <ChevronDown size={28} />
+            </button>
+          </div>
+        ) : (
+          /* 纯净键盘快捷模式 (外接键盘平板/桌面PC专属) */
+          <div className="flex flex-col items-center gap-2 py-2">
+            <button
+              onClick={onTogglePause}
+              disabled={!isPlaying || isGameOver}
+              className={`px-5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                isPaused ? 'bg-[#0099FF] text-white hover:bg-[#0284C7]' : 'bg-slate-100 hover:bg-[#EBF8FF] text-[#334155] hover:text-[#0099FF]'
+              } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+            >
+              {isPaused ? <Play size={14} /> : <Pause size={14} />}
+              <span>{isPaused ? '继续游戏 (P / 空格)' : '暂停游戏 (P / 空格)'}</span>
+            </button>
+            <div className="text-[11px] text-[#94A3B8]">方向键 / WASD 转向 · 空格键开始 · P 键暂停</div>
+          </div>
+        )}
+
+        {/* 底部微型模式切换条与全屏滑屏说明 */}
+        <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#94A3B8] pt-1">
+          <span>全屏滑屏 / 键盘 WASD 随时可用</span>
+          <span>•</span>
           <button
-            onClick={() => handleDirBtn('LEFT')}
-            className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
+            onClick={toggleDpad}
+            title="切换触控十字键或纯净键盘模式"
+            className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-2 py-0.5 rounded-full flex items-center gap-1 transition-all cursor-pointer"
           >
-            <ChevronLeft size={28} />
-          </button>
-          <button
-            onClick={() => { sound.unlockAudio(); onTogglePause?.(); }}
-            disabled={!isPlaying || isGameOver}
-            className={`w-[76px] h-[52px] rounded-2xl flex items-center justify-center transition-all shadow-xs ${
-              isPaused ? 'bg-[#0099FF] text-white' : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
-            } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-          >
-            {isPaused ? <Play size={20} /> : <Pause size={20} />}
-          </button>
-          <button
-            onClick={() => handleDirBtn('RIGHT')}
-            className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
-          >
-            <ChevronRight size={28} />
+            {showDpad ? (
+              <>
+                <Keyboard size={12} />
+                <span>切为纯键盘</span>
+              </>
+            ) : (
+              <>
+                <Gamepad2 size={12} />
+                <span>开启触控键</span>
+              </>
+            )}
           </button>
         </div>
-
-        <button
-          onClick={() => handleDirBtn('DOWN')}
-          className="w-[76px] h-[52px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs"
-        >
-          <ChevronDown size={28} />
-        </button>
-        <span className="text-[10px] text-[#94A3B8] mt-1">支持全屏滑屏或虚拟触控键 · 中心按键暂停</span>
-      </div>
-
-      {/* 电脑端快捷键提示 */}
-      <div className="mt-4 hidden sm:flex flex-col items-center gap-2 select-none">
-        <button
-          onClick={onTogglePause}
-          disabled={!isPlaying || isGameOver}
-          className={`px-5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-            isPaused ? 'bg-[#0099FF] text-white hover:bg-[#0284C7]' : 'bg-slate-100 hover:bg-[#EBF8FF] text-[#334155] hover:text-[#0099FF]'
-          } ${(!isPlaying || isGameOver) ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-        >
-          {isPaused ? <Play size={14} /> : <Pause size={14} />}
-          <span>{isPaused ? '继续游戏 (P / 空格)' : '暂停游戏 (P / 空格)'}</span>
-        </button>
-        <div className="text-[11px] text-[#94A3B8]">方向键 / WASD 转向 · 空格键开始 · P 键暂停</div>
       </div>
     </div>
   );
