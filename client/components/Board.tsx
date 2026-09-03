@@ -153,6 +153,22 @@ export default function Board({
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
   const [showArtModal, setShowArtModal] = useState(false);
+  const [artData, setArtData] = useState<{
+    trajectory: Point[];
+    events: TrajectoryEvent[];
+    steps: number;
+  } | null>(null);
+
+  // 打开走位艺术卡片：在事件回调中安全捕获轨迹快照，避免在 render 阶段直接读取 ref.current
+  const handleOpenArtModal = useCallback(() => {
+    setArtData({
+      trajectory: [...(trajectoryRef?.current || [])],
+      events: [...(trajectoryEventsRef?.current || [])],
+      steps: trajectoryRef?.current?.length || 0,
+    });
+    setShowArtModal(true);
+  }, [trajectoryRef, trajectoryEventsRef]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -160,7 +176,6 @@ export default function Board({
   const floatingTextsRef = useRef<FloatingText[]>([]);
   const confettiRef = useRef<Confetti[]>([]);
   const digestionWavesRef = useRef<DigestionWave[]>([]);
-  const comboRef = useRef({ count: 0, lastTime: 0 });
   const shakeRef = useRef({ frames: 0, intensity: 0 });
   const prevScoreRef = useRef(score);
   const prevGameOverRef = useRef(isGameOver);
@@ -947,7 +962,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp]);
 
   // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -1263,7 +1278,7 @@ export default function Board({
             {isReplay ? (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowArtModal(true)}
+                  onClick={handleOpenArtModal}
                   className="px-3.5 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all border border-slate-200/60"
                   title="生成走位艺术卡片"
                 >
@@ -1287,7 +1302,7 @@ export default function Board({
             ) : (
               <div className="flex items-center gap-2.5">
                 <button
-                  onClick={() => setShowArtModal(true)}
+                  onClick={handleOpenArtModal}
                   className="px-4 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                 >
                   <Sparkles size={14} className="text-[#0099FF]" />
@@ -1507,12 +1522,12 @@ export default function Board({
       <TrajectoryCardModal
         isOpen={showArtModal}
         onClose={() => setShowArtModal(false)}
-        trajectory={trajectoryRef?.current || []}
-        events={trajectoryEventsRef?.current || []}
+        trajectory={artData?.trajectory || []}
+        events={artData?.events || []}
         score={score}
         duration={duration}
         maxCombo={maxCombo}
-        steps={trajectoryRef?.current?.length || 0}
+        steps={artData?.steps || 0}
         username={replayUser || '南大家园极客'}
       />
     </div>

@@ -314,9 +314,11 @@ export default function TrajectoryCardModal({
   }, [trajectory, events, score, duration, maxCombo, steps, username, seed]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
       generatePoster();
-    }
+    }, 16);
+    return () => clearTimeout(timer);
   }, [isOpen, generatePoster]);
 
   const [fallbackNotice, setFallbackNotice] = useState(false);

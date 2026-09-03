@@ -57,8 +57,13 @@ class HapticManager {
         const duration = Array.isArray(pattern) ? pattern.reduce((a, b) => a + b, 0) : pattern;
         for (let i = 0; i < gamepads.length; i++) {
           const gp = gamepads[i];
-          if (gp && 'vibrationActuator' in gp && gp.vibrationActuator && typeof (gp.vibrationActuator as { playEffect?: Function }).playEffect === 'function') {
-            (gp.vibrationActuator as { playEffect: Function }).playEffect('dual-rumble', {
+          if (
+            gp &&
+            'vibrationActuator' in gp &&
+            gp.vibrationActuator &&
+            typeof (gp.vibrationActuator as { playEffect?: (...args: unknown[]) => Promise<unknown> }).playEffect === 'function'
+          ) {
+            (gp.vibrationActuator as { playEffect: (...args: unknown[]) => Promise<unknown> }).playEffect('dual-rumble', {
               startDelay: 0,
               duration: Math.min(350, duration * 3),
               weakMagnitude: this.mode === 'STRONG' ? 0.6 : 0.3,
