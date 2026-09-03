@@ -224,6 +224,9 @@ export default function Home() {
     replayUser,
     replaySpeedRate,
     setReplaySpeedRate,
+    replayCurrentTick,
+    replayTotalTicks,
+    seekReplay,
     trajectoryRef,
     trajectoryEventsRef,
     startGame,
@@ -430,6 +433,9 @@ export default function Home() {
                 isReplay={isReplay}
                 replayUser={replayUser}
                 replaySpeedRate={replaySpeedRate}
+                replayCurrentTick={replayCurrentTick}
+                replayTotalTicks={replayTotalTicks}
+                onSeekReplay={seekReplay}
                 onSetReplaySpeed={setReplaySpeedRate}
                 onExitReplay={exitReplay}
                 onRestartReplay={handleRestartReplay}

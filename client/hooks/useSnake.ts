@@ -132,7 +132,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [isReplay, setIsReplay] = useState(false);
   const [replayUser, setReplayUser] = useState<string>('');
   const [replaySpeedRate, setReplaySpeedRate] = useState<number>(1);
+  const [replayCurrentTick, setReplayCurrentTick] = useState<number>(0);
+  const [replayTotalTicks, setReplayTotalTicks] = useState<number>(0);
   const isReplayRef = useRef<boolean>(false);
+  const replaySeedRef = useRef<number>(0);
+  const isSeekingRef = useRef<boolean>(false);
   const replayInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
 
   // 移动端振动触觉反馈 (智能接入多层级触觉管理器)
@@ -197,6 +201,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
       countdownTimerRef.current = null;
     }
     setResumeCountdown(null);
+    if (isSeekingRef.current) {
+      stateRef.current.over = true;
+      stateRef.current.playing = false;
+      return;
+    }
     // 物理受击瞬间：立即冻结逻辑主物理时钟
     stateRef.current.over = true;
     stateRef.current.playing = false;
@@ -323,6 +332,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setIsReplay(true);
       setReplayUser(targetUser || '高手玩家');
       setReplaySpeedRate(1);
+
+      const maxTick = parsedInputs.length > 0 ? parsedInputs[parsedInputs.length - 1].tick + 8 : 100;
+      setReplayTotalTicks(maxTick);
+      setReplayCurrentTick(0);
+      replaySeedRef.current = seed;
 
       rngRef.current = new Mulberry32(seed);
       tickCountRef.current = 0;
@@ -493,6 +507,9 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
     tickCountRef.current += 1;
     totalElapsedMsRef.current += speedMs;
+    if (isReplayRef.current && !isSeekingRef.current) {
+      setReplayCurrentTick(tickCountRef.current);
+    }
 
     // 连击结算辅助函数 (确保物理确定性时钟与 Go 后端完全一致)
     const applyComboEat = (baseScore: number) => {
@@ -561,9 +578,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
         combo: currentCombo,
       });
       setLength(nextSnake.length);
-      sound.playEat();
-      sound.playCombo(currentCombo);
-      vibrate('eat', currentCombo);
+      if (!isSeekingRef.current) {
+        sound.playEat();
+        sound.playCombo(currentCombo);
+        vibrate('eat', currentCombo);
+      }
       fenceRef.current.clear();
       const nextSpeed = calcSpeedMs(stateRef.current.score);
       setSpeedMs(nextSpeed);
@@ -592,9 +611,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
       });
       bonusCountRef.current += 1;
       setBonusCount(bonusCountRef.current);
-      sound.playBonus();
-      sound.playCombo(currentCombo);
-      vibrate('bonus', currentCombo);
+      if (!isSeekingRef.current) {
+        sound.playBonus();
+        sound.playCombo(currentCombo);
+        vibrate('bonus', currentCombo);
+      }
       clearBonus();
     }
 
@@ -692,6 +713,55 @@ export function useSnake(onGameOver?: GameOverCallback) {
     };
   }, [changeDirection, togglePause]);
 
+  // 电竞录像毫秒级瞬态快进复盘 (Seek Replay)
+  const seekReplay = useCallback(
+    (targetTick: number) => {
+      if (!isReplayRef.current) return;
+      const boundedTarget = Math.max(0, Math.min(targetTick, replayTotalTicks));
+      isSeekingRef.current = true;
+
+      // 若回退至先前的步数，先瞬间重置回初始第 0 步
+      if (boundedTarget < tickCountRef.current) {
+        rngRef.current = new Mulberry32(replaySeedRef.current);
+        tickCountRef.current = 0;
+        inputsRef.current = [];
+        pausedMsRef.current = 0;
+        pauseStartRef.current = 0;
+        stepsRef.current = 0;
+        bonusCountRef.current = 0;
+        comboCountRef.current = 0;
+        totalElapsedMsRef.current = 0;
+        lastEatElapsedMsRef.current = -99999;
+        lastEatTimestampRef.current = 0;
+        maxComboRef.current = 0;
+        snakeRef.current = [
+          { x: 10, y: 12 },
+          { x: 9, y: 12 },
+          { x: 8, y: 12 },
+        ];
+        fenceRef.current.clear();
+        dirRef.current = 'RIGHT';
+        queueRef.current = [];
+        stateRef.current = { playing: true, over: false, paused: false, score: 0, start: Date.now() };
+        clearBonus();
+        spawnFood();
+      }
+
+      // 纳秒级在内存中快速物理迭代推进
+      while (tickCountRef.current < boundedTarget && !stateRef.current.over) {
+        tick();
+      }
+
+      isSeekingRef.current = false;
+      setReplayCurrentTick(tickCountRef.current);
+      setScore(stateRef.current.score);
+      setLength(snakeRef.current.length);
+      setComboCount(comboCountRef.current);
+      setMaxCombo(maxComboRef.current);
+    },
+    [replayTotalTicks, clearBonus, spawnFood, tick]
+  );
+
   return {
     snakeRef,
     fenceRef,
@@ -719,6 +789,9 @@ export function useSnake(onGameOver?: GameOverCallback) {
     replayUser,
     replaySpeedRate,
     setReplaySpeedRate,
+    replayCurrentTick,
+    replayTotalTicks,
+    seekReplay,
     trajectoryRef,
     trajectoryEventsRef,
     startGame,

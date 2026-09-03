@@ -79,6 +79,9 @@ interface Props {
   isReplay?: boolean;
   replayUser?: string;
   replaySpeedRate?: number;
+  replayCurrentTick?: number;
+  replayTotalTicks?: number;
+  onSeekReplay?: (tick: number) => void;
   onSetReplaySpeed?: (speed: number) => void;
   onExitReplay?: () => void;
   onRestartReplay?: () => void;
@@ -144,7 +147,9 @@ export default function Board({
   resumeCountdown = null,
   deathReason = '',
   highScore = 0,
-  isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
+  isReplay = false, replayUser = '', replaySpeedRate = 1,
+  replayCurrentTick = 0, replayTotalTicks = 0, onSeekReplay,
+  onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
   const [showArtModal, setShowArtModal] = useState(false);
@@ -1033,22 +1038,48 @@ export default function Board({
     <div className="bg-white p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       {/* 观摩回放模式专属横幅 */}
       {isReplay && (
-        <div className="w-full mb-3 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-[#EBF8FF] to-[#E0F2FE] border border-[#66CCFF]/40 text-[#0099FF] flex items-center justify-between text-xs font-bold animate-in fade-in">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-[#0099FF] shrink-0 animate-pulse" />
-            <span className="truncate">观摩走位中：<strong className="text-slate-900">{replayUser}</strong></span>
+        <div className="w-full mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#EBF8FF] to-[#E0F2FE] border border-[#66CCFF]/40 text-[#0099FF] flex flex-col gap-2 text-xs font-bold animate-in fade-in shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-[#0099FF] shrink-0 animate-pulse" />
+              <span className="truncate">观摩走位中：<strong className="text-slate-900">{replayUser}</strong></span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white font-mono text-[#0099FF] shadow-2xs">
+                {replaySpeedRate}x 倍速
+              </span>
+              <button
+                onClick={onExitReplay}
+                className="text-[11px] text-slate-500 hover:text-rose-500 transition-colors cursor-pointer"
+              >
+                退出
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white font-mono text-[#0099FF] shadow-2xs">
-              {replaySpeedRate}x 倍速
-            </span>
-            <button
-              onClick={onExitReplay}
-              className="text-[11px] text-slate-500 hover:text-rose-500 transition-colors cursor-pointer"
-            >
-              退出
-            </button>
-          </div>
+
+          {/* 极简电竞走位时间轴 (点击任意位置瞬态快进/后退复盘) */}
+          {replayTotalTicks > 0 && (
+            <div className="w-full flex flex-col gap-1 pt-0.5">
+              <div
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                  onSeekReplay?.(Math.floor(ratio * replayTotalTicks));
+                }}
+                className="relative w-full h-1.5 hover:h-2.5 bg-white/80 rounded-full overflow-hidden cursor-pointer transition-all shadow-inner group"
+                title="点击快速跳转走位进度"
+              >
+                <div
+                  className="h-full bg-[#0099FF] rounded-full transition-all duration-75"
+                  style={{ width: `${Math.min(100, (replayCurrentTick / replayTotalTicks) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[9.5px] font-mono font-medium text-slate-500 tabular-nums px-0.5">
+                <span>步数: {replayCurrentTick}</span>
+                <span>总步数: {replayTotalTicks}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
