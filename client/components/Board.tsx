@@ -590,9 +590,15 @@ export default function Board({
           }
         });
 
+        // 检测当前节是否处于转弯拐角 (前后节构成 90° 折角，赋予流线型柔性管道圆角)
+        const prevSeg = snake[i - 1];
+        const nextSeg = snake[i + 1];
+        const isCorner = prevSeg && nextSeg && prevSeg.x !== nextSeg.x && prevSeg.y !== nextSeg.y;
+
         const scaleFactor = 1 + bulge;
         const segSize = (CELL - 2) * scaleFactor;
         const offset = ((CELL - 2) * (scaleFactor - 1)) / 2;
+        const cornerRadius = isCorner ? 6 : 4;
 
         ctx.save();
         if (inCombo && !endingBlink) {
@@ -611,7 +617,7 @@ export default function Board({
           seg.y * CELL + 1 - offset,
           segSize,
           segSize,
-          4
+          cornerRadius
         );
         ctx.fill();
 
@@ -1274,7 +1280,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('UP')}
                   aria-label="向上"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-t-2xl rounded-b-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-t-2xl rounded-b-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                 >
                   <ChevronUp size={26} />
                 </button>
@@ -1283,7 +1289,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('LEFT')}
                   aria-label="向左"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-l-2xl rounded-r-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-l-2xl rounded-r-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                 >
                   <ChevronLeft size={26} />
                 </button>
@@ -1302,7 +1308,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('RIGHT')}
                   aria-label="向右"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-r-2xl rounded-l-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-r-2xl rounded-l-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                 >
                   <ChevronRight size={26} />
                 </button>
@@ -1311,7 +1317,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('DOWN')}
                   aria-label="向下"
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-b-2xl rounded-t-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-b-2xl rounded-t-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                 >
                   <ChevronDown size={26} />
                 </button>
@@ -1322,7 +1328,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('UP')}
                   aria-label="向上"
-                  className="w-[64px] h-[44px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  className="w-[64px] h-[44px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                 >
                   <ChevronUp size={26} />
                 </button>
@@ -1330,21 +1336,21 @@ export default function Board({
                   <button
                     onClick={() => handleDirBtn('LEFT')}
                     aria-label="向左"
-                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                   >
                     <ChevronLeft size={26} />
                   </button>
                   <button
                     onClick={() => handleDirBtn('DOWN')}
                     aria-label="向下"
-                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                   >
                     <ChevronDown size={26} />
                   </button>
                   <button
                     onClick={() => handleDirBtn('RIGHT')}
                     aria-label="向右"
-                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
                   >
                     <ChevronRight size={26} />
                   </button>

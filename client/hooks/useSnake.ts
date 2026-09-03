@@ -197,14 +197,22 @@ export function useSnake(onGameOver?: GameOverCallback) {
       countdownTimerRef.current = null;
     }
     setResumeCountdown(null);
+    // 物理受击瞬间：立即冻结逻辑主物理时钟
     stateRef.current.over = true;
     stateRef.current.playing = false;
-    setIsGameOver(true);
-    setIsPlaying(false);
     clearBonus();
-    sound.stopBgm();
-    sound.playGameOver();
     vibrate('gameover');
+
+    // 播放磁带停机微滑音 (Tape-Stop) 与街机游戏结束和弦
+    sound.stopBgmWithTapeDrop();
+    sound.playGameOver();
+
+    // 维持受击定格 60ms 后才正式弹出结算面板 (动作游戏打击感灵魂 Hit-Stop)
+    setTimeout(() => {
+      setIsGameOver(true);
+      setIsPlaying(false);
+    }, 60);
+
     // 局后平滑切回温馨大厅 BGM
     setTimeout(() => {
       sound.startMenuBgm();

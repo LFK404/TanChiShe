@@ -264,6 +264,61 @@ class SoundManager {
     }
   }
 
+  // 磁带停机下行滑音停机 (Tape-Stop Pitch Drop 220ms，赋予落幕电影级仪式感)
+  stopBgmWithTapeDrop(onComplete?: () => void) {
+    this.currentMode = 'NONE';
+    this.stopHeartbeat();
+    const bgm = this.inGameBgmAudio;
+
+    // 同时用 Web Audio 合成器产生 220ms 温暖下行微滑音 (360Hz -> 55Hz)
+    if (this.ctx && !this.muted) {
+      try {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        const now = this.ctx.currentTime;
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.22);
+        gain.gain.setValueAtTime(0.18 * this.sfxVolume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(gain);
+        if (this.masterFilter) {
+          gain.connect(this.masterFilter);
+        } else {
+          gain.connect(this.ctx.destination);
+        }
+        osc.start(now);
+        osc.stop(now + 0.23);
+      } catch {}
+    }
+
+    if (bgm && !bgm.paused) {
+      const startRate = bgm.playbackRate || 1.0;
+      const startTime = performance.now();
+      const dropDuration = 220;
+      const step = () => {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(1, elapsed / dropDuration);
+        try {
+          bgm.playbackRate = Math.max(0.08, startRate * (1 - progress * 0.9));
+          bgm.volume = Math.max(0, 0.28 * (1 - progress) * this.bgmVolume);
+        } catch {}
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          bgm.pause();
+          bgm.currentTime = 0;
+          bgm.playbackRate = 1.0;
+          onComplete?.();
+        }
+      };
+      requestAnimationFrame(step);
+    } else {
+      this.stopBgm();
+      onComplete?.();
+    }
+  }
+
   // 精准高光短音频播放器 (支持指定最大时长、平滑淡出与智能 BGM 避让 Ducking)
   private playJingleFile(url: string, durationSec: number, volume = 0.35) {
     if (this.muted || typeof window === 'undefined') return;
@@ -389,17 +444,17 @@ class SoundManager {
     this.playNotes('triangle', [440, 659.25], 0.05, 0.03, 0.2);
   }
 
-  // 连击动态升调音阶 (Combo 1x ~ 5x+)
+  // 连击动态五声音阶和弦攀升 (Pentatonic Chime Climb: 宫-商-角-徵-羽，清脆悦耳的风铃听感)
   playCombo(count: number) {
-    const scales = [
-      [261.63, 329.63], // Combo 1: C4 -> E4
-      [329.63, 392.0], // Combo 2: E4 -> G4
-      [392.0, 523.25], // Combo 3: G4 -> C5
-      [523.25, 659.25], // Combo 4: C5 -> E5
-      [659.25, 783.99, 1046.5], // Combo 5+: E5 -> G5 -> C6
+    const pentatonicScales = [
+      [523.25, 587.33], // Combo 1: C5 -> D5 (宫 -> 商，初吻水滴)
+      [587.33, 659.25], // Combo 2: D5 -> E5 (商 -> 角，清澈和鸣)
+      [659.25, 783.99], // Combo 3: E5 -> G5 (角 -> 徵，欢畅扬起)
+      [783.99, 880.00], // Combo 4: G5 -> A5 (徵 -> 羽，华彩奔涌)
+      [783.99, 880.00, 1046.5], // Combo 5+: 羽 -> 高音宫，通透水晶琶音
     ];
-    const idx = Math.min(Math.max(count - 1, 0), scales.length - 1);
-    this.playNotes('triangle', scales[idx], 0.08, 0.035, 0.3);
+    const idx = Math.min(Math.max(count - 1, 0), pentatonicScales.length - 1);
+    this.playNotes('sine', pentatonicScales[idx], 0.085, 0.036, 0.3);
   }
 
   // 普通成就达成庆祝音阶
