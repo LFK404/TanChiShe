@@ -52,6 +52,6 @@
 
 - **单一一级 `.gitignore`**：根目录统一维护权威 `.gitignore`。
 - **环境隔离**：根目录不存 `.env`，下沉至 `client/.env.example` 与 `server/.env.example`。
-- **提交前零报错/零警告铁律（Zero-Diagnostics Pre-Commit Guardrail）**：每次 Git 提交前，**必须主动检查 IDE “问题 (Problems)”面板 / 执行静态语法、类型与 ESLint 校验（`npm run lint`）**。确保 0 语法报错、0 未使用变量、0 React Hook 依赖缺失与 0 明显报警；严禁在存在未解决警告时草率提交代码，发现问题必须第一时间地毯式闭环修复。
+- **提交前零报错/零警告铁律（Zero-Diagnostics Pre-Commit Guardrail）**：每次 Git 提交前，**必须主动检查 IDE “问题 (Problems)”面板 / 执行静态语法、类型与 ESLint 校验（`npm run lint`）**。确保 0 TypeScript 语法与类型报错、0 未使用变量、0 React Hook 依赖缺失；严禁在存在未解决的代码与 Hook 警告时提交代码（注：cSpell 等插件的单词拼写提示不在此限，可直接忽略）。
 - **代码极简与整洁准则**：代码实现力求极致精简优雅，严禁过度设计与无意义的冗余封装；关键算法、状态机、音效与后端逻辑保持准确精炼的中文注释。
 - **文档极简表达准则**：所有文档描述、提交信息与特性总结必须保持极致精炼通俗、直击核心改动，坚决拒绝冗长罗嗦与词藻堆砌，与南大家园极简美学保持高度统一。
