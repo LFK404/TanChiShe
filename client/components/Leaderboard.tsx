@@ -4,6 +4,7 @@ import { User } from '@/types';
 interface Props {
   items: User[];
   currentUser?: User | null;
+  isLoading?: boolean;
   onRefresh: () => void;
   onWatchReplay?: (user: User) => void;
 }
@@ -19,11 +20,13 @@ const BADGE_STYLES: Record<number, string> = {
 };
 
 // 全服 Top 10 竞技风云榜组件 (极简现代排版，零 AI 模板感)
-export default function Leaderboard({ items, currentUser, onRefresh, onWatchReplay }: Props) {
+export default function Leaderboard({ items, currentUser, isLoading = false, onRefresh, onWatchReplay }: Props) {
   // 计算当前登录玩家排名与战胜全服玩家百分比
   let beatPercent = 0;
+  let myRank = 0;
   if (currentUser && currentUser.highScore > 0 && items.length > 0) {
-    const myRank = items.findIndex((it) => it.username === currentUser.username) + 1;
+    const idx = items.findIndex((it) => it.username === currentUser.username);
+    myRank = idx >= 0 ? idx + 1 : 0;
     if (myRank === 1) {
       beatPercent = 99;
     } else if (myRank > 1) {
@@ -53,9 +56,24 @@ export default function Leaderboard({ items, currentUser, onRefresh, onWatchRepl
         </button>
       </div>
 
-      {/* 排行榜名次流水列表 */}
+      {/* 排行榜名次流水列表 / 优雅浅灰骨架屏 */}
       <div className="space-y-1 my-1">
-        {items.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-1.5 py-1">
+            {[1, 2, 3, 4, 5].map((idx) => (
+              <div
+                key={idx}
+                className="h-8.5 rounded-xl bg-slate-100/75 animate-pulse flex items-center px-3 justify-between"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-5 h-5 rounded-lg bg-slate-200/80" />
+                  <div className="w-16 h-3 rounded bg-slate-200/80" />
+                </div>
+                <div className="w-8 h-3 rounded bg-slate-200/80" />
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
           <div className="text-center py-6 text-xs text-slate-400 font-normal">暂无上榜记录</div>
         ) : (
           items.slice(0, 10).map((u, i) => {
@@ -97,7 +115,7 @@ export default function Leaderboard({ items, currentUser, onRefresh, onWatchRepl
                       回放
                     </button>
                   )}
-                  <span className="font-mono text-xs font-bold text-[#0F172A]">{u.highScore}</span>
+                  <span className="font-mono text-xs font-bold text-[#0F172A] tabular-nums">{u.highScore}</span>
                 </div>
               </div>
             );
@@ -105,11 +123,22 @@ export default function Leaderboard({ items, currentUser, onRefresh, onWatchRepl
         )}
       </div>
 
-      {/* 底部当前玩家排位评语 */}
+      {/* 底部当前玩家排位评语与个人最佳名次展示 */}
       {currentUser && (
         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-[#94A3B8]">
-          <span>超越全服玩家</span>
-          <span className="font-mono font-bold text-[#0099FF]">{beatPercent}%</span>
+          <div className="flex items-center gap-1.5">
+            <span>我的最佳:</span>
+            <strong className="font-mono font-bold text-[#0F172A] tabular-nums">{currentUser.highScore} 分</strong>
+            {myRank > 0 ? (
+              <span className="text-[10.5px] text-[#0099FF] font-medium">(第 {myRank} 名)</span>
+            ) : currentUser.highScore > 0 ? (
+              <span className="text-[10px] text-slate-400">(未进前10)</span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-1">
+            <span>超越</span>
+            <span className="font-mono font-bold text-[#0099FF] tabular-nums">{beatPercent}%</span>
+          </div>
         </div>
       )}
     </div>

@@ -113,12 +113,6 @@ interface Particle {
   life: number; maxLife: number;
 }
 
-// 冲击波扩散光环实体
-interface Shockwave {
-  x: number; y: number; radius: number; maxRadius: number;
-  color: string; alpha: number; lineWidth: number;
-}
-
 // 浮空得分/连击微文字实体
 interface FloatingText {
   x: number; y: number; text: string; color: string;
@@ -137,16 +131,6 @@ interface DigestionWave {
   startTime: number;
 }
 
-// 指尖触碰微光涟漪实体
-interface TouchRipple {
-  x: number; y: number; r: number; alpha: number; maxR: number;
-}
-
-// 滑屏流光尾迹点实体
-interface SwipeTrailPoint {
-  x: number; y: number; alpha: number;
-}
-
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
   queueRef,
@@ -160,10 +144,7 @@ export default function Board({
   const [showArtModal, setShowArtModal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const touchRipplesRef = useRef<TouchRipple[]>([]);
-  const swipeTrailsRef = useRef<SwipeTrailPoint[]>([]);
   const particlesRef = useRef<Particle[]>([]);
-  const shockwavesRef = useRef<Shockwave[]>([]);
   const motionTrailsRef = useRef<{ x: number; y: number; alpha: number }[]>([]);
   const floatingTextsRef = useRef<FloatingText[]>([]);
   const confettiRef = useRef<Confetti[]>([]);
@@ -293,22 +274,17 @@ export default function Board({
     });
   };
 
-  // 监听移速提升：蛇头弹出轻灵浮字 ⚡ X.Xx、顶部速度胶囊高光微弹跳与指尖触感
+  // 监听移速提升：仅通过顶部速度胶囊高光微弹跳与指尖触感轻巧反馈，杜绝遮挡视野
   useEffect(() => {
     if (speedMs < prevSpeedMsRef.current && isPlaying && !isPaused && !isGameOver) {
       setSpeedPulse(true);
       const timer = setTimeout(() => setSpeedPulse(false), 240);
-      const head = snakeRef.current[0];
-      if (head) {
-        const rate = (BASE_SPEED_MS / speedMs).toFixed(1);
-        spawnFloatingText(head.x, head.y, `⚡ ${rate}x`, '#0099FF');
-      }
       haptics.trigger('snap');
       prevSpeedMsRef.current = speedMs;
       return () => clearTimeout(timer);
     }
     prevSpeedMsRef.current = speedMs;
-  }, [speedMs, isPlaying, isPaused, isGameOver, snakeRef]);
+  }, [speedMs, isPlaying, isPaused, isGameOver]);
 
   // 吃到红苹果清空栅栏时爆发浅灰粉尘消散粒子 (强化瓦解打击感)
   const spawnCrumbleParticles = (gridX: number, gridY: number) => {
@@ -371,15 +347,6 @@ export default function Board({
         // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，多巴胺微光粒子
         triggerShake(3, 1.2);
         spawnParticles(head.x, head.y, '#F59E0B', 18);
-        shockwavesRef.current.push({
-          x: head.x * CELL + CELL / 2,
-          y: head.y * CELL + CELL / 2,
-          radius: CELL / 2,
-          maxRadius: CELL * 2.2,
-          color: '#F59E0B',
-          alpha: 0.85,
-          lineWidth: 2,
-        });
 
         if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
@@ -398,16 +365,6 @@ export default function Board({
           spawnCrumbleParticles(fx, fy);
         });
         fenceSpawnTimeRef.current.clear();
-
-        shockwavesRef.current.push({
-          x: head.x * CELL + CELL / 2,
-          y: head.y * CELL + CELL / 2,
-          radius: CELL / 2,
-          maxRadius: CELL * 1.6,
-          color: '#0099FF',
-          alpha: 0.75,
-          lineWidth: 1.5,
-        });
 
         if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+10', '#10B981');
@@ -833,25 +790,6 @@ export default function Board({
     particlesRef.current = activeParticles;
     ctx.globalAlpha = 1;
 
-    // 9. 更新并绘制冲击波扩散光环
-    const activeShockwaves: Shockwave[] = [];
-    shockwavesRef.current.forEach((sw) => {
-      sw.radius += 1.4;
-      sw.alpha *= 0.88;
-      if (sw.alpha > 0.03 && sw.radius < sw.maxRadius) {
-        ctx.save();
-        ctx.strokeStyle = sw.color;
-        ctx.globalAlpha = sw.alpha;
-        ctx.lineWidth = sw.lineWidth;
-        ctx.beginPath();
-        ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-        activeShockwaves.push(sw);
-      }
-    });
-    shockwavesRef.current = activeShockwaves;
-
     // 10. 更新并绘制四色彩纸欢庆礼花 (重力加速度与空气阻力)
     const activeConfetti: Confetti[] = [];
     confettiRef.current.forEach((c) => {
@@ -905,43 +843,6 @@ export default function Board({
     });
     floatingTextsRef.current = activeTexts;
 
-    // 12. 更新并绘制指尖触控微光涟漪
-    touchRipplesRef.current = touchRipplesRef.current.filter((rp) => {
-      rp.r += 1.4;
-      rp.alpha -= 0.045;
-      if (rp.alpha <= 0.01) return false;
-      ctx.save();
-      ctx.strokeStyle = `rgba(0, 153, 255, ${rp.alpha})`;
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-      return true;
-    });
-
-    // 13. 更新并绘制滑屏天青流光尾迹 (平滑贝塞尔光弧)
-    if (swipeTrailsRef.current.length > 1) {
-      ctx.save();
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (let i = 0; i < swipeTrailsRef.current.length - 1; i++) {
-        const pt1 = swipeTrailsRef.current[i];
-        const pt2 = swipeTrailsRef.current[i + 1];
-        pt1.alpha -= 0.045;
-        if (pt1.alpha > 0.02) {
-          ctx.strokeStyle = `rgba(0, 153, 255, ${pt1.alpha})`;
-          ctx.lineWidth = 3.6 * ((i + 1) / swipeTrailsRef.current.length);
-          ctx.beginPath();
-          ctx.moveTo(pt1.x, pt1.y);
-          ctx.lineTo(pt2.x, pt2.y);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-    }
-    swipeTrailsRef.current = swipeTrailsRef.current.filter((p) => p.alpha > 0.02);
-
     ctx.restore();
   }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef]);
 
@@ -950,23 +851,6 @@ export default function Board({
     if (e.touches.length === 0) return;
     const touch = e.touches[0];
     touchStartPosRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
-
-    // 获取在 Canvas 内部的映射坐标以绘制微光涟漪
-    const cvs = canvasRef.current;
-    if (cvs) {
-      const rect = cvs.getBoundingClientRect();
-      const cvsX = (touch.clientX - rect.left) * ((GRID * CELL) / rect.width);
-      const cvsY = (touch.clientY - rect.top) * ((GRID * CELL) / rect.height);
-      if (cvsX >= 0 && cvsX <= GRID * CELL && cvsY >= 0 && cvsY <= GRID * CELL) {
-        touchRipplesRef.current.push({
-          x: cvsX,
-          y: cvsY,
-          r: 4,
-          alpha: 0.65,
-          maxR: 26,
-        });
-      }
-    }
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -974,23 +858,6 @@ export default function Board({
     if (isReplay || !isPlaying || isGameOver || isPaused) return;
 
     const touch = e.touches[0];
-    const cvs = canvasRef.current;
-    if (cvs) {
-      const rect = cvs.getBoundingClientRect();
-      const cvsX = (touch.clientX - rect.left) * ((GRID * CELL) / rect.width);
-      const cvsY = (touch.clientY - rect.top) * ((GRID * CELL) / rect.height);
-      if (cvsX >= 0 && cvsX <= GRID * CELL && cvsY >= 0 && cvsY <= GRID * CELL) {
-        swipeTrailsRef.current.push({
-          x: cvsX,
-          y: cvsY,
-          alpha: 0.6,
-        });
-        if (swipeTrailsRef.current.length > 8) {
-          swipeTrailsRef.current.shift();
-        }
-      }
-    }
-
     const dx = touch.clientX - touchStartPosRef.current.x;
     const dy = touch.clientY - touchStartPosRef.current.y;
     const absX = Math.abs(dx);
@@ -1012,22 +879,6 @@ export default function Board({
 
       // 连续滑行不断触：将当前触点重置为新起点，允许一笔划连续过弯
       touchStartPosRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
-
-      // 在转折点激发出微光圈
-      if (cvs) {
-        const rect = cvs.getBoundingClientRect();
-        const cvsX = (touch.clientX - rect.left) * ((GRID * CELL) / rect.width);
-        const cvsY = (touch.clientY - rect.top) * ((GRID * CELL) / rect.height);
-        if (cvsX >= 0 && cvsX <= GRID * CELL && cvsY >= 0 && cvsY <= GRID * CELL) {
-          touchRipplesRef.current.push({
-            x: cvsX,
-            y: cvsY,
-            r: 5,
-            alpha: 0.85,
-            maxR: 30,
-          });
-        }
-      }
     }
   };
 
@@ -1149,17 +1000,21 @@ export default function Board({
 
         <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F8FAFC]" />
 
-        {/* 开始游戏遮罩 (非回放模式) */}
+        {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}
         {!isPlaying && !isGameOver && !isReplay && (
-          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 select-none">
             <button
               onClick={onStart}
-              className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Play size={16} />
               <span>开始游戏</span>
               <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
             </button>
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
+              <span>按空格/方向键 或 屏幕任意处划动启程</span>
+            </div>
           </div>
         )}
 

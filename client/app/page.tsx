@@ -74,17 +74,32 @@ export default function Home() {
     }
   }, [user, prefetchSession]);
 
-  // 刷新全服 Top 10 排行榜
+  const [isBoardLoading, setIsBoardLoading] = useState(true);
+
+  // 刷新全服 Top 10 排行榜 (带骨架屏过渡)
   const refreshBoard = useCallback(async () => {
-    setBoard(await apiLeaderboard());
+    setIsBoardLoading(true);
+    try {
+      const data = await apiLeaderboard();
+      setBoard(data);
+    } catch {} finally {
+      setIsBoardLoading(false);
+    }
   }, []);
 
   // 挂载时拉取排行榜
   useEffect(() => {
     let ignore = false;
-    apiLeaderboard().then((data) => {
-      if (!ignore) setBoard(data);
-    }).catch(() => {});
+    apiLeaderboard()
+      .then((data) => {
+        if (!ignore) {
+          setBoard(data);
+          setIsBoardLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setIsBoardLoading(false);
+      });
     return () => { ignore = true; };
   }, []);
 
@@ -112,43 +127,53 @@ export default function Home() {
         return;
       }
 
-      const res = await apiSettleGame(
-        {
-          sessionToken: currentSession.sessionToken,
-          inputs,
-          totalTicks,
-        },
-        user.token
-      );
+      try {
+        const res = await apiSettleGame(
+          {
+            sessionToken: currentSession.sessionToken,
+            inputs,
+            totalTicks,
+          },
+          user.token
+        );
 
-      if (res.ok && res.data) {
-        if (res.isNewRecord && res.data.user) {
-          updateUser(res.data.user);
-          sound.playVictory();
-          addToast('刷新个人历史最佳纪录！', 'GOLD');
+        if (res.ok && res.data) {
+          if (res.isNewRecord && res.data.user) {
+            updateUser(res.data.user);
+            sound.playVictory();
+            addToast('刷新个人历史最佳纪录！', 'GOLD');
+          }
         }
-      }
 
-      // 刷新排行榜并仅在【刷新个人纪录且位列前10】时才祝贺
-      const newBoard = await apiLeaderboard();
-      setBoard(newBoard);
-      const userRank = newBoard.findIndex((u) => u.username === user.username) + 1;
-      if (res.ok && res.isNewRecord && userRank > 0 && userRank <= 10) {
-        addToast(`荣登全服风云榜第 ${userRank} 名！`, 'DIAMOND');
-        const rankAch = checkAndUnlockAchievements({
-          score: _finalScore,
-          length: 3,
-          duration: _finalDur,
-          maxCombo: maxCombo,
-          bonusCount: 0,
-          speedMs: 122,
-          steps: totalTicks,
-          rank: userRank,
-        }, user.username);
-        rankAch.forEach((ach) => {
-          sound.playGrandAchievement();
-          addToast(`加冕至高成就: [${ach.name}]`, ach.tier);
-        });
+        // 刷新排行榜并仅在【刷新个人纪录且位列前10】时才祝贺
+        const newBoard = await apiLeaderboard();
+        setBoard(newBoard);
+        const userRank = newBoard.findIndex((u) => u.username === user.username) + 1;
+        if (res.ok && res.isNewRecord && userRank > 0 && userRank <= 10) {
+          addToast(`荣登全服风云榜第 ${userRank} 名！`, 'DIAMOND');
+          const rankAch = checkAndUnlockAchievements({
+            score: _finalScore,
+            length: 3,
+            duration: _finalDur,
+            maxCombo: maxCombo,
+            bonusCount: 0,
+            speedMs: 122,
+            steps: totalTicks,
+            rank: userRank,
+          }, user.username);
+          rankAch.forEach((ach) => {
+            sound.playGrandAchievement();
+            addToast(`加冕至高成就: [${ach.name}]`, ach.tier);
+          });
+        }
+      } catch {
+        // 弱网或断网离线游玩：优雅保全战绩至本地队列，消除控制台报错
+        try {
+          const offlineRecords = JSON.parse(localStorage.getItem('snake_offline_records') || '[]');
+          offlineRecords.push({ score: _finalScore, dur: _finalDur, date: new Date().toISOString() });
+          localStorage.setItem('snake_offline_records', JSON.stringify(offlineRecords.slice(-5)));
+        } catch {}
+        addToast('当前处于离线模式 · 单机战绩已在本地存盘', 'BRONZE');
       }
     },
     [user, updateUser, prefetchSession, addToast, refreshBoard]
@@ -431,6 +456,7 @@ export default function Home() {
             <Leaderboard
               items={board}
               currentUser={user}
+              isLoading={isBoardLoading}
               onRefresh={refreshBoard}
               onWatchReplay={handleWatchReplay}
             />

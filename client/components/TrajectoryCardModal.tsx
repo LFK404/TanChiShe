@@ -319,23 +319,36 @@ export default function TrajectoryCardModal({
     }
   }, [isOpen, generatePoster]);
 
-  // 一键复制图片到剪贴板
+  const [fallbackNotice, setFallbackNotice] = useState(false);
+
+  // 一键复制图片到剪贴板 (具备移动端/微信/QQ等受限环境的优雅降级)
   const handleCopy = async () => {
     if (!canvasRef.current) return;
     try {
+      if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+        throw new Error('ClipboardItem not supported');
+      }
       canvasRef.current.toBlob(async (blob) => {
         if (!blob) return;
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob }),
-        ]);
-        setCopied(true);
-        sound.playToggle();
-        haptics.trigger('ui');
-        setTimeout(() => setCopied(false), 2000);
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob }),
+          ]);
+          setCopied(true);
+          sound.playToggle();
+          haptics.trigger('ui');
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          handleDownload();
+          setFallbackNotice(true);
+          setTimeout(() => setFallbackNotice(false), 2500);
+        }
       });
     } catch {
-      // 若浏览器限制 ClipboardItem，降级为下载
+      // 若浏览器限制 ClipboardItem，降级为下载保存
       handleDownload();
+      setFallbackNotice(true);
+      setTimeout(() => setFallbackNotice(false), 2500);
     }
   };
 
@@ -398,8 +411,16 @@ export default function TrajectoryCardModal({
             onClick={handleCopy}
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-[0.98] text-slate-700 font-bold text-xs transition-all cursor-pointer border border-slate-200/60"
           >
-            {copied ? <Check size={14} className="text-[#10B981]" /> : <Copy size={14} />}
-            <span>{copied ? '已复制图片' : '复制卡片'}</span>
+            {fallbackNotice ? (
+              <Check size={14} className="text-[#0099FF]" />
+            ) : copied ? (
+              <Check size={14} className="text-[#10B981]" />
+            ) : (
+              <Copy size={14} />
+            )}
+            <span>
+              {fallbackNotice ? '已为您直接下载' : copied ? '已复制图片' : '复制卡片'}
+            </span>
           </button>
           <button
             onClick={handleDownload}

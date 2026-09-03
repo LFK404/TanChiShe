@@ -565,8 +565,20 @@ export function useSnake(onGameOver?: GameOverCallback) {
       }
 
       sound.unlockAudio();
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key))
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
         e.preventDefault();
+        // 自动失焦页面按钮，防止空格键误触之前点击过的按钮
+        if (document.activeElement instanceof HTMLElement && document.activeElement.tagName === 'BUTTON') {
+          document.activeElement.blur();
+        }
+      }
+
+      // M 键：自习室/工位快速一键静音/取消静音
+      if (e.key === 'm' || e.key === 'M') {
+        sound.toggleMute();
+        return;
+      }
+
       if (e.key === 'p' || e.key === 'P') return togglePause();
       if (e.key === ' ') {
         // 等待起跑状态下按空格立即唤醒出发
@@ -583,8 +595,31 @@ export function useSnake(onGameOver?: GameOverCallback) {
       const dir = KEY_DIR[e.key];
       if (dir) changeDirection(dir);
     };
+
+    // 切出后台自动安全暂停保护 (防玩家回微信、切屏接电话导致对局意外撞死)
+    const onVisibilityChange = () => {
+      if (document.hidden && stateRef.current.playing && !stateRef.current.paused && !stateRef.current.over) {
+        togglePause();
+      }
+    };
+
+    // 激烈对局防误触退出/刷新保护 (得分达到 200 分以上且对局进行中时拦截误触关闭)
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (stateRef.current.playing && !stateRef.current.over && stateRef.current.score >= 200) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('beforeunload', onBeforeUnload);
+
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
   }, [changeDirection, togglePause]);
 
   return {
