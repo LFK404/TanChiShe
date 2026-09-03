@@ -1,13 +1,15 @@
-import React from 'react';
-import { User } from '@/types';
+import React, { useState } from 'react';
+import { User, LocalMatchRecord } from '@/types';
 
 interface Props {
   items: User[];
   currentUser?: User | null;
   isLoading?: boolean;
   recentScores?: number[];
+  localHistory?: LocalMatchRecord[];
   onRefresh: () => void;
   onWatchReplay?: (user: User) => void;
+  onViewHistoryArt?: (record: LocalMatchRecord) => void;
 }
 
 // 纯 SVG 矢量战绩走势微折线 (无任何第三方库，极度轻盈极客)
@@ -56,7 +58,18 @@ const BADGE_STYLES: Record<number, string> = {
 };
 
 // 全服 Top 10 竞技风云榜组件 (极简现代排版，零 AI 模板感)
-export default function Leaderboard({ items, currentUser, isLoading = false, recentScores = [], onRefresh, onWatchReplay }: Props) {
+export default function Leaderboard({
+  items,
+  currentUser,
+  isLoading = false,
+  recentScores = [],
+  localHistory = [],
+  onRefresh,
+  onWatchReplay,
+  onViewHistoryArt,
+}: Props) {
+  const [tab, setTab] = useState<'GLOBAL' | 'LOCAL'>('GLOBAL');
+
   // 计算当前登录玩家排名与战胜全服玩家百分比
   let beatPercent = 0;
   let myRank = 0;
@@ -78,84 +91,151 @@ export default function Leaderboard({ items, currentUser, isLoading = false, rec
 
   return (
     <div className="bg-white p-5 rounded-3xl flex flex-col select-none border border-slate-200/80 shadow-xs">
-      {/* 榜单标题与手动刷新 */}
+      {/* 榜单标题与分类切换胶囊 */}
       <div className="flex justify-between items-center pb-2.5">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-3.5 bg-[#0099FF] rounded-full" />
-          <h2 className="text-sm font-extrabold text-[#0F172A] tracking-tight">Top 10 风云榜</h2>
+        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono">
+          <button
+            onClick={() => setTab('GLOBAL')}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              tab === 'GLOBAL'
+                ? 'bg-white text-[#0099FF] shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            风云榜
+          </button>
+          <button
+            onClick={() => setTab('LOCAL')}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              tab === 'LOCAL'
+                ? 'bg-white text-[#0099FF] shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            个人档案
+          </button>
         </div>
-        <button
-          onClick={onRefresh}
-          className="text-[11px] text-[#94A3B8] hover:text-[#0099FF] transition-colors cursor-pointer font-medium"
-        >
-          刷新
-        </button>
+        {tab === 'GLOBAL' ? (
+          <button
+            onClick={onRefresh}
+            className="text-[11px] text-[#94A3B8] hover:text-[#0099FF] transition-colors cursor-pointer font-medium"
+          >
+            刷新
+          </button>
+        ) : (
+          <span className="text-[10px] text-slate-400 font-mono">近 10 局</span>
+        )}
       </div>
 
-      {/* 排行榜名次流水列表 / 优雅浅灰骨架屏 */}
+      {/* 主数据区：全服风云榜 VS 本地个人档案 */}
       <div className="space-y-1 my-1">
-        {isLoading ? (
-          <div className="space-y-1.5 py-1">
-            {[1, 2, 3, 4, 5].map((idx) => (
-              <div
-                key={idx}
-                className="h-8.5 rounded-xl bg-slate-100/75 animate-pulse flex items-center px-3 justify-between"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-lg bg-slate-200/80" />
-                  <div className="w-16 h-3 rounded bg-slate-200/80" />
+        {tab === 'GLOBAL' ? (
+          isLoading ? (
+            <div className="space-y-1.5 py-1">
+              {[1, 2, 3, 4, 5].map((idx) => (
+                <div
+                  key={idx}
+                  className="h-8.5 rounded-xl bg-slate-100/75 animate-pulse flex items-center px-3 justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-lg bg-slate-200/80" />
+                    <div className="w-16 h-3 rounded bg-slate-200/80" />
+                  </div>
+                  <div className="w-8 h-3 rounded bg-slate-200/80" />
                 </div>
-                <div className="w-8 h-3 rounded bg-slate-200/80" />
-              </div>
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-6 text-xs text-slate-400 font-normal">暂无上榜记录</div>
-        ) : (
-          items.slice(0, 10).map((u, i) => {
-            const rank = i + 1;
-            const isMe = currentUser?.username === u.username;
-            const hasReplay = !!(u.replayInputs && u.replaySeed);
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-400 font-normal">暂无上榜记录</div>
+          ) : (
+            items.slice(0, 10).map((u, i) => {
+              const rank = i + 1;
+              const isMe = currentUser?.username === u.username;
+              const hasReplay = !!(u.replayInputs && u.replaySeed);
 
-            return (
-              <div
-                key={u.username}
-                className={`flex items-center justify-between p-2 rounded-xl transition-colors ${
-                  isMe ? 'bg-[#EBF8FF] text-[#0099FF] font-bold' : 'hover:bg-slate-50 text-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className={`w-5 h-5 flex items-center justify-center rounded-lg text-xs font-black font-mono shrink-0 shadow-2xs ${getBadgeStyle(
-                      rank
-                    )}`}
-                  >
-                    {rank}
-                  </span>
-                  <span className="truncate text-xs">{u.username}</span>
-                  {isMe && (
-                    <span className="text-[10px] text-[#0099FF] font-semibold bg-white/80 px-1 rounded-sm shrink-0 border border-[#0099FF]/20">
-                      我
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* 一键观摩高手通关走位 */}
-                  {hasReplay && onWatchReplay && (
-                    <button
-                      onClick={() => onWatchReplay(u)}
-                      title={`观摩 ${u.username} 的通关走位`}
-                      className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#EBF8FF] text-[#0099FF] hover:bg-[#0099FF] hover:text-white transition-all cursor-pointer shadow-2xs"
+              return (
+                <div
+                  key={u.username}
+                  className={`flex items-center justify-between p-2 rounded-xl transition-colors ${
+                    isMe ? 'bg-[#EBF8FF] text-[#0099FF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className={`w-5 h-5 flex items-center justify-center rounded-lg text-xs font-black font-mono shrink-0 shadow-2xs ${getBadgeStyle(
+                        rank
+                      )}`}
                     >
-                      回放
-                    </button>
-                  )}
-                  <span className="font-mono text-xs font-bold text-[#0F172A] tabular-nums">{u.highScore}</span>
+                      {rank}
+                    </span>
+                    <span className="truncate text-xs">{u.username}</span>
+                    {isMe && (
+                      <span className="text-[10px] text-[#0099FF] font-semibold bg-white/80 px-1 rounded-sm shrink-0 border border-[#0099FF]/20">
+                        我
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* 一键观摩高手通关走位 */}
+                    {hasReplay && onWatchReplay && (
+                      <button
+                        onClick={() => onWatchReplay(u)}
+                        title={`观摩 ${u.username} 的通关走位`}
+                        className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#EBF8FF] text-[#0099FF] hover:bg-[#0099FF] hover:text-white transition-all cursor-pointer shadow-2xs"
+                      >
+                        回放
+                      </button>
+                    )}
+                    <span className="font-mono text-xs font-bold text-[#0F172A] tabular-nums">{u.highScore}</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })
+          )
+        ) : (
+          /* 本地个人档案流水列表 (最近 10 局对局档案，支持调起海报复盘) */
+          localHistory.length === 0 ? (
+            <div className="text-center py-7 text-xs text-slate-400 font-medium">
+              尚无本地对局记录，完成一局后自动归档
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-0.5">
+              {localHistory.map((rec, i) => (
+                <div
+                  key={rec.id}
+                  className="flex items-center justify-between p-2 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-slate-100 text-xs transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono font-bold text-slate-400 text-[11px] w-5 shrink-0">
+                      #{String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-black text-slate-800 tabular-nums">
+                          {rec.score}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {rec.duration}s · {rec.length}节
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 truncate font-mono">
+                        {rec.deathReason ? `[${rec.deathReason}]` : '[常规完赛]'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => onViewHistoryArt?.(rec)}
+                    className="px-2 py-0.5 bg-white hover:bg-[#EBF8FF] text-[#0099FF] rounded-lg border border-slate-200/80 text-[10.5px] font-bold font-mono transition-all shrink-0 cursor-pointer shadow-2xs"
+                    title="回看此局走位艺术卡片"
+                  >
+                    走位海报
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 

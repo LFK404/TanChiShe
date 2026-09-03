@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
 import { useSnake } from '@/hooks/useSnake';
 import { apiStartGame, apiSettleGame, apiLeaderboard } from '@/services/api';
-import { User, InputRecord } from '@/types';
+import { User, InputRecord, LocalMatchRecord, Point } from '@/types';
 import Header from '@/components/Header';
 import Board from '@/components/Board';
 import Leaderboard from '@/components/Leaderboard';
@@ -12,6 +12,7 @@ import Login from '@/components/Login';
 import Tutorial from '@/components/Tutorial';
 import Achievements from '@/components/Achievements';
 import InGameToast, { ToastItem } from '@/components/InGameToast';
+import TrajectoryCardModal from '@/components/TrajectoryCardModal';
 import { checkAndUnlockAchievements, AchievementTier } from '@/utils/achievements';
 import { sound } from '@/utils/audio';
 
@@ -21,6 +22,16 @@ export default function Home() {
   const [board, setBoard] = useState<User[]>([]);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [localHistory, setLocalHistory] = useState<LocalMatchRecord[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('snake_match_archive_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [historyArtRecord, setHistoryArtRecord] = useState<LocalMatchRecord | null>(null);
 
   // 添加局中即时微弹窗 (南大家园微拟态勋章体系)
   const addToast = useCallback((text: string, tier: AchievementTier = 'BRONZE', color?: string) => {
@@ -120,11 +131,34 @@ export default function Home() {
       _finalDur: number,
       inputs: InputRecord[],
       totalTicks: number,
-      maxCombo = 1
+      maxCombo = 1,
+      trajectory: Point[] = [],
+      trajectoryEvents: unknown[] = []
     ) => {
-      if (!user) return;
       // 战局结束时立即清空悬浮 Toast，避免与结算面板重叠冲突
       setToasts([]);
+
+      // 沉淀本地最近 10 局个人对局档案 (支持离线走位海报回顾)
+      try {
+        const localRecord: LocalMatchRecord = {
+          id: `rec_${Date.now()}`,
+          timestamp: Date.now(),
+          score: _finalScore,
+          length: Math.max(3, trajectory.length > 0 ? trajectory.length : 3),
+          duration: _finalDur,
+          maxCombo: maxCombo || 1,
+          deathReason: '对局完成',
+          trajectory: [...trajectory],
+          events: [...(trajectoryEvents as unknown as LocalMatchRecord['events'] || [])],
+          steps: trajectory.length,
+        };
+        const rawHistory = JSON.parse(localStorage.getItem('snake_match_archive_v1') || '[]');
+        const updatedArchive = [localRecord, ...rawHistory].slice(0, 10);
+        localStorage.setItem('snake_match_archive_v1', JSON.stringify(updatedArchive));
+        setLocalHistory(updatedArchive);
+      } catch {}
+
+      if (!user) return;
 
       const currentSession = sessionRef.current;
       sessionRef.current = null; // 消费当前 session
@@ -155,27 +189,8 @@ export default function Home() {
           }
         }
 
-        // 刷新排行榜并仅在【刷新个人纪录且位列前10】时才祝贺
-        const newBoard = await apiLeaderboard();
-        setBoard(newBoard);
-        const userRank = newBoard.findIndex((u) => u.username === user.username) + 1;
-        if (res.ok && res.isNewRecord && userRank > 0 && userRank <= 10) {
-          addToast(`荣登全服风云榜第 ${userRank} 名！`, 'DIAMOND');
-          const rankAch = checkAndUnlockAchievements({
-            score: _finalScore,
-            length: 3,
-            duration: _finalDur,
-            maxCombo: maxCombo,
-            bonusCount: 0,
-            speedMs: 122,
-            steps: totalTicks,
-            rank: userRank,
-          }, user.username);
-          rankAch.forEach((ach) => {
-            sound.playGrandAchievement();
-            addToast(`加冕至高成就: [${ach.name}]`, ach.tier);
-          });
-        }
+        // 刷新排行榜展示最新榜单
+        refreshBoard();
       } catch {
         // 弱网或断网离线游玩：优雅保全战绩至本地队列，消除控制台报错
         try {
@@ -450,8 +465,10 @@ export default function Home() {
               currentUser={user}
               isLoading={isBoardLoading}
               recentScores={recentScores}
+              localHistory={localHistory}
               onRefresh={refreshBoard}
               onWatchReplay={handleWatchReplay}
+              onViewHistoryArt={setHistoryArtRecord}
             />
           </div>
 
@@ -472,6 +489,21 @@ export default function Home() {
           <InGameToast toasts={toasts} onRemove={removeToast} />
           <Tutorial isOpen={showTutorial} onClose={handleCloseTutorial} />
           <Achievements isOpen={showAchievements} onClose={() => setShowAchievements(false)} username={user?.username} />
+
+          {/* 历史对局专属走位艺术海报弹窗 */}
+          {historyArtRecord && (
+            <TrajectoryCardModal
+              isOpen={!!historyArtRecord}
+              onClose={() => setHistoryArtRecord(null)}
+              trajectory={historyArtRecord.trajectory || []}
+              events={[]}
+              score={historyArtRecord.score}
+              duration={historyArtRecord.duration}
+              maxCombo={historyArtRecord.maxCombo}
+              steps={historyArtRecord.steps || 0}
+              username={user?.username || '极客玩家'}
+            />
+          )}
         </div>
       )}
     </main>

@@ -45,3 +45,17 @@ export interface GameSettleResponse {
   isNewRecord: boolean;
   user: User;
 }
+
+// 本地最近对局记录实体 (支持离线档案与走位艺术复盘)
+export interface LocalMatchRecord {
+  id: string;
+  timestamp: number;
+  score: number;
+  length: number;
+  duration: number;
+  maxCombo: number;
+  deathReason: string;
+  trajectory: Point[];
+  events?: { x: number; y: number; type: 'eat' | 'combo' | 'bonus' | 'death'; tick: number }[];
+  steps: number;
+}
