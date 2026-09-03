@@ -43,12 +43,22 @@ const DIR_DELTAS: Record<Direction, Point> = {
   RIGHT: { x: 1, y: 0 },
 };
 
+// 走位轨迹高光进食事件
+export interface TrajectoryEvent {
+  x: number;
+  y: number;
+  type: 'APPLE' | 'BONUS';
+  combo: number;
+}
+
 export type GameOverCallback = (
   score: number,
   duration: number,
   inputs: InputRecord[],
   totalTicks: number,
-  maxCombo?: number
+  maxCombo?: number,
+  trajectory?: Point[],
+  trajectoryEvents?: TrajectoryEvent[]
 ) => void;
 
 // 贪吃蛇全套确定性物理时序与状态驱动引擎
@@ -96,6 +106,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const lastEatTimestampRef = useRef<number>(0);
   const maxComboRef = useRef<number>(0);
   const bonusExpireTickRef = useRef<number>(0);
+  const trajectoryRef = useRef<Point[]>([]);
+  const trajectoryEventsRef = useRef<TrajectoryEvent[]>([]);
 
   // 电竞对局录像回放状态机
   const [isReplay, setIsReplay] = useState(false);
@@ -175,7 +187,15 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }, 1200);
     if (!isReplayRef.current) {
       const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
-      onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current, maxComboRef.current);
+      onGameOver?.(
+        stateRef.current.score,
+        dur,
+        inputsRef.current,
+        tickCountRef.current,
+        maxComboRef.current,
+        trajectoryRef.current,
+        trajectoryEventsRef.current
+      );
     }
   }, [onGameOver, clearBonus, vibrate]);
 
@@ -203,6 +223,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setComboCount(0);
       setMaxCombo(0);
       setLastEatTimestamp(0);
+      trajectoryRef.current = [{ x: 10, y: 12 }];
+      trajectoryEventsRef.current = [];
 
       snakeRef.current = [
         { x: 10, y: 12 },
@@ -278,6 +300,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setComboCount(0);
       setMaxCombo(0);
       setLastEatTimestamp(0);
+      trajectoryRef.current = [{ x: 10, y: 12 }];
+      trajectoryEventsRef.current = [];
 
       snakeRef.current = [
         { x: 10, y: 12 },
@@ -424,9 +448,10 @@ export function useSnake(onGameOver?: GameOverCallback) {
       if (!isOpp(dirRef.current, nextDir)) dirRef.current = nextDir;
     }
 
-    // 2. 计算新蛇头坐标
+    // 2. 计算新蛇头坐标并记录走位轨迹
     const delta = DIR_DELTAS[dirRef.current];
     const head = { x: snakeRef.current[0].x + delta.x, y: snakeRef.current[0].y + delta.y };
+    trajectoryRef.current.push(head);
 
     // 3. 边界碰撞
     if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
@@ -446,6 +471,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
     if (isEatingApple) {
       const nextSnake = [head, ...snakeRef.current];
       const { currentCombo } = applyComboEat(10);
+      trajectoryEventsRef.current.push({
+        x: head.x,
+        y: head.y,
+        type: 'APPLE',
+        combo: currentCombo,
+      });
       setLength(nextSnake.length);
       sound.playEat();
       sound.playCombo(currentCombo);
@@ -471,6 +502,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
     // 7. 吃到金色幸运果 (+30 分并纳入连击链，第3次起阶梯加分，保留栅栏)
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
       const { currentCombo } = applyComboEat(30);
+      trajectoryEventsRef.current.push({
+        x: head.x,
+        y: head.y,
+        type: 'BONUS',
+        combo: currentCombo,
+      });
       bonusCountRef.current += 1;
       setBonusCount(bonusCountRef.current);
       sound.playBonus();
@@ -563,6 +600,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     replayUser,
     replaySpeedRate,
     setReplaySpeedRate,
+    trajectoryRef,
+    trajectoryEventsRef,
     startGame,
     startReplay,
     exitReplay,

@@ -1,12 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Direction, Point } from '@/types';
-import { CELL, GRID, BASE_SPEED_MS } from '@/hooks/useSnake';
+import { CELL, GRID, BASE_SPEED_MS, TrajectoryEvent } from '@/hooks/useSnake';
 import { sound } from '@/utils/audio';
 import { haptics } from '@/utils/haptics';
+import TrajectoryCardModal from './TrajectoryCardModal';
 import {
   Play,
   Pause,
   RotateCcw,
+  Sparkles,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -28,21 +30,23 @@ function SettleTierCrest({ score }: { score: number }) {
       : null;
 
   const badgeConfig =
-    score >= 800
-      ? { text: '钻石·超凡殿堂', color: 'text-[#0099FF] bg-[#EBF8FF]' }
-      : score >= 500
-      ? { text: '黄金·登峰造极', color: 'text-[#D97706] bg-[#FEF3C7]' }
-      : score >= 300
-      ? { text: '白银·技巧渐熟', color: 'text-[#64748B] bg-[#F1F5F9]' }
-      : score >= 100
-      ? { text: '青铜·方寸探索', color: 'text-[#10B981] bg-[#ECFDF5]' }
-      : { text: '初出茅庐', color: 'text-slate-400 bg-slate-100' };
+    tier === 'DIAMOND'
+      ? { label: '钻石', color: '#8B5CF6' }
+      : tier === 'GOLD'
+      ? { label: '黄金', color: '#F59E0B' }
+      : tier === 'SILVER'
+      ? { label: '白银', color: '#64748B' }
+      : tier === 'BRONZE'
+      ? { label: '青铜', color: '#D97706' }
+      : null;
+
+  if (!tier || !badgeConfig) return null;
 
   return (
-    <div className="flex flex-col items-center gap-1 animate-in zoom-in-95 duration-300">
-      <NCUCrestBadge tier={tier || 'BRONZE'} unlocked={!!tier} size={tier ? 52 : 46} />
-      <span className={`text-[10.5px] font-bold px-2.5 py-0.5 rounded-full ${badgeConfig.color}`}>
-        {badgeConfig.text}
+    <div className="flex flex-col items-center gap-1.5 animate-in zoom-in-90 duration-300">
+      <NCUCrestBadge tier={tier} size={48} className="drop-shadow-sm" />
+      <span className="text-[11px] font-bold" style={{ color: badgeConfig.color }}>
+        {badgeConfig.label}段位
       </span>
     </div>
   );
@@ -61,7 +65,10 @@ interface Props {
   length: number;
   speedMs: number;
   comboCount?: number;
+  maxCombo?: number;
   lastEatTimestamp?: number;
+  trajectoryRef?: React.MutableRefObject<Point[]>;
+  trajectoryEventsRef?: React.MutableRefObject<TrajectoryEvent[]>;
   isPlaying: boolean;
   isGameOver: boolean;
   isPaused: boolean;
@@ -143,11 +150,14 @@ interface SwipeTrailPoint {
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
   queueRef,
-  score, duration, length, speedMs, comboCount = 0, lastEatTimestamp = 0, isPlaying, isGameOver, isPaused,
+  score, duration, length, speedMs, comboCount = 0, maxCombo = 0, lastEatTimestamp = 0,
+  trajectoryRef, trajectoryEventsRef,
+  isPlaying, isGameOver, isPaused,
   isWaitingStart = false,
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
+  const [showArtModal, setShowArtModal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const touchRipplesRef = useRef<TouchRipple[]>([]);
@@ -165,6 +175,7 @@ export default function Board({
   const offscreenBgRef = useRef<HTMLCanvasElement | null>(null);
   const bonusSpawnTimeRef = useRef<number>(0);
   const foodSpawnTimeRef = useRef<number>(0);
+  const fenceSpawnTimeRef = useRef<Map<string, number>>(new Map());
 
   // 监听开局与吃果得分，触发红果果冻微弹跳与得分胶囊微弹性脉冲
   const [scorePulse, setScorePulse] = useState(false);
@@ -367,6 +378,7 @@ export default function Board({
           const [fx, fy] = k.split(',').map(Number);
           spawnCrumbleParticles(fx, fy);
         });
+        fenceSpawnTimeRef.current.clear();
 
         shockwavesRef.current.push({
           x: head.x * CELL + CELL / 2,
@@ -432,10 +444,23 @@ export default function Board({
       ctx.fillRect(0, 0, cvs.width, cvs.height);
     }
 
-    // 2. 绘制残留栅栏 (浅灰极简方块 + 现代微定位暗标)
-    ctx.fillStyle = '#E2E8F0';
+    // 2. 绘制残留栅栏 (余温石化渐变微动效 + 现代微定位暗标)
+    const currentNow = Date.now();
     fenceRef.current.forEach((k) => {
+      if (!fenceSpawnTimeRef.current.has(k)) {
+        fenceSpawnTimeRef.current.set(k, currentNow);
+      }
+      const spawnT = fenceSpawnTimeRef.current.get(k) || currentNow;
+      const age = currentNow - spawnT;
+
+      // 刚蜕下的 180ms 内，由蛇身浅天青 #BAE6FD 柔和冷却石化至浅灰 #E2E8F0
+      let blockColor = '#E2E8F0';
+      if (age < 180) {
+        blockColor = age < 90 ? '#BAE6FD' : '#CBD5E1';
+      }
+
       const [x, y] = k.split(',').map(Number);
+      ctx.fillStyle = blockColor;
       ctx.beginPath();
       drawRoundRect(ctx, x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2, 3);
       ctx.fill();
@@ -697,19 +722,77 @@ export default function Board({
         else if (nextQueued === 'RIGHT') { px = 1.2; py = 0; }
       }
 
-      // 眼白
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.2, 0, Math.PI * 2);
-      ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.2, 0, Math.PI * 2);
-      ctx.fill();
+      // 蛇头情绪微表情状态机 (落幕闭目 / 吃果笑弯 / 濒死惊慌 / 灵动明眸)
+      const isDeadState = isGameOver;
+      const isSatisfied = !isDeadState && nowTime - (lastEatTimestamp || 0) < 220;
 
-      // 瞳孔
-      ctx.fillStyle = '#0F172A';
-      ctx.beginPath();
-      ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.2, 0, Math.PI * 2);
-      ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.2, 0, Math.PI * 2);
-      ctx.fill();
+      // 探测正前方 1 格死角危险状态 (Panic Glance)
+      let isPanic = false;
+      if (!isDeadState && !isSatisfied && snake.length > 1) {
+        const next = snake[1];
+        const hdx = head.x - next.x;
+        const hdy = head.y - next.y;
+        const frontX = head.x + hdx;
+        const frontY = head.y + hdy;
+        const isBlocked =
+          frontX < 0 || frontX >= GRID || frontY < 0 || frontY >= GRID ||
+          fenceRef.current.has(`${frontX},${frontY}`) ||
+          snake.some((s) => s.x === frontX && s.y === frontY);
+        if (isBlocked) isPanic = true;
+      }
+
+      if (isDeadState) {
+        // 1. 游戏落幕：闭目微线
+        ctx.strokeStyle = '#94A3B8';
+        ctx.lineWidth = 1.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(head.x * CELL + e1x - 2, head.y * CELL + e1y);
+        ctx.lineTo(head.x * CELL + e1x + 2, head.y * CELL + e1y);
+        ctx.moveTo(head.x * CELL + e2x - 2, head.y * CELL + e2y);
+        ctx.lineTo(head.x * CELL + e2x + 2, head.y * CELL + e2y);
+        ctx.stroke();
+      } else if (isSatisfied) {
+        // 2. 吃果满足：灵动笑弯月牙弧线
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = 1.3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y + 1, 2.2, Math.PI, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y + 1, 2.2, Math.PI, 0);
+        ctx.stroke();
+      } else if (isPanic) {
+        // 3. 濒死惊慌：眼白瞪大至 2.6px，瞳孔急剧微缩至 0.75px 并施加高频微颤抖
+        const jitterX = Math.sin(nowTime * 0.04) * 0.6;
+        const jitterY = Math.cos(nowTime * 0.04) * 0.6;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.6, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e1x + px + jitterX, head.y * CELL + e1y + py + jitterY, 0.75, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e2x + px + jitterX, head.y * CELL + e2y + py + jitterY, 0.75, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // 4. 常态：机敏明眸与视线追踪预瞄
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.2, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.2, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     // 8. 更新并绘制粒子微特效
@@ -1011,7 +1094,7 @@ export default function Board({
             }`}
           >
             <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
-            <strong className={`${st.valColor} text-sm font-mono font-black`}>{st.val}</strong>
+            <strong className={`${st.valColor} text-sm font-mono font-black tabular-nums tracking-tight`}>{st.val}</strong>
             {st.isBonus && (
               <span className="absolute top-0.5 right-1 text-[#D97706] font-mono font-extrabold text-[9px] animate-pulse">
                 +30
@@ -1097,54 +1180,85 @@ export default function Board({
               <SettleTierCrest score={score} />
             </div>
 
-            <div className="text-2xl sm:text-3xl font-black text-[#0F172A] font-mono tracking-tight mb-3">
+            <div className="text-2xl sm:text-3xl font-black text-[#0F172A] font-mono tracking-tight mb-1.5">
               {score} <span className="text-xs font-normal text-slate-400">分</span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-slate-600 mb-5 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
+            {/* 诗意短评 (融入南大情怀与对局特征) */}
+            <p className="text-[11px] text-slate-400 font-medium mb-3 max-w-xs leading-relaxed">
+              “{(() => {
+                const hour = new Date().getHours();
+                if (hour >= 23 || hour < 5) return '夜深了，南昌的风微凉，注意休息。';
+                if (score >= 500) return '方寸棋盘之间，走出了一片从容开阔天地。';
+                if (maxCombo >= 4) return '行云流水，节拍如诗，连击节奏令人赞叹。';
+                if (length >= 25) return '游弋如龙，穿行在自己织就的开阔回廊中。';
+                if (duration >= 80) return '心平气和，百转千回，沉着笃定。';
+                if (score < 100) return '步子迈得有些急，南昌的微风还在等你。';
+                return '每一次急转，皆是对广阔空间的精妙度量。';
+              })()}”
+            </p>
+
+            <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
               <div className="flex flex-col items-center">
                 <span className="text-[10px] text-slate-400">蛇身长度</span>
-                <strong className="text-[#0099FF] font-mono font-bold text-sm">{length}</strong>
+                <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length}</strong>
               </div>
               <span className="w-px h-6 bg-slate-200" />
               <div className="flex flex-col items-center">
                 <span className="text-[10px] text-slate-400">存活用时</span>
-                <strong className="text-[#8B5CF6] font-mono font-bold text-sm">{duration}s</strong>
+                <strong className="text-[#8B5CF6] font-mono font-bold text-sm tabular-nums">{duration}s</strong>
               </div>
               <span className="w-px h-6 bg-slate-200" />
               <div className="flex flex-col items-center">
                 <span className="text-[10px] text-slate-400">最终移速</span>
-                <strong className="text-[#10B981] font-mono font-bold text-sm">
+                <strong className="text-[#10B981] font-mono font-bold text-sm tabular-nums">
                   {Math.round((BASE_SPEED_MS / speedMs) * 10) / 10}x
                 </strong>
               </div>
             </div>
 
             {isReplay ? (
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowArtModal(true)}
+                  className="px-3.5 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all border border-slate-200/60"
+                  title="生成走位艺术卡片"
+                >
+                  <Sparkles size={13} className="text-[#0099FF]" />
+                  <span>走位卡片</span>
+                </button>
                 <button
                   onClick={onRestartReplay || onStart}
-                  className="px-5 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="px-4 py-2 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
-                  <RotateCcw size={14} />
-                  <span>重新观摩</span>
+                  <RotateCcw size={13} />
+                  <span>重播</span>
                 </button>
                 <button
                   onClick={onExitReplay}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs"
                 >
-                  <span>退出观摩</span>
+                  <span>退出</span>
                 </button>
               </div>
             ) : (
-              <button
-                onClick={onStart}
-                className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <RotateCcw size={15} />
-                <span>再来一局</span>
-                <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
-              </button>
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => setShowArtModal(true)}
+                  className="px-4 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                >
+                  <Sparkles size={14} className="text-[#0099FF]" />
+                  <span>走位艺术卡片</span>
+                </button>
+                <button
+                  onClick={onStart}
+                  className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <RotateCcw size={14} />
+                  <span>再来一局</span>
+                  <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -1275,6 +1389,19 @@ export default function Board({
           </div>
         )}
       </div>
+
+      {/* 走位几何抽象艺术卡片海报模态弹窗 */}
+      <TrajectoryCardModal
+        isOpen={showArtModal}
+        onClose={() => setShowArtModal(false)}
+        trajectory={trajectoryRef?.current || []}
+        events={trajectoryEventsRef?.current || []}
+        score={score}
+        duration={duration}
+        maxCombo={maxCombo}
+        steps={trajectoryRef?.current?.length || 0}
+        username={replayUser || '南大家园极客'}
+      />
     </div>
   );
 }

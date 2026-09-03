@@ -179,6 +179,8 @@ export default function Home() {
     replayUser,
     replaySpeedRate,
     setReplaySpeedRate,
+    trajectoryRef,
+    trajectoryEventsRef,
     startGame,
     startReplay,
     exitReplay,
@@ -404,7 +406,10 @@ export default function Home() {
                 length={length}
                 speedMs={speedMs}
                 comboCount={comboCount}
+                maxCombo={maxCombo}
                 lastEatTimestamp={lastEatTimestamp}
+                trajectoryRef={trajectoryRef}
+                trajectoryEventsRef={trajectoryEventsRef}
                 isPlaying={isPlaying}
                 isGameOver={isGameOver}
                 isPaused={isPaused}

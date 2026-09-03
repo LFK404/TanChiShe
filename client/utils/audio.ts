@@ -5,6 +5,7 @@ type BgmMode = 'MENU' | 'INGAME' | 'NONE';
 
 class SoundManager {
   private ctx: AudioContext | null = null;
+  private masterFilter: BiquadFilterNode | null = null;
   private menuBgmAudio: HTMLAudioElement | null = null;
   private inGameBgmAudio: HTMLAudioElement | null = null;
   private currentMode: BgmMode = 'NONE';
@@ -67,7 +68,17 @@ class SoundManager {
       const AudioCtx =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) this.ctx = new AudioCtx();
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+        // 创建温润低通滤波总线 (削去 2600Hz 以上刺耳方波毛刺，赋予木质与水滴温润听感)
+        try {
+          this.masterFilter = this.ctx.createBiquadFilter();
+          this.masterFilter.type = 'lowpass';
+          this.masterFilter.frequency.value = 2600;
+          this.masterFilter.Q.value = 1.0;
+          this.masterFilter.connect(this.ctx.destination);
+        } catch {}
+      }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
@@ -210,14 +221,29 @@ class SoundManager {
 
   pauseBgm() {
     this.stopHeartbeat();
-    if (this.inGameBgmAudio && !this.inGameBgmAudio.paused) this.inGameBgmAudio.pause();
+    // 沉水透传声学微雕：暂停时将滤波截止频率瞬间压低至 360Hz (如隔磨砂玻璃在室外低吟)
+    if (this.ctx && this.masterFilter) {
+      try {
+        this.masterFilter.frequency.setTargetAtTime(360, this.ctx.currentTime, 0.08);
+      } catch {}
+    }
+    if (this.inGameBgmAudio && !this.inGameBgmAudio.paused) {
+      this.inGameBgmAudio.volume = 0.08 * this.bgmVolume;
+    }
     if (this.menuBgmAudio && !this.menuBgmAudio.paused) this.menuBgmAudio.pause();
   }
 
   resumeBgm() {
     if (this.muted) return;
+    // 恢复游戏：低通滤波平滑浮回 2600Hz 清澈暖调
+    if (this.ctx && this.masterFilter) {
+      try {
+        this.masterFilter.frequency.setTargetAtTime(2600, this.ctx.currentTime, 0.1);
+      } catch {}
+    }
     if (this.currentMode === 'INGAME' && this.inGameBgmAudio) {
-      this.inGameBgmAudio.play().catch(() => {});
+      this.inGameBgmAudio.volume = 0.28 * this.bgmVolume;
+      if (this.inGameBgmAudio.paused) this.inGameBgmAudio.play().catch(() => {});
     } else if (this.currentMode === 'MENU' && this.menuBgmAudio) {
       this.menuBgmAudio.play().catch(() => {});
     }
@@ -325,7 +351,7 @@ class SoundManager {
         gain.gain.setValueAtTime(effectiveVol, start);
         gain.gain.linearRampToValueAtTime(0.001, start + noteDur);
         osc.connect(gain);
-        gain.connect(this.ctx!.destination);
+        gain.connect(this.masterFilter || this.ctx!.destination);
         osc.start(start);
         osc.stop(start + noteDur);
       });
