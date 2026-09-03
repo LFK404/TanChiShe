@@ -7,8 +7,23 @@ import { Mulberry32 } from '@/utils/prng';
 // 游戏物理网格常量 (24x24 格子，单格 20px)
 export const GRID = 24;
 export const CELL = 20;
-export const BASE_SPEED_MS = 122; // 基础速度 (~8.2 格/秒)
-export const MIN_SPEED_MS = 61; // 极速上限 (2.0x 速度，~16.4 格/秒)
+export const BASE_SPEED_MS = 140; // 基础速度 (约 7.1 格/秒，温和从容)
+export const MIN_SPEED_MS = 70;   // 极速上限 (2.0x 速度，约 14.3 格/秒)
+
+// 0.1x 平滑非线性阶梯算速函数 (Lv.0 专享 70 分平缓漫步区，Lv.6 起增量递增 +20，1160分巅峰封顶)
+export function calcSpeedMs(score: number): number {
+  if (score >= 1160) return 70; // 2.0x (极限封顶)
+  if (score >= 970)  return 74; // 1.9x
+  if (score >= 800)  return 78; // 1.8x
+  if (score >= 650)  return 82; // 1.7x (残影/心跳开启)
+  if (score >= 520)  return 87; // 1.6x
+  if (score >= 410)  return 93; // 1.5x
+  if (score >= 310)  return 100; // 1.4x
+  if (score >= 220)  return 108; // 1.3x
+  if (score >= 140)  return 117; // 1.2x
+  if (score >= 70)   return 127; // 1.1x
+  return BASE_SPEED_MS;         // 1.0x (0~69分 140ms)
+}
 
 const toKey = (x: number, y: number) => `${x},${y}`;
 
@@ -482,10 +497,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       sound.playCombo(currentCombo);
       vibrate('eat', currentCombo);
       fenceRef.current.clear();
-      const nextSpeed = Math.max(
-        MIN_SPEED_MS,
-        BASE_SPEED_MS - Math.floor(stateRef.current.score / 40) * 4
-      );
+      const nextSpeed = calcSpeedMs(stateRef.current.score);
       setSpeedMs(nextSpeed);
       sound.updateGameSpeed(nextSpeed);
       snakeRef.current = nextSnake;

@@ -179,6 +179,8 @@ export default function Board({
 
   // 监听开局与吃果得分，触发红果果冻微弹跳与得分胶囊微弹性脉冲
   const [scorePulse, setScorePulse] = useState(false);
+  const [speedPulse, setSpeedPulse] = useState(false);
+  const prevSpeedMsRef = useRef(speedMs);
   useEffect(() => {
     foodSpawnTimeRef.current = Date.now();
     if (score > 0) {
@@ -290,6 +292,23 @@ export default function Board({
       maxLife: 38,
     });
   };
+
+  // 监听移速提升：蛇头弹出轻灵浮字 ⚡ X.Xx、顶部速度胶囊高光微弹跳与指尖触感
+  useEffect(() => {
+    if (speedMs < prevSpeedMsRef.current && isPlaying && !isPaused && !isGameOver) {
+      setSpeedPulse(true);
+      const timer = setTimeout(() => setSpeedPulse(false), 240);
+      const head = snakeRef.current[0];
+      if (head) {
+        const rate = (BASE_SPEED_MS / speedMs).toFixed(1);
+        spawnFloatingText(head.x, head.y, `⚡ ${rate}x`, '#0099FF');
+      }
+      haptics.trigger('snap');
+      prevSpeedMsRef.current = speedMs;
+      return () => clearTimeout(timer);
+    }
+    prevSpeedMsRef.current = speedMs;
+  }, [speedMs, isPlaying, isPaused, isGameOver, snakeRef]);
 
   // 吃到红苹果清空栅栏时爆发浅灰粉尘消散粒子 (强化瓦解打击感)
   const spawnCrumbleParticles = (gridX: number, gridY: number) => {
@@ -620,9 +639,9 @@ export default function Board({
       }
     }
 
-    // 6. 极速狂飙运动残影 (speedMs <= 75 时)
+    // 6. 极速狂飙运动残影 (speedMs <= 82，即 1.7x 破风档以上开启)
     const head = snake[0];
-    if (speedMs <= 75 && isPlaying && !isPaused && !isGameOver && head) {
+    if (speedMs <= 82 && isPlaying && !isPaused && !isGameOver && head) {
       const lastTrail = motionTrailsRef.current[0];
       if (!lastTrail || lastTrail.x !== head.x || lastTrail.y !== head.y) {
         motionTrailsRef.current.unshift({ x: head.x, y: head.y, alpha: 0.35 });
@@ -1089,8 +1108,10 @@ export default function Board({
         {statCapsules.map((st) => (
           <div
             key={st.label}
-            className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden transition-transform duration-150 ${
+            className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden transition-all duration-150 ${
               st.label === '得分' && scorePulse ? 'scale-105' : 'scale-100'
+            } ${
+              st.label === '速度' && speedPulse ? 'scale-105 ring-2 ring-[#0099FF]/40 shadow-xs' : ''
             }`}
           >
             <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>

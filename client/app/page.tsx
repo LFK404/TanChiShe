@@ -261,9 +261,11 @@ export default function Home() {
     if (bonusCount >= 5) checkMilestone('bonus_5', () => addToast('连收 5 颗金果 (金果饕餮)!', 'GOLD'));
     if (bonusCount >= 8) checkMilestone('bonus_8', () => addToast('连收 8 颗金果 (金玉满堂)!', 'DIAMOND'));
 
-    // 5. 极速高光弹窗
-    if (speedMs <= 85 && score >= 250) checkMilestone('spd_15', () => addToast('速度突破 1.5x (极速掌控)!', 'SILVER'));
-    if (speedMs <= 65 && score >= 600) checkMilestone('spd_20', () => addToast('达到极限速度 2.0x (极限狂飙)!', 'GOLD'));
+    // 5. 极速高光弹窗 (覆盖 1.3x、1.5x、1.7x、2.0x 关键进阶里程碑)
+    if (speedMs <= 108 && score >= 220) checkMilestone('spd_13', () => addToast('节奏加快 · 速度进入 1.3x 档位!', 'BRONZE'));
+    if (speedMs <= 93 && score >= 410) checkMilestone('spd_15', () => addToast('速度突破 1.5x (黄金微操)!', 'SILVER'));
+    if (speedMs <= 82 && score >= 650) checkMilestone('spd_17', () => addToast('速度突破 1.7x (破风残影)!', 'GOLD'));
+    if (speedMs <= 70 && score >= 1160) checkMilestone('spd_20', () => addToast('突破千分 · 达到极限速度 2.0x (极限狂飙)!', 'DIAMOND'));
 
     // 6. 检查 24 枚成就系统是否点亮 (按用户名严格命名空间隔离)
     const newlyUnlocked = checkAndUnlockAchievements({

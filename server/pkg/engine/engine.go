@@ -8,9 +8,38 @@ import (
 // 网格与物理参数常量
 const (
 	GRID          = 24
-	BASE_SPEED_MS = 122
-	MIN_SPEED_MS  = 61
+	BASE_SPEED_MS = 140
+	MIN_SPEED_MS  = 70
 )
+
+// CalcSpeedMs 计算当前得分对应的单步时间周期 (毫秒)
+// 0.1x 平滑非线性阶梯算速函数 (Lv.0 专享 70 分平缓漫步区，Lv.6 起增量递增 +20，1160分巅峰封顶)
+func CalcSpeedMs(score int) int {
+	switch {
+	case score >= 1160:
+		return 70 // 2.0x (极限封顶)
+	case score >= 970:
+		return 74 // 1.9x
+	case score >= 800:
+		return 78 // 1.8x
+	case score >= 650:
+		return 82 // 1.7x (残影/心跳开启)
+	case score >= 520:
+		return 87 // 1.6x
+	case score >= 410:
+		return 93 // 1.5x
+	case score >= 310:
+		return 100 // 1.4x
+	case score >= 220:
+		return 108 // 1.3x
+	case score >= 140:
+		return 117 // 1.2x
+	case score >= 70:
+		return 127 // 1.1x
+	default:
+		return BASE_SPEED_MS // 1.0x (0~69分 140ms)
+	}
+}
 
 // Mulberry32 32位确定性伪随机数发生器 (与前端 TypeScript 100% 字节对齐)
 type Mulberry32 struct {
@@ -215,7 +244,7 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			score += 10 + extraComboScore
 
 			fence = make(map[string]bool)
-			speedMs = max(MIN_SPEED_MS, BASE_SPEED_MS-(score/40)*4)
+			speedMs = CalcSpeedMs(score)
 			food, bonusPoint = spawnFoodInReplay(rng, snake, fence, bonusPoint)
 			if bonusPoint != nil && bonusExpireTick == 0 {
 				bonusExpireTick = tick + int(8000/speedMs)

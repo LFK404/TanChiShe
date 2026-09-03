@@ -135,14 +135,15 @@ class SoundManager {
   // 根据当前移速动态加速 BGM 并联动低频心跳脉冲
   updateGameSpeed(speedMs: number) {
     if (!this.inGameBgmAudio) return;
-    if (speedMs > 95) {
+    if (speedMs > 108) {
       this.inGameBgmAudio.playbackRate = 1.0;
       this.stopHeartbeat();
-    } else if (speedMs > 75) {
+    } else if (speedMs > 82) {
+      // 1.3x ~ 1.6x 紧凑节奏微加速
       this.inGameBgmAudio.playbackRate = 1.06;
       this.stopHeartbeat();
     } else {
-      // <= 75ms 满速狂飙
+      // <= 82ms (1.7x+) 破风狂飙并激活 55Hz 心跳脉冲
       this.inGameBgmAudio.playbackRate = 1.12;
       this.startHeartbeat();
     }
