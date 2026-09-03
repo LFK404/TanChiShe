@@ -75,6 +75,7 @@ interface Props {
   isWaitingStart?: boolean;
   resumeCountdown?: number | null;
   deathReason?: string;
+  highScore?: number;
   isReplay?: boolean;
   replayUser?: string;
   replaySpeedRate?: number;
@@ -142,6 +143,7 @@ export default function Board({
   isWaitingStart = false,
   resumeCountdown = null,
   deathReason = '',
+  highScore = 0,
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
@@ -161,6 +163,18 @@ export default function Board({
   const bonusSpawnTimeRef = useRef<number>(0);
   const foodSpawnTimeRef = useRef<number>(0);
   const fenceSpawnTimeRef = useRef<Map<string, number>>(new Map());
+
+  // 监听首次超越个人历史最佳纪录 (PB Broken Moment)
+  const hasBrokenRecordRef = useRef(false);
+  useEffect(() => {
+    if (!isPlaying) {
+      hasBrokenRecordRef.current = false;
+    } else if (highScore > 0 && score > highScore && !hasBrokenRecordRef.current && !isReplay) {
+      hasBrokenRecordRef.current = true;
+      sound.playAchievement();
+      haptics.trigger('bonus');
+    }
+  }, [score, highScore, isPlaying, isReplay]);
 
   // 监听开局与吃果得分，触发红果果冻微弹跳与得分胶囊微弹性脉冲
   const [scorePulse, setScorePulse] = useState(false);
@@ -1000,6 +1014,24 @@ export default function Board({
           >
             <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
             <strong className={`${st.valColor} text-sm font-mono font-black tabular-nums tracking-tight`}>{st.val}</strong>
+            {st.label === '得分' && highScore > 0 && isPlaying && !isGameOver && !isReplay && (
+              <span
+                className={`ml-1 text-[9.5px] font-mono font-bold tabular-nums transition-colors duration-200 ${
+                  score > highScore
+                    ? 'text-[#0099FF] animate-pulse'
+                    : highScore - score <= 50
+                    ? 'text-[#D97706]'
+                    : 'text-slate-400/80'
+                }`}
+                title={
+                  score > highScore
+                    ? `已超越历史最佳 (+${score - highScore}分)`
+                    : `距个人最佳还差 ${highScore - score} 分`
+                }
+              >
+                {score > highScore ? `+${score - highScore}` : `-${highScore - score}`}
+              </span>
+            )}
             {st.isBonus && (
               <span className="absolute top-0.5 right-1 text-[#D97706] font-mono font-extrabold text-[9px] animate-pulse">
                 +30

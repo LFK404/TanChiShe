@@ -426,6 +426,7 @@ export default function Home() {
                 isWaitingStart={isWaitingStart}
                 resumeCountdown={resumeCountdown}
                 deathReason={deathReason}
+                highScore={user?.highScore || 0}
                 isReplay={isReplay}
                 replayUser={replayUser}
                 replaySpeedRate={replaySpeedRate}
