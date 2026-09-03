@@ -25,7 +25,7 @@ export interface Achievement {
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
-  // 🌱 青铜·方寸探索 (6枚: B-01 ~ B-06)
+  // [BRONZE] 青铜·方寸探索 (6枚: B-01 ~ B-06)
   {
     id: 'score_100',
     code: 'B-01',
@@ -87,7 +87,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.maxCombo >= 3,
   },
 
-  // 🌊 白银·技巧渐熟 (6枚: S-01 ~ S-06)
+  // [SILVER] 白银·技巧渐熟 (6枚: S-01 ~ S-06)
   {
     id: 'score_400',
     code: 'S-01',
@@ -149,7 +149,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.maxCombo >= 5,
   },
 
-  // ⭐ 黄金·登峰造极 (6枚: G-01 ~ G-06)
+  // [GOLD] 黄金·登峰造极 (6枚: G-01 ~ G-06)
   {
     id: 'score_600',
     code: 'G-01',
@@ -161,63 +161,63 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.score >= 600,
   },
   {
-    id: 'length_40',
+    id: 'length_30',
     code: 'G-02',
     name: '游龙入海',
-    description: '蛇身长度突破 40 节',
-    flavor: '龙行天下，全场皆是身躯',
+    description: '蛇身长度达到 30 节',
+    flavor: '身若游龙，穿梭自如',
     tier: 'GOLD',
-    color: '#F59E0B',
-    check: (s) => s.length >= 40,
+    color: '#10B981',
+    check: (s) => s.length >= 30,
+  },
+  {
+    id: 'survive_90s',
+    code: 'G-03',
+    name: '持久王者',
+    description: '单局存活时长达到 90 秒',
+    flavor: '定力如山，沉着冷静',
+    tier: 'GOLD',
+    color: '#8B5CF6',
+    check: (s) => s.duration >= 90,
   },
   {
     id: 'bonus_5',
-    code: 'G-03',
-    name: '财源滚滚',
-    description: '单局吃掉 5 颗金色幸运果',
-    flavor: '金色风暴，所向披靡',
+    code: 'G-04',
+    name: '探囊取物',
+    description: '单局捕获 5 颗双倍金果',
+    flavor: '目光如炬，金果尽入囊中',
     tier: 'GOLD',
     color: '#F59E0B',
     check: (s) => s.bonusCount >= 5,
   },
   {
-    id: 'speed_tier_2',
-    code: 'G-04',
-    name: '音速领航',
-    description: '速度达到 1.7x 极速档位 (82ms以内)',
-    flavor: '残影纷飞，超凡反应',
-    tier: 'GOLD',
-    color: '#F59E0B',
-    check: (s) => s.speedMs <= 82,
-  },
-  {
-    id: 'time_180',
+    id: 'combo_7',
     code: 'G-05',
-    name: '坚韧不拔',
-    description: '单局坚持存活超过 180 秒 (3分钟)',
-    flavor: '时间流逝，唯你独尊',
+    name: '连击宗师',
+    description: '达成 7 次连击 Combo',
+    flavor: '七星连珠，行云流水',
     tier: 'GOLD',
-    color: '#F59E0B',
-    check: (s) => s.duration >= 180,
+    color: '#EF4444',
+    check: (s) => s.maxCombo >= 7,
   },
   {
-    id: 'top_10',
+    id: 'rank_top10',
     code: 'G-06',
     name: '名扬四海',
-    description: '晋级全服风云榜 Top 10 名人堂',
-    flavor: '名字铭刻于全校风云榜之上',
+    description: '成功荣登全服风云榜 Top 10',
+    flavor: '榜上有名，实力毋庸置疑',
     tier: 'GOLD',
     color: '#F59E0B',
     check: (s) => s.rank !== undefined && s.rank > 0 && s.rank <= 10,
   },
 
-  // 💎 钻石·超凡殿堂 (6枚: D-01 ~ D-06)
+  // [DIAMOND] 钻石·超凡殿堂 (6枚: D-01 ~ D-06)
   {
     id: 'score_1000',
     code: 'D-01',
     name: '千分传奇',
     description: '单局得分突破 1000 分大关',
-    flavor: '载入校史的千分传奇神话',
+    flavor: '载入史册的千分传奇神话',
     tier: 'DIAMOND',
     color: '#0099FF',
     check: (s) => s.score >= 1000,

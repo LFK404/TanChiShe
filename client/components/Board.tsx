@@ -1237,21 +1237,21 @@ export default function Board({
               {score} <span className="text-xs font-normal text-slate-400">分</span>
             </div>
 
-            {/* 真实死因复盘与玩家战况点评 (告别假大空鸡汤) */}
+            {/* 真实死因复盘与玩家战况点评 (纯净极简现代主义) */}
             <div className="flex flex-col items-center gap-1 mb-3">
               {deathReason && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 text-slate-600 text-xs font-semibold shadow-2xs border border-slate-200/60">
-                  <span>💀</span>
-                  <span>死因: {deathReason}</span>
+                  <span className="font-mono text-[10px] text-slate-400 font-bold">[死因]</span>
+                  <span>{deathReason}</span>
                 </div>
               )}
               <span className="text-xs text-slate-400 font-medium">
                 {(() => {
-                  if (score >= 1000) return '⚡ 登峰造极 · 破千荣耀时刻';
-                  if (score >= 600) return '🔥 极速破风 · 走位游刃有余';
-                  if (maxCombo >= 5) return '✨ 连击大师 · 节拍掌控入微';
-                  if (score < 100) return '💥 猝不及防 · 手速快过了大脑';
-                  return '🎯 战局定格 · 距离新纪录仅一步之遥';
+                  if (score >= 1000) return '[TOP] 登峰造极 · 破千荣耀时刻';
+                  if (score >= 600) return '[FAST] 极速破风 · 走位游刃有余';
+                  if (maxCombo >= 5) return '[COMBO] 连击大师 · 节拍掌控入微';
+                  if (score < 100) return '[FATAL] 猝不及防 · 反应未及走位';
+                  return '[END] 战局定格 · 距新纪录一步之遥';
                 })()}
               </span>
             </div>
@@ -1395,9 +1395,9 @@ export default function Board({
               <button
                 onClick={toggleDpadLayout}
                 title="切换经典十字盘或电脑倒T型布局"
-                className="px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-[#F1F5F9] hover:bg-[#E2E8F0] text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1"
+                className="px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-[#F1F5F9] hover:bg-[#E2E8F0] text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1 font-mono"
               >
-                <span>{dpadLayout === 'cross' ? '🎮 紧凑十字' : '⌨️ 电脑倒T'}</span>
+                <span>{dpadLayout === 'cross' ? '十字键' : '倒T键'}</span>
               </button>
             </div>
 
@@ -1528,7 +1528,7 @@ export default function Board({
         duration={duration}
         maxCombo={maxCombo}
         steps={artData?.steps || 0}
-        username={replayUser || '南大家园极客'}
+        username={replayUser || '极客玩家'}
       />
     </div>
   );

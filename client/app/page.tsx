@@ -292,7 +292,7 @@ export default function Home() {
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
-      addToast(`🏆 解锁成就: [${ach.name}]`, ach.tier);
+      addToast(`解锁成就: [${ach.name}]`, ach.tier);
     });
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, user?.username, addToast]);
 

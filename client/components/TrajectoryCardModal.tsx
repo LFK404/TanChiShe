@@ -69,7 +69,7 @@ export default function TrajectoryCardModal({
   duration,
   maxCombo,
   steps,
-  username = '南大家园极客',
+  username = '极客玩家',
   seed = 0,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -284,7 +284,7 @@ export default function TrajectoryCardModal({
     ctx.font = '11px monospace';
     ctx.fillText(`DATE: ${formatDate()} // DETERMINISTIC RUNTIME`, 65, footerY + 22);
 
-    // 绘制南大家园朱红印章 (28% 超椭圆微拟态篆印)
+    // 绘制 NCU HOME 朱红印章 (28% 超椭圆微拟态篆印)
     const sealX = 730;
     const sealY = 1035;
     const sealW = 105;
@@ -303,9 +303,9 @@ export default function TrajectoryCardModal({
     ctx.fillStyle = '#E11D48';
     ctx.font = 'bold 12px -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('南大家园', sealX + sealW / 2, sealY + 20);
+    ctx.fillText('NCU HOME', sealX + sealW / 2, sealY + 20);
     ctx.font = '9px monospace';
-    ctx.fillText('走位珍藏 · NCU', sealX + sealW / 2, sealY + 36);
+    ctx.fillText('走位珍藏 · VERIFIED', sealX + sealW / 2, sealY + 36);
     ctx.restore();
 
     canvasRef.current = canvas;
