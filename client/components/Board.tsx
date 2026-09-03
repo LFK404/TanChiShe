@@ -74,6 +74,7 @@ interface Props {
   isPaused: boolean;
   isWaitingStart?: boolean;
   resumeCountdown?: number | null;
+  deathReason?: string;
   isReplay?: boolean;
   replayUser?: string;
   replaySpeedRate?: number;
@@ -140,6 +141,7 @@ export default function Board({
   isPlaying, isGameOver, isPaused,
   isWaitingStart = false,
   resumeCountdown = null,
+  deathReason = '',
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
@@ -1100,19 +1102,24 @@ export default function Board({
               {score} <span className="text-xs font-normal text-slate-400">分</span>
             </div>
 
-            {/* 诗意短评 (融入南大情怀与对局特征) */}
-            <p className="text-[11px] text-slate-400 font-medium mb-3 max-w-xs leading-relaxed">
-              “{(() => {
-                const hour = new Date().getHours();
-                if (hour >= 23 || hour < 5) return '夜深了，南昌的风微凉，注意休息。';
-                if (score >= 500) return '方寸棋盘之间，走出了一片从容开阔天地。';
-                if (maxCombo >= 4) return '行云流水，节拍如诗，连击节奏令人赞叹。';
-                if (length >= 25) return '游弋如龙，穿行在自己织就的开阔回廊中。';
-                if (duration >= 80) return '心平气和，百转千回，沉着笃定。';
-                if (score < 100) return '步子迈得有些急，南昌的微风还在等你。';
-                return '每一次急转，皆是对广阔空间的精妙度量。';
-              })()}”
-            </p>
+            {/* 真实死因复盘与玩家战况点评 (告别假大空鸡汤) */}
+            <div className="flex flex-col items-center gap-1 mb-3">
+              {deathReason && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 text-slate-600 text-xs font-semibold shadow-2xs border border-slate-200/60">
+                  <span>💀</span>
+                  <span>死因: {deathReason}</span>
+                </div>
+              )}
+              <span className="text-xs text-slate-400 font-medium">
+                {(() => {
+                  if (score >= 1000) return '⚡ 登峰造极 · 破千荣耀时刻';
+                  if (score >= 600) return '🔥 极速破风 · 走位游刃有余';
+                  if (maxCombo >= 5) return '✨ 连击大师 · 节拍掌控入微';
+                  if (score < 100) return '💥 猝不及防 · 手速快过了大脑';
+                  return '🎯 战局定格 · 距离新纪录仅一步之遥';
+                })()}
+              </span>
+            </div>
 
             <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
               <div className="flex flex-col items-center">
@@ -1227,7 +1234,7 @@ export default function Board({
                 <span>退出观摩</span>
               </button>
             </div>
-            <div className="text-[11px] text-slate-400">电竞级无头物理重放引擎 · 100% 还原真实操作轨迹</div>
+            <div className="text-[11px] text-slate-400">确定性物理重放 · 逐帧还原真实走位</div>
           </div>
         ) : showDpad ? (
           /* 移动端智能触控按键控制台 (零误触·紧凑一体化) */
@@ -1362,17 +1369,15 @@ export default function Board({
           </div>
         )}
 
-        {/* 底部微型模式切换条与全屏滑屏说明 (回放模式隐藏) */}
+        {/* 底部微型模式切换胶囊 (回放模式隐藏) */}
         {!isReplay && (
-          <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#94A3B8] pt-1 select-none">
-            <span>{showDpad ? '屏幕任意处滑屏 / 十字键随时可用' : '全屏滑屏已就绪 · 享受沉浸大视野'}</span>
-            <span>•</span>
+          <div className="flex items-center justify-center gap-2 text-[11px] text-[#94A3B8] pt-1 select-none">
             <button
               onClick={toggleDpad}
-              title="切换沉浸滑屏视野或经典十字键模式"
-              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-2.5 py-0.5 rounded-full transition-all cursor-pointer shadow-2xs"
+              title="切换全屏滑屏或虚拟按键模式"
+              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-3 py-0.5 rounded-full transition-all cursor-pointer shadow-2xs"
             >
-              {showDpad ? '切为沉浸滑屏' : '展开十字按键'}
+              {showDpad ? '切为全屏沉浸滑屏' : '展开方向按键'}
             </button>
           </div>
         )}

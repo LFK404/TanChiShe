@@ -5,8 +5,44 @@ interface Props {
   items: User[];
   currentUser?: User | null;
   isLoading?: boolean;
+  recentScores?: number[];
   onRefresh: () => void;
   onWatchReplay?: (user: User) => void;
+}
+
+// 纯 SVG 矢量战绩走势微折线 (无任何第三方库，极度轻盈极客)
+function ScoreSparkline({ scores }: { scores: number[] }) {
+  if (!scores || scores.length < 2) return null;
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const range = max - min || 1;
+  const w = 54;
+  const h = 14;
+  const points = scores
+    .map((s, i) => {
+      const x = (i / (scores.length - 1)) * w;
+      const y = h - ((s - min) / range) * (h - 4) - 2;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  const lastY = (h - ((scores[scores.length - 1] - min) / range) * (h - 4) - 2).toFixed(1);
+
+  return (
+    <div className="flex items-center gap-1 cursor-default" title={`近 ${scores.length} 局得分走势: ${scores.join(' → ')}`}>
+      <svg width={w} height={h} className="overflow-visible">
+        <polyline
+          fill="none"
+          stroke="#0099FF"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points}
+        />
+        <circle cx={w} cy={lastY} r="2" fill="#0099FF" />
+      </svg>
+    </div>
+  );
 }
 
 // 1~6 名专属多巴胺多色几何徽标配置 (金·红·绿·紫·天青·活力青)
@@ -20,7 +56,7 @@ const BADGE_STYLES: Record<number, string> = {
 };
 
 // 全服 Top 10 竞技风云榜组件 (极简现代排版，零 AI 模板感)
-export default function Leaderboard({ items, currentUser, isLoading = false, onRefresh, onWatchReplay }: Props) {
+export default function Leaderboard({ items, currentUser, isLoading = false, recentScores = [], onRefresh, onWatchReplay }: Props) {
   // 计算当前登录玩家排名与战胜全服玩家百分比
   let beatPercent = 0;
   let myRank = 0;
@@ -135,9 +171,18 @@ export default function Leaderboard({ items, currentUser, isLoading = false, onR
               <span className="text-[10px] text-slate-400">(未进前10)</span>
             ) : null}
           </div>
-          <div className="flex items-center gap-1">
-            <span>超越</span>
-            <span className="font-mono font-bold text-[#0099FF] tabular-nums">{beatPercent}%</span>
+
+          <div className="flex items-center gap-2.5">
+            {recentScores && recentScores.length >= 2 && (
+              <div className="hidden sm:flex items-center gap-1 text-[10.5px] text-slate-400">
+                <span>近态</span>
+                <ScoreSparkline scores={recentScores} />
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <span>超越</span>
+              <span className="font-mono font-bold text-[#0099FF] tabular-nums">{beatPercent}%</span>
+            </div>
           </div>
         </div>
       )}

@@ -114,6 +114,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const isWaitingStartRef = useRef(false);
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [deathReason, setDeathReason] = useState<string>('');
+  const deathReasonRef = useRef<string>('');
   const durationRef = useRef<number>(0);
   const stepsRef = useRef<number>(0);
   const bonusCountRef = useRef<number>(0);
@@ -230,6 +232,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
         countdownTimerRef.current = null;
       }
       setResumeCountdown(null);
+      deathReasonRef.current = '';
+      setDeathReason('');
       isReplayRef.current = false;
       setIsReplay(false);
       setReplayUser('');
@@ -520,6 +524,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
     // 3. 边界碰撞
     if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
+      deathReasonRef.current = '撞上边界边缘墙体';
+      setDeathReason('撞上边界边缘墙体');
       gameOver();
       return;
     }
@@ -527,7 +533,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
     // 4. 自身身体碰撞
     const isEatingApple = head.x === foodRef.current.x && head.y === foodRef.current.y;
     const bodyToCheck = isEatingApple ? snakeRef.current : snakeRef.current.slice(0, -1);
-    if (bodyToCheck.some((p) => p.x === head.x && p.y === head.y)) {
+    const collideBodyIndex = bodyToCheck.findIndex((p) => p.x === head.x && p.y === head.y);
+    if (collideBodyIndex !== -1) {
+      const reason = `追尾自身躯干 (第 ${collideBodyIndex + 1} 节)`;
+      deathReasonRef.current = reason;
+      setDeathReason(reason);
       gameOver();
       return;
     }
@@ -557,6 +567,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
     // 6. 残留栅栏碰撞检测
     if (fenceRef.current.has(toKey(head.x, head.y))) {
+      deathReasonRef.current = '误入身后死路障壁';
+      setDeathReason('误入身后死路障壁');
       gameOver();
       return;
     }
@@ -694,6 +706,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     isPaused,
     isWaitingStart,
     resumeCountdown,
+    deathReason,
     isReplay,
     replayUser,
     replaySpeedRate,

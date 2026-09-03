@@ -76,6 +76,16 @@ export default function Home() {
 
   const [isBoardLoading, setIsBoardLoading] = useState(true);
 
+  // 最近 5 局战绩微折线 (Sparkline) 历史得分沉淀
+  const [recentScores, setRecentScores] = useState<number[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(localStorage.getItem('snake_recent_scores') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
   // 刷新全服 Top 10 排行榜 (带骨架屏过渡)
   const refreshBoard = useCallback(async () => {
     setIsBoardLoading(true);
@@ -174,6 +184,14 @@ export default function Home() {
           localStorage.setItem('snake_offline_records', JSON.stringify(offlineRecords.slice(-5)));
         } catch {}
         addToast('当前处于离线模式 · 单机战绩已在本地存盘', 'BRONZE');
+      } finally {
+        // 沉淀最近 5 局战绩得分走势
+        try {
+          const history = JSON.parse(localStorage.getItem('snake_recent_scores') || '[]');
+          const updated = [...history, _finalScore].slice(-5);
+          localStorage.setItem('snake_recent_scores', JSON.stringify(updated));
+          setRecentScores(updated);
+        } catch {}
       }
     },
     [user, updateUser, prefetchSession, addToast, refreshBoard]
@@ -201,6 +219,7 @@ export default function Home() {
     isPaused,
     isWaitingStart,
     resumeCountdown,
+    deathReason,
     isReplay,
     replayUser,
     replaySpeedRate,
@@ -257,43 +276,7 @@ export default function Home() {
   useEffect(() => {
     if (!isPlaying || isGameOver || isReplay) return;
 
-    const checkMilestone = (key: string, fn: () => void) => {
-      if (!firedMilestonesRef.current.has(key)) {
-        firedMilestonesRef.current.add(key);
-        fn();
-      }
-    };
-
-    // 1. 得分高光弹窗
-    if (score >= 100) checkMilestone('score_100', () => addToast('得分突破 100 分!', 'BRONZE'));
-    if (score >= 200) checkMilestone('score_200', () => addToast('得分突破 200 分!', 'BRONZE'));
-    if (score >= 300) checkMilestone('score_300', () => addToast('得分突破 300 分!', 'SILVER'));
-    if (score >= 500) checkMilestone('score_500', () => addToast('得分突破 500 分 (宗师境界)!', 'GOLD'));
-    if (score >= 800) checkMilestone('score_800', () => addToast('得分突破 800 分 (旷世奇才)!', 'DIAMOND'));
-
-    // 2. 身长高光弹窗
-    if (length >= 15) checkMilestone('len_15', () => addToast('蛇身突破 15 节 (灵动巨蟒)', 'BRONZE'));
-    if (length >= 25) checkMilestone('len_25', () => addToast('蛇身突破 25 节 (深海潜龙)', 'SILVER'));
-    if (length >= 35) checkMilestone('len_35', () => addToast('蛇身突破 35 节 (万象苍龙)', 'GOLD'));
-
-    // 3. 存活时长高光弹窗
-    if (duration >= 60) checkMilestone('dur_60', () => addToast('稳健存活 1 分钟!', 'BRONZE'));
-    if (duration >= 120) checkMilestone('dur_120', () => addToast('沉着坚守 2 分钟!', 'SILVER'));
-    if (duration >= 180) checkMilestone('dur_180', () => addToast('长青传奇 3 分钟!', 'GOLD'));
-    if (duration >= 300) checkMilestone('dur_300', () => addToast('不朽长生 5 分钟!', 'DIAMOND'));
-
-    // 4. 金果高光弹窗
-    if (bonusCount >= 1) checkMilestone('bonus_1', () => addToast('斩获金色幸运果 +30分!', 'BRONZE'));
-    if (bonusCount >= 5) checkMilestone('bonus_5', () => addToast('连收 5 颗金果 (金果饕餮)!', 'GOLD'));
-    if (bonusCount >= 8) checkMilestone('bonus_8', () => addToast('连收 8 颗金果 (金玉满堂)!', 'DIAMOND'));
-
-    // 5. 极速高光弹窗 (覆盖 1.3x、1.5x、1.7x、2.0x 关键进阶里程碑)
-    if (speedMs <= 108 && score >= 220) checkMilestone('spd_13', () => addToast('节奏加快 · 速度进入 1.3x 档位!', 'BRONZE'));
-    if (speedMs <= 93 && score >= 410) checkMilestone('spd_15', () => addToast('速度突破 1.5x (黄金微操)!', 'SILVER'));
-    if (speedMs <= 82 && score >= 650) checkMilestone('spd_17', () => addToast('速度突破 1.7x (破风残影)!', 'GOLD'));
-    if (speedMs <= 70 && score >= 1160) checkMilestone('spd_20', () => addToast('突破千分 · 达到极限速度 2.0x (极限狂飙)!', 'DIAMOND'));
-
-    // 6. 检查 24 枚成就系统是否点亮 (按用户名严格命名空间隔离)
+    // 检查 24 枚成就系统是否达成点亮 (仅在达成新成就时低频轻提示，杜绝跑马灯刷屏骚扰)
     const newlyUnlocked = checkAndUnlockAchievements({
       score,
       length,
@@ -306,7 +289,7 @@ export default function Home() {
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
-      addToast(`解锁成就: [${ach.name}]`, ach.tier);
+      addToast(`🏆 解锁成就: [${ach.name}]`, ach.tier);
     });
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, user?.username, addToast]);
 
@@ -395,13 +378,12 @@ export default function Home() {
           {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight whitespace-nowrap">
-                方寸之<span className="text-[#66CCFF]">间</span>，重温经
-                <span className="text-[#66CCFF]">典</span>
+              <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
+                贪吃蛇
               </h1>
-              <blockquote className="mt-1.5 pl-2.5 border-l-[3px] border-[#66CCFF] text-xs text-[#334155] leading-relaxed">
-                在方格与节奏的律动中，探寻每一次转身的从容。
-              </blockquote>
+              <p className="mt-0.5 text-xs text-slate-400 font-medium">
+                极简几何 · 现代竞技
+              </p>
             </div>
 
             <div className="hidden sm:flex flex-col items-end leading-none select-none pointer-events-none opacity-80 shrink-0 pl-2">
@@ -443,6 +425,7 @@ export default function Home() {
                 isPaused={isPaused}
                 isWaitingStart={isWaitingStart}
                 resumeCountdown={resumeCountdown}
+                deathReason={deathReason}
                 isReplay={isReplay}
                 replayUser={replayUser}
                 replaySpeedRate={replaySpeedRate}
@@ -459,6 +442,7 @@ export default function Home() {
               items={board}
               currentUser={user}
               isLoading={isBoardLoading}
+              recentScores={recentScores}
               onRefresh={refreshBoard}
               onWatchReplay={handleWatchReplay}
             />
