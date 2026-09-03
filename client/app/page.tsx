@@ -200,6 +200,7 @@ export default function Home() {
     isGameOver,
     isPaused,
     isWaitingStart,
+    resumeCountdown,
     isReplay,
     replayUser,
     replaySpeedRate,
@@ -441,6 +442,7 @@ export default function Home() {
                 isGameOver={isGameOver}
                 isPaused={isPaused}
                 isWaitingStart={isWaitingStart}
+                resumeCountdown={resumeCountdown}
                 isReplay={isReplay}
                 replayUser={replayUser}
                 replaySpeedRate={replaySpeedRate}

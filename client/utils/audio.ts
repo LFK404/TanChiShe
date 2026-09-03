@@ -407,9 +407,14 @@ class SoundManager {
     this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.12, 0.06, 0.32);
   }
 
-  // 8秒金果最后 3 秒倒计时紧急提示音
+  // 暂停恢复倒计时滴答声
   playCountdownTick() {
     this.playNotes('square', [880, 1174.66], 0.04, 0.02, 0.18);
+  }
+
+  // 暂停恢复倒计时归零发车音
+  playResumeGo() {
+    this.playNotes('triangle', [587.33, 880, 1174.66], 0.08, 0.03, 0.26);
   }
 }
 

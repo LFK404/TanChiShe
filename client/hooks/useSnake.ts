@@ -112,6 +112,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [lastEatTimestamp, setLastEatTimestamp] = useState(0);
   const [isWaitingStart, setIsWaitingStart] = useState(false);
   const isWaitingStartRef = useRef(false);
+  const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const durationRef = useRef<number>(0);
   const stepsRef = useRef<number>(0);
   const bonusCountRef = useRef<number>(0);
@@ -188,6 +190,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
   // 游戏结束结算 (自动剔除中途暂停时长)
   const gameOver = useCallback(() => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setResumeCountdown(null);
     stateRef.current.over = true;
     stateRef.current.playing = false;
     setIsGameOver(true);
@@ -218,6 +225,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const startGame = useCallback(
     (seed?: number) => {
       sound.unlockAudio();
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setResumeCountdown(null);
       isReplayRef.current = false;
       setIsReplay(false);
       setReplayUser('');
@@ -383,24 +395,62 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }
   }, [vibrate]);
 
-  // 暂停/继续游戏 (精准记录暂停时长并自动抵扣)
+  // 暂停/继续游戏 (解除暂停时启动轻量 3 拍微倒数，彻底杜绝极速下恢复瞬死)
   const togglePause = useCallback(() => {
-    if (stateRef.current.playing && !stateRef.current.over) {
-      const nextPaused = !stateRef.current.paused;
-      stateRef.current.paused = nextPaused;
-      setIsPaused(nextPaused);
-      if (nextPaused) {
-        pauseStartRef.current = Date.now();
-        sound.pauseBgm();
-      } else {
-        if (pauseStartRef.current > 0) {
-          pausedMsRef.current += Date.now() - pauseStartRef.current;
-          pauseStartRef.current = 0;
-        }
-        sound.resumeBgm();
-      }
+    if (!stateRef.current.playing || stateRef.current.over) return;
+
+    // 若当前正处于 3 秒微倒数中，再次按暂停则立即取消倒数并维持暂停状态
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+      setResumeCountdown(null);
+      stateRef.current.paused = true;
+      setIsPaused(true);
+      sound.pauseBgm();
       sound.playToggle();
       vibrate('ui');
+      return;
+    }
+
+    if (!stateRef.current.paused) {
+      // 触发暂停：立即冻结
+      pauseStartRef.current = Date.now();
+      stateRef.current.paused = true;
+      setIsPaused(true);
+      sound.pauseBgm();
+      sound.playToggle();
+      vibrate('ui');
+    } else {
+      // 从暂停中恢复：先隐藏暂停遮罩看清棋盘，启动 3-2-1 快速微倒数 (每拍 360ms，共约 1 秒)
+      setIsPaused(false);
+      let count = 3;
+      setResumeCountdown(count);
+      sound.playCountdownTick();
+      vibrate('snap');
+
+      countdownTimerRef.current = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          setResumeCountdown(count);
+          sound.playCountdownTick();
+          vibrate('snap');
+        } else {
+          // 倒数归零：物理时钟正式解冻，蛇恢复前行
+          if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+          }
+          setResumeCountdown(null);
+          stateRef.current.paused = false;
+          if (pauseStartRef.current > 0) {
+            pausedMsRef.current += Date.now() - pauseStartRef.current;
+            pauseStartRef.current = 0;
+          }
+          sound.playResumeGo();
+          sound.resumeBgm();
+          vibrate('move');
+        }
+      }, 360);
     }
   }, [vibrate]);
 
@@ -643,6 +693,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     isGameOver,
     isPaused,
     isWaitingStart,
+    resumeCountdown,
     isReplay,
     replayUser,
     replaySpeedRate,

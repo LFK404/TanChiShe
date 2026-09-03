@@ -73,6 +73,7 @@ interface Props {
   isGameOver: boolean;
   isPaused: boolean;
   isWaitingStart?: boolean;
+  resumeCountdown?: number | null;
   isReplay?: boolean;
   replayUser?: string;
   replaySpeedRate?: number;
@@ -138,6 +139,7 @@ export default function Board({
   trajectoryRef, trajectoryEventsRef,
   isPlaying, isGameOver, isPaused,
   isWaitingStart = false,
+  resumeCountdown = null,
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
 }: Props) {
@@ -203,6 +205,29 @@ export default function Board({
       try {
         localStorage.setItem('snake_show_dpad', String(next));
       } catch {}
+      return next;
+    });
+  }, []);
+
+  // 虚拟方向键形态偏好：'cross' (经典超椭圆一体十字盘) 或 't' (电脑键盘倒T布局)
+  const [dpadLayout, setDpadLayout] = useState<'cross' | 't'>(() => {
+    if (typeof window === 'undefined') return 'cross';
+    try {
+      const saved = localStorage.getItem('snake_dpad_layout');
+      return saved === 't' ? 't' : 'cross';
+    } catch {
+      return 'cross';
+    }
+  });
+
+  const toggleDpadLayout = useCallback(() => {
+    setDpadLayout((prev) => {
+      const next = prev === 'cross' ? 't' : 'cross';
+      try {
+        localStorage.setItem('snake_dpad_layout', next);
+      } catch {}
+      sound.playToggle();
+      haptics.trigger('ui');
       return next;
     });
   }, []);
@@ -1044,6 +1069,21 @@ export default function Board({
           </div>
         )}
 
+        {/* 暂停恢复快速 3 拍微倒数 (每拍 360ms，充裕就位缓冲，支持预输入过弯) */}
+        {resumeCountdown !== null && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none bg-black/[0.04]">
+            <div
+              key={resumeCountdown}
+              className="w-16 h-16 rounded-[22px] bg-white/95 border border-[#0099FF]/35 shadow-md flex flex-col items-center justify-center animate-in zoom-in-75 fade-in duration-150 select-none"
+            >
+              <span className="font-mono text-3xl font-black text-[#0099FF] tabular-nums leading-none">
+                {resumeCountdown}
+              </span>
+              <span className="text-[9px] font-bold text-slate-400 mt-1">发车预备</span>
+            </div>
+          </div>
+        )}
+
         {/* 游戏结束结算面板 (极简南大家园现代主义几何卡片) */}
         {isGameOver && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200">
@@ -1190,48 +1230,120 @@ export default function Board({
             <div className="text-[11px] text-slate-400">电竞级无头物理重放引擎 · 100% 还原真实操作轨迹</div>
           </div>
         ) : showDpad ? (
-          /* 触控十字按键控制台 (手机/平板/触屏二合一设备默认可用) */
-          <div className="flex flex-col items-center gap-2.5 touch-manipulation">
-            <button
-              onClick={() => handleDirBtn('UP')}
-              className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
-            >
-              <ChevronUp size={28} />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => handleDirBtn('LEFT')}
-                className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
-              >
-                <ChevronLeft size={28} />
-              </button>
+          /* 移动端智能触控按键控制台 (零误触·紧凑一体化) */
+          <div className="flex flex-col items-center gap-1.5 touch-manipulation select-none">
+            {/* 顶部辅助操作栏：暂停键独立置顶，绝不干扰方向盲操 */}
+            <div className="w-full max-w-[260px] flex items-center justify-between px-1 mb-0.5">
               <button
                 onClick={() => {
                   sound.unlockAudio();
                   onTogglePause?.();
                 }}
                 disabled={!isPlaying || isGameOver}
-                className={`w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] rounded-2xl flex items-center justify-center transition-all shadow-xs ${
-                  isPaused ? 'bg-[#0099FF] text-white' : 'bg-slate-100 active:bg-[#EBF8FF] text-[#334155] active:text-[#0099FF]'
+                className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs ${
+                  isPaused
+                    ? 'bg-[#0099FF] text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-[#EBF8FF] text-slate-600 hover:text-[#0099FF]'
                 } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
               >
-                {isPaused ? <Play size={20} /> : <Pause size={20} />}
+                {isPaused ? <Play size={12} /> : <Pause size={12} />}
+                <span>{isPaused ? '继续' : '暂停'}</span>
               </button>
+
               <button
-                onClick={() => handleDirBtn('RIGHT')}
-                className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
+                onClick={toggleDpadLayout}
+                title="切换经典十字盘或电脑倒T型布局"
+                className="px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-[#F1F5F9] hover:bg-[#E2E8F0] text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1"
               >
-                <ChevronRight size={28} />
+                <span>{dpadLayout === 'cross' ? '🎮 紧凑十字' : '⌨️ 电脑倒T'}</span>
               </button>
             </div>
 
-            <button
-              onClick={() => handleDirBtn('DOWN')}
-              className="w-[74px] sm:w-[84px] h-[48px] sm:h-[50px] bg-slate-100 active:bg-[#EBF8FF] rounded-2xl flex items-center justify-center text-[#334155] active:text-[#0099FF] active:scale-95 transition-all shadow-xs cursor-pointer"
-            >
-              <ChevronDown size={28} />
-            </button>
+            {/* 核心方向键区：根据 dpadLayout 渲染紧凑十字盘或倒T键盘 */}
+            {dpadLayout === 'cross' ? (
+              /* 经典一体化超椭圆十字盘 (任天堂/街机黄金比例：中心等距盲操，零误触) */
+              <div className="relative w-[190px] h-[142px] flex items-center justify-center my-0.5">
+                {/* 上 */}
+                <button
+                  onClick={() => handleDirBtn('UP')}
+                  aria-label="向上"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-t-2xl rounded-b-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronUp size={26} />
+                </button>
+
+                {/* 左 */}
+                <button
+                  onClick={() => handleDirBtn('LEFT')}
+                  aria-label="向左"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-l-2xl rounded-r-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronLeft size={26} />
+                </button>
+
+                {/* 中心静息盲操凹核 (南大家园四色多巴胺微核心) */}
+                <div className="w-9 h-9 rounded-full bg-slate-200/70 border border-white flex items-center justify-center shadow-inner pointer-events-none">
+                  <div className="grid grid-cols-2 gap-1 opacity-70">
+                    <span className="w-1 h-1 rounded-full bg-[#66CCFF]" />
+                    <span className="w-1 h-1 rounded-full bg-[#F59E0B]" />
+                    <span className="w-1 h-1 rounded-full bg-[#10B981]" />
+                    <span className="w-1 h-1 rounded-full bg-[#EC4899]" />
+                  </div>
+                </div>
+
+                {/* 右 */}
+                <button
+                  onClick={() => handleDirBtn('RIGHT')}
+                  aria-label="向右"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-r-2xl rounded-l-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronRight size={26} />
+                </button>
+
+                {/* 下 */}
+                <button
+                  onClick={() => handleDirBtn('DOWN')}
+                  aria-label="向下"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-b-2xl rounded-t-md flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronDown size={26} />
+                </button>
+              </div>
+            ) : (
+              /* 电脑键盘倒 T 型紧凑布局 (习惯物理键盘手感专属) */
+              <div className="flex flex-col items-center gap-1.5 w-[210px] my-0.5">
+                <button
+                  onClick={() => handleDirBtn('UP')}
+                  aria-label="向上"
+                  className="w-[64px] h-[44px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <ChevronUp size={26} />
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleDirBtn('LEFT')}
+                    aria-label="向左"
+                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  >
+                    <ChevronLeft size={26} />
+                  </button>
+                  <button
+                    onClick={() => handleDirBtn('DOWN')}
+                    aria-label="向下"
+                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  >
+                    <ChevronDown size={26} />
+                  </button>
+                  <button
+                    onClick={() => handleDirBtn('RIGHT')}
+                    aria-label="向右"
+                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                  >
+                    <ChevronRight size={26} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* 纯净键盘快捷模式 (外接键盘平板/桌面PC专属) */
