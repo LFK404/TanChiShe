@@ -83,6 +83,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [bonusKey, setBonusKey] = useState(0);
   const [bonusCount, setBonusCount] = useState(0);
   const [comboCount, setComboCount] = useState(0);
+  const [maxCombo, setMaxCombo] = useState(0);
   const [lastEatTimestamp, setLastEatTimestamp] = useState(0);
   const [isWaitingStart, setIsWaitingStart] = useState(false);
   const isWaitingStartRef = useRef(false);
@@ -94,6 +95,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const lastEatElapsedMsRef = useRef<number>(-99999);
   const lastEatTimestampRef = useRef<number>(0);
   const maxComboRef = useRef<number>(0);
+  const bonusExpireTickRef = useRef<number>(0);
 
   // 电竞对局录像回放状态机
   const [isReplay, setIsReplay] = useState(false);
@@ -114,13 +116,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }
   }, []);
 
-  // 清除金色幸运果与其超时计时器
-  const bonusTimersRef = useRef<NodeJS.Timeout[]>([]);
+  // 清除金色幸运果 (重置物理截止步数，杜绝宏任务漂移)
   const clearBonus = useCallback(() => {
     bonusRef.current = null;
+    bonusExpireTickRef.current = 0;
     setHasBonus(false);
-    bonusTimersRef.current.forEach((t) => clearTimeout(t));
-    bonusTimersRef.current = [];
   }, []);
 
   // 确定性独立双果生成算法 (保证与 Go 后端 PRNG 消费序列绝对一致)
@@ -153,39 +153,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
         setBonusKey((prev) => prev + 1);
         setHasBonus(true);
 
-        bonusTimersRef.current.forEach((t) => clearTimeout(t));
-        bonusTimersRef.current = [];
-
-        // 5秒、6秒、7秒时触发清脆紧迫的倒计时警报音与提示微震
-        const t5 = setTimeout(() => {
-          if (bonusRef.current) {
-            sound.playCountdownTick();
-            vibrate('countdown');
-          }
-        }, 5000);
-        const t6 = setTimeout(() => {
-          if (bonusRef.current) {
-            sound.playCountdownTick();
-            vibrate('countdown');
-          }
-        }, 6000);
-        const t7 = setTimeout(() => {
-          if (bonusRef.current) {
-            sound.playCountdownTick();
-            vibrate('countdown');
-          }
-        }, 7000);
-
-        // 8秒金果彻底消失
-        const t8 = setTimeout(() => {
-          bonusRef.current = null;
-          setHasBonus(false);
-        }, 8000);
-
-        bonusTimersRef.current.push(t5, t6, t7, t8);
+        // 8秒金果物理步数到期点 (与 Go engine 对齐: 8000 / speedMs)
+        bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMs);
       }
     }
-  }, [vibrate]);
+  }, [speedMs]);
 
   // 游戏结束结算 (自动剔除中途暂停时长)
   const gameOver = useCallback(() => {
@@ -229,6 +201,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       lastEatTimestampRef.current = 0;
       maxComboRef.current = 0;
       setComboCount(0);
+      setMaxCombo(0);
       setLastEatTimestamp(0);
 
       snakeRef.current = [
@@ -303,6 +276,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       lastEatTimestampRef.current = 0;
       maxComboRef.current = 0;
       setComboCount(0);
+      setMaxCombo(0);
       setLastEatTimestamp(0);
 
       snakeRef.current = [
@@ -430,6 +404,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       lastEatTimestampRef.current = now;
       if (currentCombo > maxComboRef.current) {
         maxComboRef.current = currentCombo;
+        setMaxCombo(currentCombo);
       }
       setComboCount(currentCombo);
       setLastEatTimestamp(now);
@@ -504,7 +479,26 @@ export function useSnake(onGameOver?: GameOverCallback) {
       clearBonus();
     }
 
-    // 8. 正常移动：蛇头前进，蛇尾留下残留栅栏 (纯 Ref 高速步进，零 React 状态调度开销)
+    // 8. 金色幸运果 8 秒物理步数倒计时与临期警报 (严格与 Go 后端物理重放引擎对齐，杜绝暂停/变速回放时钟漂移)
+    if (bonusRef.current && bonusExpireTickRef.current > 0) {
+      if (tickCountRef.current >= bonusExpireTickRef.current) {
+        bonusRef.current = null;
+        bonusExpireTickRef.current = 0;
+        setHasBonus(false);
+      } else {
+        const remainingTicks = bonusExpireTickRef.current - tickCountRef.current;
+        const remainingMs = remainingTicks * speedMs;
+        const prevRemainingMs = (remainingTicks + 1) * speedMs;
+        if (remainingMs <= 3000 && remainingMs > 0) {
+          if (Math.floor(prevRemainingMs / 1000) > Math.floor(remainingMs / 1000)) {
+            sound.playCountdownTick();
+            vibrate('countdown');
+          }
+        }
+      }
+    }
+
+    // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (纯 Ref 高速步进，零 React 状态调度开销)
     stepsRef.current += 1;
     const nextSnake = [head, ...snakeRef.current];
     const tail = nextSnake.pop()!;
@@ -544,13 +538,6 @@ export function useSnake(onGameOver?: GameOverCallback) {
     return () => window.removeEventListener('keydown', onKey);
   }, [changeDirection, togglePause]);
 
-  useEffect(() => {
-    return () => {
-      bonusTimersRef.current.forEach((t) => clearTimeout(t));
-      bonusTimersRef.current = [];
-    };
-  }, []);
-
   return {
     snakeRef,
     fenceRef,
@@ -566,6 +553,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     speedMs,
     bonusCount,
     comboCount,
+    maxCombo,
     lastEatTimestamp,
     isPlaying,
     isGameOver,

@@ -169,6 +169,7 @@ export default function Home() {
     speedMs,
     bonusCount,
     comboCount,
+    maxCombo,
     lastEatTimestamp,
     isPlaying,
     isGameOver,
@@ -267,7 +268,7 @@ export default function Home() {
       score,
       length,
       duration,
-      maxCombo: 1,
+      maxCombo,
       bonusCount,
       speedMs,
       steps: 0,
@@ -277,7 +278,7 @@ export default function Home() {
       sound.playAchievement();
       addToast(`解锁成就: [${ach.name}]`, ach.tier);
     });
-  }, [isPlaying, isGameOver, isReplay, score, length, duration, bonusCount, speedMs, user?.username, addToast]);
+  }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, user?.username, addToast]);
 
   // 开始新对局 (优先命中预取 Token，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {
