@@ -688,6 +688,41 @@ export default function Board({
       drawRoundRect(ctx, head.x * CELL + 1, head.y * CELL + 1, CELL - 2, CELL - 2, 5);
       ctx.fill();
 
+      // 吃果瞬态咬合微张嘴 (Bite Aperture 70ms: 吃下红苹果/金果瞬间前唇微张倒V咬合微缺口)
+      const isBiting = nowTime - (lastEatTimestamp || 0) < 70;
+      if (isBiting && snake.length > 1) {
+        const next = snake[1];
+        const dx = head.x - next.x;
+        const dy = head.y - next.y;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        const hx = head.x * CELL;
+        const hy = head.y * CELL;
+        if (dx === 1) {
+          // 面朝右方咬合
+          ctx.moveTo(hx + CELL - 1, hy + CELL / 2 - 2.8);
+          ctx.lineTo(hx + CELL - 4, hy + CELL / 2);
+          ctx.lineTo(hx + CELL - 1, hy + CELL / 2 + 2.8);
+        } else if (dx === -1) {
+          // 面朝左方咬合
+          ctx.moveTo(hx + 1, hy + CELL / 2 - 2.8);
+          ctx.lineTo(hx + 4, hy + CELL / 2);
+          ctx.lineTo(hx + 1, hy + CELL / 2 + 2.8);
+        } else if (dy === 1) {
+          // 面朝下方咬合
+          ctx.moveTo(hx + CELL / 2 - 2.8, hy + CELL - 1);
+          ctx.lineTo(hx + CELL / 2, hy + CELL - 4);
+          ctx.lineTo(hx + CELL / 2 + 2.8, hy + CELL - 1);
+        } else {
+          // 面朝上方咬合
+          ctx.moveTo(hx + CELL / 2 - 2.8, hy + 1);
+          ctx.lineTo(hx + CELL / 2, hy + 4);
+          ctx.lineTo(hx + CELL / 2 + 2.8, hy + 1);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
       ctx.strokeStyle = endingBlink ? 'rgba(254, 243, 199, 0.95)' : 'rgba(255, 255, 255, 0.85)';
       ctx.lineWidth = 0.8;
       ctx.stroke();
@@ -803,18 +838,34 @@ export default function Board({
         ctx.arc(head.x * CELL + e2x + px + jitterX, head.y * CELL + e2y + py + jitterY, 0.75, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // 4. 常态：机敏明眸与视线追踪预瞄
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.2, 0, Math.PI * 2);
-        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.2, 0, Math.PI * 2);
-        ctx.fill();
+        // 4. 常态：机敏明眸与视线追踪预瞄 (待机/暂停时每隔 3.8 秒自然眨眼 120ms)
+        const isIdleOrPaused = !isPlaying || isPaused;
+        const isBlinking = isIdleOrPaused && (nowTime % 3800 < 130);
 
-        ctx.fillStyle = '#0F172A';
-        ctx.beginPath();
-        ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.2, 0, Math.PI * 2);
-        ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.2, 0, Math.PI * 2);
-        ctx.fill();
+        if (isBlinking) {
+          // 灵动眨眼微表情：眼皮自然闭合成两道清澈微弧
+          ctx.strokeStyle = '#0F172A';
+          ctx.lineWidth = 1.3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(head.x * CELL + e1x - 1.8, head.y * CELL + e1y);
+          ctx.lineTo(head.x * CELL + e1x + 1.8, head.y * CELL + e1y);
+          ctx.moveTo(head.x * CELL + e2x - 1.8, head.y * CELL + e2y);
+          ctx.lineTo(head.x * CELL + e2x + 1.8, head.y * CELL + e2y);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.2, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#0F172A';
+          ctx.beginPath();
+          ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.2, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
 
