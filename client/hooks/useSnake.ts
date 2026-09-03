@@ -713,6 +713,73 @@ export function useSnake(onGameOver?: GameOverCallback) {
     };
   }, [changeDirection, togglePause]);
 
+  // 接入 Web 原生 Gamepad API 游戏手柄 (支持 Xbox / PS / Switch Pro / 街机摇杆即插即玩)
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof navigator.getGamepads !== 'function') return;
+
+    let animId: number;
+    let lastDir: Direction | null = null;
+    let lastBtnA = false;
+    let lastBtnStart = false;
+
+    const pollGamepad = () => {
+      const gamepads = navigator.getGamepads();
+      let activeGp: Gamepad | null = null;
+      for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+          activeGp = gamepads[i];
+          break;
+        }
+      }
+
+      if (activeGp) {
+        // 读取 D-Pad 方向键 (12: 上, 13: 下, 14: 左, 15: 右) 与左摇杆 axes
+        const dUp = activeGp.buttons[12]?.pressed;
+        const dDown = activeGp.buttons[13]?.pressed;
+        const dLeft = activeGp.buttons[14]?.pressed;
+        const dRight = activeGp.buttons[15]?.pressed;
+
+        const stickX = activeGp.axes[0] || 0;
+        const stickY = activeGp.axes[1] || 0;
+        const deadZone = 0.45;
+
+        let curDir: Direction | null = null;
+        if (dUp || stickY < -deadZone) curDir = 'UP';
+        else if (dDown || stickY > deadZone) curDir = 'DOWN';
+        else if (dLeft || stickX < -deadZone) curDir = 'LEFT';
+        else if (dRight || stickX > deadZone) curDir = 'RIGHT';
+
+        // 边沿触发检测：方向变化或回中后推下才触发，杜绝长按塞满缓冲队列
+        if (curDir && curDir !== lastDir) {
+          changeDirection(curDir);
+        }
+        lastDir = curDir;
+
+        // A 键 (buttons[0]) 与 Start / Menu 键 (buttons[9])
+        const btnA = activeGp.buttons[0]?.pressed || false;
+        const btnStart = activeGp.buttons[9]?.pressed || false;
+
+        if (btnA && !lastBtnA) {
+          if (isWaitingStartRef.current) {
+            isWaitingStartRef.current = false;
+            setIsWaitingStart(false);
+            stateRef.current.start = Date.now();
+          }
+        }
+        if (btnStart && !lastBtnStart) {
+          togglePause();
+        }
+        lastBtnA = btnA;
+        lastBtnStart = btnStart;
+      }
+
+      animId = requestAnimationFrame(pollGamepad);
+    };
+
+    animId = requestAnimationFrame(pollGamepad);
+    return () => cancelAnimationFrame(animId);
+  }, [changeDirection, togglePause]);
+
   // 电竞录像毫秒级瞬态快进复盘 (Seek Replay)
   const seekReplay = useCallback(
     (targetTick: number) => {

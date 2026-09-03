@@ -42,11 +42,30 @@ class HapticManager {
     }
   }
 
-  // 底层安全物理马达驱动器
+  // 底层安全物理马达驱动器 (支持手机马达与物理游戏手柄双重驱动)
   private vibrateDirect(pattern: number | number[]) {
     if (typeof window !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate(pattern);
+      } catch {}
+    }
+
+    // 同步驱动物理游戏手柄马达 (Xbox / PS5 / Switch 等 dual-rumble 振动器)
+    if (typeof window !== 'undefined' && typeof navigator.getGamepads === 'function') {
+      try {
+        const gamepads = navigator.getGamepads();
+        const duration = Array.isArray(pattern) ? pattern.reduce((a, b) => a + b, 0) : pattern;
+        for (let i = 0; i < gamepads.length; i++) {
+          const gp = gamepads[i];
+          if (gp && 'vibrationActuator' in gp && gp.vibrationActuator && typeof (gp.vibrationActuator as { playEffect?: Function }).playEffect === 'function') {
+            (gp.vibrationActuator as { playEffect: Function }).playEffect('dual-rumble', {
+              startDelay: 0,
+              duration: Math.min(350, duration * 3),
+              weakMagnitude: this.mode === 'STRONG' ? 0.6 : 0.3,
+              strongMagnitude: this.mode === 'STRONG' ? 0.4 : 0.2,
+            }).catch(() => {});
+          }
+        }
       } catch {}
     }
   }
