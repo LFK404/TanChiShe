@@ -171,6 +171,41 @@ export default function Board({
     setShowArtModal(true);
   }, [trajectoryRef, trajectoryEventsRef]);
 
+  const [copiedSummary, setCopiedSummary] = useState(false);
+
+  // 复制极简 ASCII 纯文本对局战报 (零 Emoji，等宽国际主义终端排版)
+  const handleCopySummary = useCallback(async () => {
+    const effectiveSpeed = Math.round((BASE_SPEED_MS / speedMs) * 10) / 10;
+    const summaryText = [
+      '┌── GAME RECAP // RETRO SNAKE ──────────┐',
+      `│ SCORE    : ${String(score).padEnd(27, ' ')}│`,
+      `│ LENGTH   : ${String(length + ' BLOCKS').padEnd(27, ' ')}│`,
+      `│ DURATION : ${String(duration + 's').padEnd(27, ' ')}│`,
+      `│ SPEED    : ${String(effectiveSpeed + 'x').padEnd(27, ' ')}│`,
+      `│ MAX COMBO: ${String((maxCombo || 0) + ' HITS').padEnd(27, ' ')}│`,
+      `│ CAUSE    : ${String(deathReason || 'NORMAL').padEnd(27, ' ')}│`,
+      '├───────────────────────────────────────┤',
+      '│ NCU HOME : https://zhixu.online       │',
+      '└───────────────────────────────────────┘',
+    ].join('\n');
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(summaryText);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = summaryText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedSummary(true);
+      haptics.trigger('snap');
+      setTimeout(() => setCopiedSummary(false), 1500);
+    } catch {}
+  }, [score, length, duration, speedMs, maxCombo, deathReason]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -1310,6 +1345,13 @@ export default function Board({
             {isReplay ? (
               <div className="flex items-center gap-2">
                 <button
+                  onClick={handleCopySummary}
+                  className="px-3 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold font-mono cursor-pointer shadow-xs transition-all border border-slate-200/60"
+                  title="复制极简等宽文本战报"
+                >
+                  {copiedSummary ? '[已复制]' : '战报'}
+                </button>
+                <button
                   onClick={handleOpenArtModal}
                   className="px-3.5 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all border border-slate-200/60"
                   title="生成走位艺术卡片"
@@ -1332,17 +1374,24 @@ export default function Board({
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <button
+                  onClick={handleCopySummary}
+                  className="px-3.5 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold font-mono cursor-pointer shadow-xs transition-all"
+                  title="复制极简等宽文本战报"
+                >
+                  {copiedSummary ? '[已复制]' : '复制战报'}
+                </button>
                 <button
                   onClick={handleOpenArtModal}
-                  className="px-4 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                  className="px-3.5 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                 >
                   <Sparkles size={14} className="text-[#0099FF]" />
-                  <span>走位艺术卡片</span>
+                  <span>走位卡片</span>
                 </button>
                 <button
                   onClick={onStart}
-                  className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="px-5 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <RotateCcw size={14} />
                   <span>再来一局</span>
