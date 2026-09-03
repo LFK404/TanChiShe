@@ -33,52 +33,65 @@ export default function Tutorial({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        {/* 单一规则卡片底座 (内部4个条目层次饱满，浑然一体) */}
-        <div className="my-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 flex flex-col divide-y divide-slate-200/60">
+        {/* 单一规则卡片底座 (内部5个条目层次饱满，浑然一体) */}
+        <div className="my-3.5 p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 flex flex-col divide-y divide-slate-200/60 max-h-[60vh] overflow-y-auto">
           {/* 01 死路机制 */}
-          <div className="flex items-start gap-3 pb-3">
+          <div className="flex items-start gap-3 pb-2.5">
             <NCUNumberBadge num="01" color="#D97706" bg="#FEF3C7" />
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-bold text-slate-800 mb-0.5">走过的路变成死路</h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                蛇身移动会在身后留下灰色障碍死路，不可再次折返碰撞，考验规划走位空间。
+                蛇身移动会在身后留下灰色障碍死路，不可折返碰撞，考验大局规划。
               </p>
             </div>
           </div>
 
           {/* 02 普通红苹果 */}
-          <div className="flex items-start gap-3 py-3">
+          <div className="flex items-start gap-3 py-2.5">
             <NCUNumberBadge num="02" color="#EF4444" bg="#FEE2E2" />
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-bold text-slate-800 mb-0.5">
                 普通红苹果 <span className="text-[10px] font-normal text-slate-400">(+10分 · 清空身后死路)</span>
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                吃掉后蛇身增长 1 节，并瞬间清除身后所有残留死路，让战场重新恢复开阔。
+                吃掉后蛇身增长 1 节，并瞬间清除身后所有死路，战场重回开阔。
               </p>
             </div>
           </div>
 
           {/* 03 金色幸运果 */}
-          <div className="flex items-start gap-3 py-3">
+          <div className="flex items-start gap-3 py-2.5">
             <NCUNumberBadge num="03" color="#F59E0B" bg="#FEF3C7" />
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-bold text-slate-800 mb-0.5">
                 金色幸运果 <span className="text-[10px] font-normal text-slate-400">(+30分 · 保留死路)</span>
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                概率触发并开启 8 秒倒计时！吃掉斩获 +30 高分，但死路继续保留，极度考验走位。
+                概率现身并开启 8 秒倒计时！吃掉狂揽 +30 分，保留死路考验极限走位。
               </p>
             </div>
           </div>
 
-          {/* 04 操控模式 */}
-          <div className="flex items-start gap-3 pt-3">
-            <NCUNumberBadge num="04" color="#0099FF" bg="#EBF8FF" />
+          {/* 04 3秒连击与阶梯奖励 */}
+          <div className="flex items-start gap-3 py-2.5">
+            <NCUNumberBadge num="04" color="#8B5CF6" bg="#F3E8FF" />
             <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-800 mb-0.5">双模操控与触感反馈</h3>
+              <h3 className="text-xs font-bold text-slate-800 mb-0.5">
+                3秒极速连击 <span className="text-[10px] font-normal text-slate-400">(阶梯加成 · 濒危预警)</span>
+              </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                电脑支持方向键与 WASD；手机支持全屏滑屏与十字键；空格或 P 键可随时暂停。
+                3 秒内连续吃果激活连击（红果与金果均计入）：2 连击激活蛇身耀金流光；第 3 次起每次额外加 5 分（+5/+10...累加）；剩余 1 秒蛇身急促橙红频闪，蛇头显示倒计时微弧！
+              </p>
+            </div>
+          </div>
+
+          {/* 05 操控模式 */}
+          <div className="flex items-start gap-3 pt-2.5">
+            <NCUNumberBadge num="05" color="#0099FF" bg="#EBF8FF" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xs font-bold text-slate-800 mb-0.5">全端操控与多层触感</h3>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                电脑支持方向键与 WASD；移动端支持全屏手势滑屏与虚拟十字键；空格或 P 键一键暂停。
               </p>
             </div>
           </div>

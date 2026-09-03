@@ -60,6 +60,8 @@ interface Props {
   duration: number;
   length: number;
   speedMs: number;
+  comboCount?: number;
+  lastEatTimestamp?: number;
   isPlaying: boolean;
   isGameOver: boolean;
   isPaused: boolean;
@@ -141,7 +143,7 @@ interface SwipeTrailPoint {
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
   queueRef,
-  score, duration, length, speedMs, isPlaying, isGameOver, isPaused,
+  score, duration, length, speedMs, comboCount = 0, lastEatTimestamp = 0, isPlaying, isGameOver, isPaused,
   isWaitingStart = false,
   isReplay = false, replayUser = '', replaySpeedRate = 1, onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
@@ -278,23 +280,23 @@ export default function Board({
     });
   };
 
-  // 吃到红苹果清空栅栏时爆发浅灰粉尘消散粒子
+  // 吃到红苹果清空栅栏时爆发浅灰粉尘消散粒子 (强化瓦解打击感)
   const spawnCrumbleParticles = (gridX: number, gridY: number) => {
     const centerX = gridX * CELL + CELL / 2;
     const centerY = gridY * CELL + CELL / 2;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 8; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 0.4 + Math.random() * 1.2;
+      const speed = 0.5 + Math.random() * 1.6;
       particlesRef.current.push({
-        x: centerX + (Math.random() - 0.5) * 6,
-        y: centerY + (Math.random() - 0.5) * 6,
+        x: centerX + (Math.random() - 0.5) * 8,
+        y: centerY + (Math.random() - 0.5) * 8,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        color: '#CBD5E1',
-        size: 1.2 + Math.random() * 1.2,
-        alpha: 0.8,
+        color: '#94A3B8',
+        size: 1.2 + Math.random() * 1.6,
+        alpha: 0.85,
         life: 0,
-        maxLife: 14 + Math.floor(Math.random() * 6),
+        maxLife: 16 + Math.floor(Math.random() * 8),
       });
     }
   };
@@ -330,22 +332,15 @@ export default function Board({
       // 触发蛇身物理吞咽传导波
       digestionWavesRef.current.push({ startTime: now });
 
-      // 3 秒内连续吃果判定为连击 Combo
-      if (now - comboRef.current.lastTime <= 3000) {
-        comboRef.current.count += 1;
-      } else {
-        comboRef.current.count = 1;
-      }
-      comboRef.current.lastTime = now;
+      const currentCombo = comboCount || 1;
 
-      // 播放 8-bit 递增动态连击升阶音阶
-      sound.playCombo(comboRef.current.count);
+      // 判定是金果还是普通红苹果 (金果基础分 30，红果基础分 10)
+      const isBonusFruit = diff >= 30;
 
-      if (diff >= 30) {
-        // 金色幸运果
-        triggerShake(8, 3.5);
+      if (isBonusFruit) {
+        // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，多巴胺微光粒子
+        triggerShake(3, 1.2);
         spawnParticles(head.x, head.y, '#F59E0B', 18);
-        spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
         shockwavesRef.current.push({
           x: head.x * CELL + CELL / 2,
           y: head.y * CELL + CELL / 2,
@@ -355,9 +350,18 @@ export default function Board({
           alpha: 0.85,
           lineWidth: 2,
         });
+
+        if (currentCombo === 1) {
+          spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
+        } else if (currentCombo === 2) {
+          spawnFloatingText(head.x, head.y, '+30 2连击! (下次+5)', '#D97706');
+        } else {
+          const extra = (currentCombo - 2) * 5;
+          spawnFloatingText(head.x, head.y, `+${diff} 金果 ${currentCombo}连击! (+${extra})`, '#D97706');
+        }
       } else {
-        // 普通红苹果 (清空栅栏并触发粉尘瓦解)
-        triggerShake(4, 1.8);
+        // 普通红苹果：轻柔微震 (2帧/0.8px)，清空栅栏并爆发强化粉尘消散粒子
+        triggerShake(2, 0.8);
         spawnParticles(head.x, head.y, '#EF4444', 10);
         fenceRef.current.forEach((k) => {
           const [fx, fy] = k.split(',').map(Number);
@@ -373,20 +377,24 @@ export default function Board({
           alpha: 0.75,
           lineWidth: 1.5,
         });
-        if (comboRef.current.count > 1) {
-          spawnFloatingText(head.x, head.y, `+10 ${comboRef.current.count}连击!`, '#0099FF');
-        } else {
+
+        if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+10', '#10B981');
+        } else if (currentCombo === 2) {
+          spawnFloatingText(head.x, head.y, '+10 2连击! (下次+5)', '#0099FF');
+        } else {
+          const extra = (currentCombo - 2) * 5;
+          spawnFloatingText(head.x, head.y, `+${diff} ${currentCombo}连击! (+${extra})`, '#0099FF');
         }
       }
     }
     prevScoreRef.current = score;
-  }, [score, snakeRef, fenceRef]);
+  }, [score, snakeRef, fenceRef, comboCount]);
 
-  // 监听游戏结束，触发死亡震屏、粒子消散与高光礼花
+  // 监听游戏结束，触发死亡轻微震屏 (6帧/2.5px)、粒子消散与高光礼花
   useEffect(() => {
     if (isGameOver && !prevGameOverRef.current) {
-      triggerShake(12, 5.0);
+      triggerShake(6, 2.5);
       const head = snakeRef.current[0];
       if (head) {
         spawnParticles(head.x, head.y, '#EF4444', 24);
@@ -515,17 +523,33 @@ export default function Board({
       ctx.fill();
     }
 
-    // 5. 绘制蛇身 (多巴胺晶体平滑渐变 + 物理吞咽传导波)
+    // 5. 绘制蛇身 (多巴胺晶体平滑渐变 + 连击流光动效与濒危急促呼吸频闪 + 物理吞咽传导波)
     const snake = snakeRef.current;
     const nowTime = Date.now();
     digestionWavesRef.current = digestionWavesRef.current.filter((w) => nowTime - w.startTime < 750);
+
+    const comboElapsed = nowTime - (lastEatTimestamp || 0);
+    const inCombo = (comboCount || 0) >= 2 && comboElapsed < 3000;
+    const isEndingSoon = inCombo && comboElapsed >= 2000; // 剩余 1 秒快终止
+    const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.024) > 0;
 
     if (snake.length > 1) {
       const len = snake.length;
       for (let i = len - 1; i >= 1; i--) {
         const seg = snake[i];
         const ratio = 1 - i / len;
-        const color = ratio > 0.6 ? '#38BDF8' : ratio > 0.3 ? '#7DD3FC' : '#BAE6FD';
+
+        let color = ratio > 0.6 ? '#38BDF8' : ratio > 0.3 ? '#7DD3FC' : '#BAE6FD';
+        if (inCombo) {
+          if (endingBlink) {
+            // 快终止频闪：急促橙红亮起
+            color = i % 2 === 0 ? '#F59E0B' : '#EF4444';
+          } else {
+            // 连击进行中：耀金高光流光穿梭
+            const wave = 0.5 + 0.5 * Math.sin(nowTime / 150 - i * 0.4);
+            color = wave > 0.6 ? '#F59E0B' : ratio > 0.5 ? '#38BDF8' : '#7DD3FC';
+          }
+        }
 
         // 计算物理吞咽波传导到当前节时的微隆起弹性形变
         let bulge = 0;
@@ -542,6 +566,15 @@ export default function Board({
         const segSize = (CELL - 2) * scaleFactor;
         const offset = ((CELL - 2) * (scaleFactor - 1)) / 2;
 
+        ctx.save();
+        if (inCombo && !endingBlink) {
+          ctx.shadowColor = '#F59E0B';
+          ctx.shadowBlur = 4;
+        } else if (endingBlink) {
+          ctx.shadowColor = '#EF4444';
+          ctx.shadowBlur = 6;
+        }
+
         ctx.fillStyle = color;
         ctx.beginPath();
         drawRoundRect(
@@ -555,9 +588,10 @@ export default function Board({
         ctx.fill();
 
         // 晶体纯白微描边 (密集折叠转弯时各节边界清晰透气)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.strokeStyle = inCombo && endingBlink ? 'rgba(255, 237, 213, 0.9)' : 'rgba(255, 255, 255, 0.75)';
         ctx.lineWidth = 0.8;
         ctx.stroke();
+        ctx.restore();
       }
     }
 
@@ -586,20 +620,45 @@ export default function Board({
       }
     });
 
-    // 7. 绘制蛇头 (南大家园天青蓝 #66CCFF + 纯白晶体描边 + 灵动双眼视线追踪)
+    // 7. 绘制蛇头 (南大家园天青蓝 #66CCFF + 连击濒危频闪 + 纯白晶体描边 + 灵动双眼视线追踪)
     if (head) {
-      ctx.fillStyle = '#66CCFF';
+      ctx.save();
+      let headColor = '#66CCFF';
+      if (inCombo) {
+        if (endingBlink) {
+          headColor = '#F59E0B';
+          ctx.shadowColor = '#EF4444';
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.shadowColor = '#F59E0B';
+          ctx.shadowBlur = 5;
+        }
+      }
+
+      ctx.fillStyle = headColor;
       ctx.beginPath();
       drawRoundRect(ctx, head.x * CELL + 1, head.y * CELL + 1, CELL - 2, CELL - 2, 5);
       ctx.fill();
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.strokeStyle = endingBlink ? 'rgba(254, 243, 199, 0.95)' : 'rgba(255, 255, 255, 0.85)';
       ctx.lineWidth = 0.8;
       ctx.stroke();
+      ctx.restore();
 
-      // 计算双眼在蛇头上的朝向偏移与视线追踪 (采用标量计算，零 GC 对象分配)
-      let e1x = 4, e1y = 4;
-      let e2x = CELL - 4, e2y = 4;
+      // 连击进行时在蛇头上方微标显示 3 秒倒计时灵动微弧
+      if (inCombo) {
+        const remainRatio = Math.max(0, 1 - comboElapsed / 3000);
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + CELL / 2, head.y * CELL - 4, 3.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * remainRatio);
+        ctx.strokeStyle = isEndingSoon ? '#EF4444' : '#F59E0B';
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      // 计算双眼在蛇头上的朝向偏移与视线追踪 (聚拢机敏间距 7.6px，面容神采奕奕)
+      let e1x = 6.2, e1y = 4.5;
+      let e2x = 13.8, e2y = 4.5;
       let px = 0, py = 0;
 
       if (snake.length > 1) {
@@ -607,20 +666,24 @@ export default function Board({
         const dx = head.x - next.x;
         const dy = head.y - next.y;
         if (dx === 1) {
-          e1x = CELL - 5; e1y = 4;
-          e2x = CELL - 5; e2y = CELL - 4;
+          // 向右移动：面朝右侧，双眼居右并收紧垂直间距
+          e1x = 15.5; e1y = 6.2;
+          e2x = 15.5; e2y = 13.8;
           px = 0.8; py = 0;
         } else if (dx === -1) {
-          e1x = 5; e1y = 4;
-          e2x = 5; e2y = CELL - 4;
+          // 向左移动：面朝左侧，双眼居左并收紧垂直间距
+          e1x = 4.5; e1y = 6.2;
+          e2x = 4.5; e2y = 13.8;
           px = -0.8; py = 0;
         } else if (dy === 1) {
-          e1x = 4; e1y = CELL - 5;
-          e2x = CELL - 4; e2y = CELL - 5;
+          // 向下移动：面朝下方，双眼居下并收紧水平间距
+          e1x = 6.2; e1y = 15.5;
+          e2x = 13.8; e2y = 15.5;
           px = 0; py = 0.8;
         } else {
-          e1x = 4; e1y = 5;
-          e2x = CELL - 4; e2y = 5;
+          // 向上移动：面朝上方，双眼居上并收紧水平间距
+          e1x = 6.2; e1y = 4.5;
+          e2x = 13.8; e2y = 4.5;
           px = 0; py = -0.8;
         }
       }
@@ -637,8 +700,8 @@ export default function Board({
       // 眼白
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.4, 0, Math.PI * 2);
-      ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.4, 0, Math.PI * 2);
+      ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.2, 0, Math.PI * 2);
+      ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.2, 0, Math.PI * 2);
       ctx.fill();
 
       // 瞳孔

@@ -47,7 +47,8 @@ export type GameOverCallback = (
   score: number,
   duration: number,
   inputs: InputRecord[],
-  totalTicks: number
+  totalTicks: number,
+  maxCombo?: number
 ) => void;
 
 // 贪吃蛇全套确定性物理时序与状态驱动引擎
@@ -81,11 +82,18 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [hasBonus, setHasBonus] = useState(false);
   const [bonusKey, setBonusKey] = useState(0);
   const [bonusCount, setBonusCount] = useState(0);
+  const [comboCount, setComboCount] = useState(0);
+  const [lastEatTimestamp, setLastEatTimestamp] = useState(0);
   const [isWaitingStart, setIsWaitingStart] = useState(false);
   const isWaitingStartRef = useRef(false);
   const durationRef = useRef<number>(0);
   const stepsRef = useRef<number>(0);
   const bonusCountRef = useRef<number>(0);
+  const comboCountRef = useRef<number>(0);
+  const totalElapsedMsRef = useRef<number>(0);
+  const lastEatElapsedMsRef = useRef<number>(-99999);
+  const lastEatTimestampRef = useRef<number>(0);
+  const maxComboRef = useRef<number>(0);
 
   // 电竞对局录像回放状态机
   const [isReplay, setIsReplay] = useState(false);
@@ -195,7 +203,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }, 1200);
     if (!isReplayRef.current) {
       const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
-      onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current);
+      onGameOver?.(stateRef.current.score, dur, inputsRef.current, tickCountRef.current, maxComboRef.current);
     }
   }, [onGameOver, clearBonus, vibrate]);
 
@@ -215,6 +223,13 @@ export function useSnake(onGameOver?: GameOverCallback) {
       pauseStartRef.current = 0;
       stepsRef.current = 0;
       bonusCountRef.current = 0;
+      comboCountRef.current = 0;
+      totalElapsedMsRef.current = 0;
+      lastEatElapsedMsRef.current = -99999;
+      lastEatTimestampRef.current = 0;
+      maxComboRef.current = 0;
+      setComboCount(0);
+      setLastEatTimestamp(0);
 
       snakeRef.current = [
         { x: 10, y: 12 },
@@ -282,6 +297,13 @@ export function useSnake(onGameOver?: GameOverCallback) {
       pauseStartRef.current = 0;
       stepsRef.current = 0;
       bonusCountRef.current = 0;
+      comboCountRef.current = 0;
+      totalElapsedMsRef.current = 0;
+      lastEatElapsedMsRef.current = -99999;
+      lastEatTimestampRef.current = 0;
+      maxComboRef.current = 0;
+      setComboCount(0);
+      setLastEatTimestamp(0);
 
       snakeRef.current = [
         { x: 10, y: 12 },
@@ -395,6 +417,31 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }
 
     tickCountRef.current += 1;
+    totalElapsedMsRef.current += speedMs;
+
+    // 连击结算辅助函数 (确保物理确定性时钟与 Go 后端完全一致)
+    const applyComboEat = (baseScore: number) => {
+      const elapsed = totalElapsedMsRef.current;
+      const isCombo = lastEatElapsedMsRef.current >= 0 && elapsed - lastEatElapsedMsRef.current <= 3000;
+      const currentCombo = isCombo ? comboCountRef.current + 1 : 1;
+      comboCountRef.current = currentCombo;
+      lastEatElapsedMsRef.current = elapsed;
+      const now = Date.now();
+      lastEatTimestampRef.current = now;
+      if (currentCombo > maxComboRef.current) {
+        maxComboRef.current = currentCombo;
+      }
+      setComboCount(currentCombo);
+      setLastEatTimestamp(now);
+
+      let extraScore = 0;
+      if (currentCombo >= 3) {
+        extraScore = (currentCombo - 2) * 5;
+      }
+      stateRef.current.score += baseScore + extraScore;
+      setScore(stateRef.current.score);
+      return { currentCombo, extraScore };
+    };
 
     // 1. 消费转向队列
     if (queueRef.current.length > 0) {
@@ -420,14 +467,14 @@ export function useSnake(onGameOver?: GameOverCallback) {
       return;
     }
 
-    // 5. 吃到普通红苹果 (增长 1 节 + 清空栅栏 + 动态加速)
+    // 5. 吃到普通红苹果 (增长 1 节 + 连击刷新 + 阶梯加分 + 清空栅栏 + 动态加速)
     if (isEatingApple) {
       const nextSnake = [head, ...snakeRef.current];
-      stateRef.current.score += 10;
-      setScore(stateRef.current.score);
+      const { currentCombo } = applyComboEat(10);
       setLength(nextSnake.length);
       sound.playEat();
-      vibrate('eat');
+      sound.playCombo(currentCombo);
+      vibrate('eat', currentCombo);
       fenceRef.current.clear();
       const nextSpeed = Math.max(
         MIN_SPEED_MS,
@@ -446,14 +493,14 @@ export function useSnake(onGameOver?: GameOverCallback) {
       return;
     }
 
-    // 7. 吃到金色幸运果 (+30 分，保留栅栏)
+    // 7. 吃到金色幸运果 (+30 分并纳入连击链，第3次起阶梯加分，保留栅栏)
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
-      stateRef.current.score += 30;
+      const { currentCombo } = applyComboEat(30);
       bonusCountRef.current += 1;
-      setScore(stateRef.current.score);
       setBonusCount(bonusCountRef.current);
       sound.playBonus();
-      vibrate('bonus');
+      sound.playCombo(currentCombo);
+      vibrate('bonus', currentCombo);
       clearBonus();
     }
 
@@ -463,7 +510,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     const tail = nextSnake.pop()!;
     fenceRef.current.add(toKey(tail.x, tail.y));
     snakeRef.current = nextSnake;
-  }, [gameOver, spawnFood, clearBonus, vibrate]);
+  }, [gameOver, spawnFood, clearBonus, vibrate, speedMs]);
 
   // 全局键盘监听 (方向键 / WASD / 空格 / P)
   useEffect(() => {
@@ -518,6 +565,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     length,
     speedMs,
     bonusCount,
+    comboCount,
+    lastEatTimestamp,
     isPlaying,
     isGameOver,
     isPaused,

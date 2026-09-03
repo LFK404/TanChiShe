@@ -117,6 +117,8 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 	var bonusPoint *Point
 	bonusExpireTick := 0
 	totalElapsedMs := 0
+	lastEatElapsedMs := -99999
+	comboCount := 0
 
 	// 初始开局生成第一颗红果与金果
 	food, bp := spawnFoodInReplay(rng, snake, fence, bonusPoint)
@@ -197,10 +199,21 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞自身死亡", tick)
 		}
 
-		// 6. 吃到普通红苹果 (长身子 + 清空栅栏 + 动态加速)
+		// 6. 吃到普通红苹果 (长身子 + 连击刷新 + 阶梯加分 + 清空栅栏 + 动态加速)
 		if isEatingApple {
 			snake = append([]Point{head}, snake...)
-			score += 10
+			if lastEatElapsedMs >= 0 && totalElapsedMs-lastEatElapsedMs <= 3000 {
+				comboCount++
+			} else {
+				comboCount = 1
+			}
+			lastEatElapsedMs = totalElapsedMs
+			extraComboScore := 0
+			if comboCount >= 3 {
+				extraComboScore = (comboCount - 2) * 5
+			}
+			score += 10 + extraComboScore
+
 			fence = make(map[string]bool)
 			speedMs = max(MIN_SPEED_MS, BASE_SPEED_MS-(score/40)*4)
 			food, bonusPoint = spawnFoodInReplay(rng, snake, fence, bonusPoint)
@@ -219,9 +232,20 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞栅栏死路", tick)
 		}
 
-		// 8. 吃到金色幸运果 (+30 分，保留栅栏)
+		// 8. 吃到金色幸运果 (+30 分并纳入连击链，第3次起阶梯加分，保留栅栏)
 		if bonusPoint != nil && head.X == bonusPoint.X && head.Y == bonusPoint.Y {
-			score += 30
+			if lastEatElapsedMs >= 0 && totalElapsedMs-lastEatElapsedMs <= 3000 {
+				comboCount++
+			} else {
+				comboCount = 1
+			}
+			lastEatElapsedMs = totalElapsedMs
+			extraComboScore := 0
+			if comboCount >= 3 {
+				extraComboScore = (comboCount - 2) * 5
+			}
+			score += 30 + extraComboScore
+
 			bonusPoint = nil
 			bonusExpireTick = 0
 		}

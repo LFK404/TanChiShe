@@ -94,7 +94,8 @@ export default function Home() {
       _finalScore: number,
       _finalDur: number,
       inputs: InputRecord[],
-      totalTicks: number
+      totalTicks: number,
+      maxCombo = 1
     ) => {
       if (!user) return;
       // 战局结束时立即清空悬浮 Toast，避免与结算面板重叠冲突
@@ -138,7 +139,7 @@ export default function Home() {
           score: _finalScore,
           length: 3,
           duration: _finalDur,
-          maxCombo: 1,
+          maxCombo: maxCombo,
           bonusCount: 0,
           speedMs: 122,
           steps: totalTicks,
@@ -167,6 +168,8 @@ export default function Home() {
     length,
     speedMs,
     bonusCount,
+    comboCount,
+    lastEatTimestamp,
     isPlaying,
     isGameOver,
     isPaused,
@@ -399,6 +402,8 @@ export default function Home() {
                 duration={duration}
                 length={length}
                 speedMs={speedMs}
+                comboCount={comboCount}
+                lastEatTimestamp={lastEatTimestamp}
                 isPlaying={isPlaying}
                 isGameOver={isGameOver}
                 isPaused={isPaused}
