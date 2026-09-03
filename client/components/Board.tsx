@@ -132,9 +132,11 @@ interface Confetti {
   color: string; size: number; alpha: number; life: number; maxLife: number;
 }
 
-// 蛇身吞咽物理传导波
+// 蛇身吞咽物理流光传导波
 interface DigestionWave {
   startTime: number;
+  isBonus: boolean;
+  totalSegments: number;
 }
 
 export default function Board({
@@ -396,13 +398,17 @@ export default function Board({
       const head = snakeRef.current[0] || { x: 10, y: 12 };
       const now = Date.now();
 
-      // 触发蛇身物理吞咽传导波
-      digestionWavesRef.current.push({ startTime: now });
-
-      const currentCombo = comboCount || 1;
-
       // 判定是金果还是普通红苹果 (金果基础分 30，红果基础分 10)
       const isBonusFruit = diff >= 30;
+
+      // 触发蛇身物理吞咽传导波 (包含金果属性与当前蛇节长度，用于流光传导)
+      digestionWavesRef.current.push({
+        startTime: now,
+        isBonus: isBonusFruit,
+        totalSegments: snakeRef.current.length,
+      });
+
+      const currentCombo = comboCount || 1;
 
       if (isBonusFruit) {
         // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，多巴胺微光粒子
@@ -588,7 +594,9 @@ export default function Board({
     // 5. 绘制蛇身 (多巴胺晶体平滑渐变 + 连击流光动效与濒危急促呼吸频闪 + 物理吞咽传导波)
     const snake = snakeRef.current;
     const nowTime = Date.now();
-    digestionWavesRef.current = digestionWavesRef.current.filter((w) => nowTime - w.startTime < 750);
+    digestionWavesRef.current = digestionWavesRef.current.filter(
+      (w) => nowTime - w.startTime < Math.max(1200, (w.totalSegments + 2) * 45)
+    );
 
     const comboElapsed = nowTime - (lastEatTimestamp || 0);
     const inCombo = (comboCount || 0) >= 2 && comboElapsed < 3000;
@@ -613,14 +621,20 @@ export default function Board({
           }
         }
 
-        // 计算物理吞咽波传导到当前节时的微隆起弹性形变
+        // 计算物理吞咽波传导到当前节时的微隆起弹性形变与流光发光核
         let bulge = 0;
+        let activeWaveBonus = false;
         digestionWavesRef.current.forEach((w) => {
           const waveElapsed = nowTime - w.startTime;
-          const targetIdx = waveElapsed / 35;
+          // 每节传导约 40ms，波形自然顺畅流动
+          const targetIdx = waveElapsed / 40;
           const dist = Math.abs(i - targetIdx);
-          if (dist < 1.2) {
-            bulge = Math.max(bulge, (1 - dist / 1.2) * 0.24);
+          if (dist < 1.3) {
+            const intensity = 1 - dist / 1.3;
+            if (intensity * 0.28 > bulge) {
+              bulge = intensity * 0.28;
+              activeWaveBonus = w.isBonus;
+            }
           }
         });
 
@@ -659,6 +673,24 @@ export default function Board({
         ctx.strokeStyle = inCombo && endingBlink ? 'rgba(255, 237, 213, 0.9)' : 'rgba(255, 255, 255, 0.75)';
         ctx.lineWidth = 0.8;
         ctx.stroke();
+
+        // 吞咽流光波经过当前节时：在关节内部叠加绘制晶莹发光核 (普通果晶白，金果流金)
+        if (bulge > 0.05) {
+          const coreAlpha = Math.min(0.85, bulge * 3.4);
+          ctx.fillStyle = activeWaveBonus
+            ? `rgba(254, 243, 199, ${coreAlpha})`
+            : `rgba(255, 255, 255, ${coreAlpha})`;
+          ctx.beginPath();
+          ctx.arc(
+            seg.x * CELL + 1 + (CELL - 2) / 2,
+            seg.y * CELL + 1 + (CELL - 2) / 2,
+            ((CELL - 2) / 2) * (0.35 + bulge * 1.4),
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+
         ctx.restore();
       }
     }
