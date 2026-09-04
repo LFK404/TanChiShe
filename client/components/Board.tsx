@@ -67,6 +67,10 @@ interface Props {
   comboCount?: number;
   maxCombo?: number;
   lastEatTimestamp?: number;
+  totalElapsedMs?: number;
+  lastEatElapsedMs?: number;
+  bonusProgressPercent?: number;
+  bonusRemainSec?: number;
   trajectoryRef?: React.MutableRefObject<Point[]>;
   trajectoryEventsRef?: React.MutableRefObject<TrajectoryEvent[]>;
   isPlaying: boolean;
@@ -141,8 +145,10 @@ interface DigestionWave {
 
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
+  bonusProgressPercent = 100, bonusRemainSec = 8.0,
   queueRef,
-  score, duration, length, speedMs, comboCount = 0, maxCombo = 0, lastEatTimestamp = 0,
+  score, duration, length, speedMs, comboCount = 0, maxCombo = 0,
+  lastEatTimestamp = 0, totalElapsedMs = 0, lastEatElapsedMs = -99999,
   trajectoryRef, trajectoryEventsRef,
   isPlaying, isGameOver, isPaused,
   isWaitingStart = false,
@@ -508,6 +514,16 @@ export default function Board({
     prevGameOverRef.current = isGameOver;
   }, [isGameOver, snakeRef, score]);
 
+  // 初始化 Canvas 视网膜高清分辨率 (DPR 物理像素无损映射)
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 3);
+    const size = GRID * CELL;
+    cvs.width = Math.round(size * dpr);
+    cvs.height = Math.round(size * dpr);
+  }, []);
+
   // 主渲染流程 (Canvas 2D 极简现代主义绘制引擎)
   const render = useCallback(() => {
     const cvs = canvasRef.current;
@@ -515,7 +531,9 @@ export default function Board({
     const ctx = cvs.getContext('2d');
     if (!ctx) return;
 
+    const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 3);
     ctx.save();
+    ctx.scale(dpr, dpr);
 
     // 处理屏幕震颤偏移
     if (shakeRef.current.frames > 0) {
@@ -645,8 +663,11 @@ export default function Board({
       (w) => nowTime - w.startTime < Math.max(1200, (w.totalSegments + 2) * 45)
     );
 
-    const comboElapsed = nowTime - (lastEatTimestamp || 0);
-    const inCombo = (comboCount || 0) >= 2 && comboElapsed < 3000;
+    // 采用物理时钟计算连击剩余时间 (彻底杜绝暂停期间与倍速回放误灭灯)
+    const comboElapsed = (totalElapsedMs !== undefined && lastEatElapsedMs !== undefined && lastEatElapsedMs >= 0)
+      ? (totalElapsedMs - lastEatElapsedMs)
+      : (nowTime - (lastEatTimestamp || 0));
+    const inCombo = (comboCount || 0) >= 2 && comboElapsed >= 0 && comboElapsed < 3000;
     const isEndingSoon = inCombo && comboElapsed >= 2000; // 剩余 1 秒快终止
     const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.024) > 0;
 
@@ -1041,7 +1062,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs]);
 
   // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -1215,7 +1236,32 @@ export default function Board({
         ))}
       </div>
 
-      {/* Canvas 画布与全屏滑屏手势感应层 */}
+      {/* 幸运果外挂独立时空导轨 (完全移出地图视界，物理步数百分比驱动，绝不失步) */}
+      <div
+        className={`w-full overflow-hidden transition-all duration-300 ${
+          hasBonus ? 'max-h-14 mb-3 opacity-100' : 'max-h-0 mb-0 opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="bg-[#FEF3C7]/90 border border-[#F59E0B]/35 rounded-2xl px-3.5 py-1.5 flex flex-col gap-1 shadow-2xs">
+          <div className="flex items-center justify-between text-[11px] font-bold">
+            <span className="text-[#D97706] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse" />
+              <span>金色幸运果 · 限时抢夺 (+30分)</span>
+            </span>
+            <span className="text-amber-800/80 font-mono text-[10px] tabular-nums">
+              {isWaitingStart ? '等待出发中 (计时冻结)' : `${Math.max(0, bonusRemainSec).toFixed(1)}s`}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-amber-200/50 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#F59E0B] to-[#EF4444] rounded-full transition-all duration-75 ease-linear shadow-[0_0_6px_#F59E0B]"
+              style={{ width: `${Math.max(0, Math.min(100, bonusProgressPercent))}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Canvas 画布与全屏滑屏手势感应层 (100% 纯净视界，无内贴进度条干扰) */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -1223,20 +1269,6 @@ export default function Board({
         onTouchCancel={handleTouchEnd}
         className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] border border-slate-200/70 touch-none max-w-full shadow-inner select-none"
       >
-        {/* 限时幸运果 8 秒倒计时条 (GPU 硬件加速丝滑渐变) */}
-        {hasBonus && (
-          <div className="absolute top-0 left-0 right-0 h-[3.5px] bg-[#EBF8FF] overflow-hidden z-20 pointer-events-none">
-            <div
-              key={bonusKey}
-              className="w-full h-full origin-left will-change-transform bg-gradient-to-r from-[#66CCFF] to-[#0099FF] shadow-[0_0_8px_#66CCFF]"
-              style={{
-                animation: 'bonusProgress 8s linear forwards',
-                animationPlayState: isPaused ? 'paused' : 'running',
-              }}
-            />
-          </div>
-        )}
-
         <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F8FAFC]" />
 
         {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}

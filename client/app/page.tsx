@@ -220,6 +220,8 @@ export default function Home() {
     bonusRef,
     hasBonus,
     bonusKey,
+    bonusProgressPercent,
+    bonusRemainSec,
     queueRef,
     score,
     duration,
@@ -229,6 +231,8 @@ export default function Home() {
     comboCount,
     maxCombo,
     lastEatTimestamp,
+    totalElapsedMs,
+    lastEatElapsedMs,
     isPlaying,
     isGameOver,
     isPaused,
@@ -463,6 +467,8 @@ export default function Home() {
                 bonusRef={bonusRef}
                 hasBonus={hasBonus}
                 bonusKey={bonusKey}
+                bonusProgressPercent={bonusProgressPercent}
+                bonusRemainSec={bonusRemainSec}
                 queueRef={queueRef}
                 score={score}
                 duration={duration}
@@ -471,6 +477,8 @@ export default function Home() {
                 comboCount={comboCount}
                 maxCombo={maxCombo}
                 lastEatTimestamp={lastEatTimestamp}
+                totalElapsedMs={totalElapsedMs}
+                lastEatElapsedMs={lastEatElapsedMs}
                 trajectoryRef={trajectoryRef}
                 trajectoryEventsRef={trajectoryEventsRef}
                 isPlaying={isPlaying}

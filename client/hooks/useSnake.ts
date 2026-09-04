@@ -104,12 +104,17 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const [isGameOver, setIsGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [speedMs, setSpeedMs] = useState(BASE_SPEED_MS);
+  const speedMsRef = useRef<number>(BASE_SPEED_MS);
   const [hasBonus, setHasBonus] = useState(false);
   const [bonusKey, setBonusKey] = useState(0);
   const [bonusCount, setBonusCount] = useState(0);
   const [comboCount, setComboCount] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [lastEatTimestamp, setLastEatTimestamp] = useState(0);
+  const [totalElapsedMs, setTotalElapsedMs] = useState(0);
+  const [lastEatElapsedMs, setLastEatElapsedMs] = useState(-99999);
+  const [bonusProgressPercent, setBonusProgressPercent] = useState(100);
+  const [bonusRemainSec, setBonusRemainSec] = useState(8.0);
   const [isWaitingStart, setIsWaitingStart] = useState(false);
   const isWaitingStartRef = useRef(false);
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
@@ -156,6 +161,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     bonusRef.current = null;
     bonusExpireTickRef.current = 0;
     setHasBonus(false);
+    setBonusProgressPercent(0);
+    setBonusRemainSec(0);
   }, []);
 
   // 确定性独立双果生成算法 (保证与 Go 后端 PRNG 消费序列绝对一致)
@@ -187,12 +194,18 @@ export function useSnake(onGameOver?: GameOverCallback) {
         bonusRef.current = remainingEmpty[Math.floor(r3 * remainingEmpty.length)];
         setBonusKey((prev) => prev + 1);
         setHasBonus(true);
+        setBonusProgressPercent(100);
+        setBonusRemainSec(8.0);
 
-        // 8秒金果物理步数到期点 (与 Go engine 对齐: 8000 / speedMs)
-        bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMs);
+        // 若处于开局等待起步态，步数暂不扣减，待迈出第一步后再正确定位到期步数
+        if (!isWaitingStartRef.current) {
+          bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMsRef.current);
+        } else {
+          bonusExpireTickRef.current = 0;
+        }
       }
     }
-  }, [speedMs]);
+  }, []);
 
   // 游戏结束结算 (自动剔除中途暂停时长)
   const gameOver = useCallback(() => {
@@ -289,6 +302,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setDuration(0);
       setLength(3);
       setBonusCount(0);
+      speedMsRef.current = BASE_SPEED_MS;
       setSpeedMs(BASE_SPEED_MS);
       setIsGameOver(false);
       setIsPaused(false);
@@ -337,6 +351,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setReplayTotalTicks(maxTick);
       setReplayCurrentTick(0);
       replaySeedRef.current = seed;
+      speedMsRef.current = BASE_SPEED_MS;
+      setSpeedMs(BASE_SPEED_MS);
 
       rngRef.current = new Mulberry32(seed);
       tickCountRef.current = 0;
@@ -371,7 +387,6 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setDuration(0);
       setLength(3);
       setBonusCount(0);
-      setSpeedMs(BASE_SPEED_MS);
       setIsGameOver(false);
       setIsPaused(false);
       setIsPlaying(true);
@@ -409,6 +424,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
       isWaitingStartRef.current = false;
       setIsWaitingStart(false);
       stateRef.current.start = Date.now();
+      // 迈出第一步时正式激活金果的物理步数到期点 (消除开局提前倒数)
+      if (bonusRef.current) {
+        bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMsRef.current);
+        setBonusProgressPercent(100);
+        setBonusRemainSec(8.0);
+      }
     }
 
     const q = queueRef.current;
@@ -508,7 +529,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     }
 
     tickCountRef.current += 1;
-    totalElapsedMsRef.current += speedMs;
+    totalElapsedMsRef.current += speedMsRef.current;
+    setTotalElapsedMs(totalElapsedMsRef.current);
     if (isReplayRef.current && !isSeekingRef.current) {
       setReplayCurrentTick(tickCountRef.current);
     }
@@ -520,6 +542,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       const currentCombo = isCombo ? comboCountRef.current + 1 : 1;
       comboCountRef.current = currentCombo;
       lastEatElapsedMsRef.current = elapsed;
+      setLastEatElapsedMs(elapsed);
       const now = Date.now();
       lastEatTimestampRef.current = now;
       if (currentCombo > maxComboRef.current) {
@@ -587,6 +610,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       }
       fenceRef.current.clear();
       const nextSpeed = calcSpeedMs(stateRef.current.score);
+      speedMsRef.current = nextSpeed;
       setSpeedMs(nextSpeed);
       sound.updateGameSpeed(nextSpeed);
       snakeRef.current = nextSnake;
@@ -621,14 +645,22 @@ export function useSnake(onGameOver?: GameOverCallback) {
       clearBonus();
     }
 
-    // 8. 金色幸运果 8 秒物理步数倒计时与临期警报 (严格与 Go 后端物理重放引擎对齐，杜绝暂停/变速回放时钟漂移)
+    // 8. 金色幸运果 8 秒物理步数倒计时与临期警报 (纯物理步数百分比驱动，绝不失步)
     if (bonusRef.current && bonusExpireTickRef.current > 0) {
       if (tickCountRef.current >= bonusExpireTickRef.current) {
         bonusRef.current = null;
         bonusExpireTickRef.current = 0;
         setHasBonus(false);
+        setBonusProgressPercent(0);
+        setBonusRemainSec(0);
       } else {
+        const totalTicks = Math.round(8000 / speedMs);
         const remainingTicks = bonusExpireTickRef.current - tickCountRef.current;
+        const percent = totalTicks > 0 ? (remainingTicks / totalTicks) * 100 : 0;
+        const remainSec = (remainingTicks * speedMs) / 1000;
+        setBonusProgressPercent(percent);
+        setBonusRemainSec(remainSec);
+
         const remainingMs = remainingTicks * speedMs;
         const prevRemainingMs = (remainingTicks + 1) * speedMs;
         if (remainingMs <= 3000 && remainingMs > 0) {
@@ -638,6 +670,9 @@ export function useSnake(onGameOver?: GameOverCallback) {
           }
         }
       }
+    } else if (bonusRef.current && isWaitingStartRef.current) {
+      setBonusProgressPercent(100);
+      setBonusRemainSec(8.0);
     }
 
     // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (纯 Ref 高速步进，零 React 状态调度开销)
@@ -679,6 +714,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
           isWaitingStartRef.current = false;
           setIsWaitingStart(false);
           stateRef.current.start = Date.now();
+          if (bonusRef.current) {
+            bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMsRef.current);
+            setBonusProgressPercent(100);
+            setBonusRemainSec(8.0);
+          }
           sound.playMove();
           return;
         }
@@ -827,8 +867,19 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setLength(snakeRef.current.length);
       setComboCount(comboCountRef.current);
       setMaxCombo(maxComboRef.current);
+      setTotalElapsedMs(totalElapsedMsRef.current);
+      setLastEatElapsedMs(lastEatElapsedMsRef.current);
+      if (bonusRef.current && bonusExpireTickRef.current > 0) {
+        const totalTicks = Math.round(8000 / speedMs);
+        const remainingTicks = Math.max(0, bonusExpireTickRef.current - tickCountRef.current);
+        setBonusProgressPercent(totalTicks > 0 ? (remainingTicks / totalTicks) * 100 : 0);
+        setBonusRemainSec((remainingTicks * speedMs) / 1000);
+      } else {
+        setBonusProgressPercent(0);
+        setBonusRemainSec(0);
+      }
     },
-    [replayTotalTicks, clearBonus, spawnFood, tick]
+    [replayTotalTicks, clearBonus, spawnFood, tick, speedMs]
   );
 
   return {
@@ -838,6 +889,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     bonusRef,
     hasBonus,
     bonusKey,
+    bonusProgressPercent,
+    bonusRemainSec,
     dirRef,
     queueRef,
     score,
@@ -848,6 +901,8 @@ export function useSnake(onGameOver?: GameOverCallback) {
     comboCount,
     maxCombo,
     lastEatTimestamp,
+    totalElapsedMs,
+    lastEatElapsedMs,
     isPlaying,
     isGameOver,
     isPaused,
