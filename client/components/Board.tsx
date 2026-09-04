@@ -778,10 +778,10 @@ export default function Board({
     const comboElapsed = (totalElapsedMs !== undefined && lastEatElapsedMs !== undefined && lastEatElapsedMs >= 0)
       ? (totalElapsedMs - lastEatElapsedMs)
       : (nowTime - (lastEatTimestamp || 0));
-    // 3 连击起激活全蛇身炫彩特效，2 连击保持轻量专注，长时间游戏不眼花
-    const inCombo = (comboCount || 0) >= 3 && comboElapsed >= 0 && comboElapsed < 3000;
+    // 2 连击起激活全蛇身炫彩流金与频闪特效，即刻爽快反馈
+    const inCombo = (comboCount || 0) >= 2 && comboElapsed >= 0 && comboElapsed < 3000;
     const isEndingSoon = inCombo && comboElapsed >= 2000; // 剩余 1 秒快终止
-    const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.024) > 0;
+    const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.025) > 0;
 
     // 连击飞驰或极限移速状态下蛇尾向后留下的流光微星轨 (低频轻量，寿命仅9帧，绝不干扰走位)
     if (isPlaying && !isPaused && !isGameOver && snake.length >= 3 && (inCombo || speedMs <= 95)) {
@@ -797,20 +797,25 @@ export default function Board({
         const seg = snake[i];
         const ratio = 1 - i / len;
 
-        let color = ratio > 0.6 ? '#38BDF8' : ratio > 0.3 ? '#7DD3FC' : '#BAE6FD';
+        // 基底天青晶体渐变
+        let color = ratio > 0.6 ? '#38BDF8' : ratio > 0.25 ? '#7DD3FC' : '#BAE6FD';
         if (inCombo) {
           if (endingBlink) {
-            // 快终止提醒：温和暖橙提示，杜绝刺眼斑马纹高频交替
-            color = ratio > 0.5 ? '#F59E0B' : '#FB923C';
+            // 快终止急促频闪预警
+            color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
           } else {
-            // 连击进行中：380ms 黄金能量行波 (Fluid Golden Wave)，流畅顺传恢复飞驰动感
-            const wave = Math.sin(nowTime / 380 - i * 0.45);
-            if (wave > 0.35) {
-              color = '#FBBF24'; // 璀璨亮金波峰
-            } else if (wave > -0.15) {
-              color = '#38BDF8'; // 天青蓝波腰
+            // 连击进行中：160ms 灵动流光与柔和连续色彩渐变 (Soft Golden Shimmer)
+            const wave = 0.5 + 0.5 * Math.sin(nowTime / 160 - i * 0.42);
+            // 根据波形平滑过渡：波峰亮金 -> 暖金过渡 -> 天青蓝 -> 冰蓝
+            if (wave > 0.72) {
+              color = '#FDE047'; // 亮流金高光
+            } else if (wave > 0.48) {
+              color = '#F59E0B'; // 暖流金
+            } else if (wave > 0.25) {
+              // 柔和过渡带：金辉融入天青
+              color = ratio > 0.5 ? '#38BDF8' : '#7DD3FC';
             } else {
-              color = '#0284C7'; // 深空湛蓝波谷
+              color = ratio > 0.5 ? '#0EA5E9' : '#38BDF8';
             }
           }
         }
@@ -843,7 +848,17 @@ export default function Board({
         const cornerRadius = isCorner ? 6 : 4;
 
         ctx.save();
-        // 移除身体节的发虚模糊阴影，保持极简锐利与护眼
+        // 全蛇身金光环绕外发光 (Golden Glow Halo)
+        if (inCombo) {
+          if (endingBlink) {
+            ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
+            ctx.shadowBlur = 6;
+          } else {
+            const glowAlpha = 0.6 + 0.25 * Math.sin(nowTime / 160 - i * 0.42);
+            ctx.shadowColor = `rgba(245, 158, 11, ${glowAlpha.toFixed(2)})`;
+            ctx.shadowBlur = 5;
+          }
+        }
 
         ctx.fillStyle = color;
         ctx.beginPath();
@@ -859,9 +874,9 @@ export default function Board({
 
         // 晶体描边：连击时泛出温润流动金光，平时纯白晶莹
         if (inCombo && !endingBlink) {
-          const strokeWave = Math.sin(nowTime / 380 - i * 0.45);
-          ctx.strokeStyle = strokeWave > 0.2 ? 'rgba(254, 240, 138, 0.9)' : 'rgba(255, 255, 255, 0.75)';
-          ctx.lineWidth = strokeWave > 0.2 ? 1.0 : 0.8;
+          const strokeWave = Math.sin(nowTime / 160 - i * 0.42);
+          ctx.strokeStyle = strokeWave > 0.1 ? 'rgba(254, 240, 138, 0.95)' : 'rgba(255, 255, 255, 0.75)';
+          ctx.lineWidth = strokeWave > 0.1 ? 1.0 : 0.8;
         } else if (inCombo && endingBlink) {
           ctx.strokeStyle = 'rgba(255, 237, 213, 0.9)';
           ctx.lineWidth = 0.8;
@@ -872,9 +887,9 @@ export default function Board({
         ctx.stroke();
 
         // 连击能量行波流光微核 (在能量波峰节内部点亮极微小的高光核，动感十足)
-        const wave = Math.sin(nowTime / 380 - i * 0.45);
-        if (inCombo && !endingBlink && wave > 0.65 && bulge <= 0.05) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        const shimmerPeak = Math.sin(nowTime / 160 - i * 0.42);
+        if (inCombo && !endingBlink && shimmerPeak > 0.7 && bulge <= 0.05) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
           ctx.beginPath();
           ctx.arc(
             seg.x * CELL + 1 + (CELL - 2) / 2,
@@ -939,13 +954,13 @@ export default function Board({
       if (inCombo) {
         if (endingBlink) {
           headColor = '#F59E0B';
-          ctx.shadowColor = '#F59E0B';
-          ctx.shadowBlur = 4;
+          ctx.shadowColor = 'rgba(239, 68, 68, 0.85)';
+          ctx.shadowBlur = 7;
         } else {
-          const headPulse = Math.sin(nowTime / 380);
-          headColor = headPulse > 0.25 ? '#FBBF24' : '#66CCFF';
-          ctx.shadowColor = '#F59E0B';
-          ctx.shadowBlur = 4;
+          const headPulse = Math.sin(nowTime / 160);
+          headColor = headPulse > 0.2 ? '#FBBF24' : '#66CCFF';
+          ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
+          ctx.shadowBlur = 6;
         }
       }
 
