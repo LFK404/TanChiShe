@@ -919,40 +919,40 @@ export default function Board({
       if (isDeadState) {
         // 1. 游戏落幕：闭目微线
         ctx.strokeStyle = '#94A3B8';
-        ctx.lineWidth = 1.2;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(head.x * CELL + e1x - 2, head.y * CELL + e1y);
-        ctx.lineTo(head.x * CELL + e1x + 2, head.y * CELL + e1y);
-        ctx.moveTo(head.x * CELL + e2x - 2, head.y * CELL + e2y);
-        ctx.lineTo(head.x * CELL + e2x + 2, head.y * CELL + e2y);
-        ctx.stroke();
-      } else if (isSatisfied) {
-        // 2. 吃果满足：灵动笑弯月牙弧线
-        ctx.strokeStyle = '#0F172A';
         ctx.lineWidth = 1.3;
         ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y + 1, 2.2, Math.PI, 0);
+        ctx.moveTo(head.x * CELL + e1x - 2.2, head.y * CELL + e1y);
+        ctx.lineTo(head.x * CELL + e1x + 2.2, head.y * CELL + e1y);
+        ctx.moveTo(head.x * CELL + e2x - 2.2, head.y * CELL + e2y);
+        ctx.lineTo(head.x * CELL + e2x + 2.2, head.y * CELL + e2y);
+        ctx.stroke();
+      } else if (isSatisfied) {
+        // 2. 吃果满足：灵动笑弯月牙弧线 (微放大至 2.5px 半径)
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = 1.35;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y + 1, 2.5, Math.PI, 0);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y + 1, 2.2, Math.PI, 0);
+        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y + 1, 2.5, Math.PI, 0);
         ctx.stroke();
       } else if (isPanic) {
-        // 3. 濒死惊慌：眼白瞪大至 2.6px，瞳孔急剧微缩至 0.75px 并施加高频微颤抖
+        // 3. 濒死惊慌：眼白瞪大至 3.0px，瞳孔急剧微缩至 0.85px 并施加高频微颤抖
         const jitterX = Math.sin(nowTime * 0.04) * 0.6;
         const jitterY = Math.cos(nowTime * 0.04) * 0.6;
 
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.6, 0, Math.PI * 2);
-        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.6, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 3.0, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 3.0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#0F172A';
         ctx.beginPath();
-        ctx.arc(head.x * CELL + e1x + px + jitterX, head.y * CELL + e1y + py + jitterY, 0.75, 0, Math.PI * 2);
-        ctx.arc(head.x * CELL + e2x + px + jitterX, head.y * CELL + e2y + py + jitterY, 0.75, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e1x + px + jitterX, head.y * CELL + e1y + py + jitterY, 0.85, 0, Math.PI * 2);
+        ctx.arc(head.x * CELL + e2x + px + jitterX, head.y * CELL + e2y + py + jitterY, 0.85, 0, Math.PI * 2);
         ctx.fill();
       } else {
         // 4. 常态：机敏明眸与视线追踪预瞄 (待机/暂停时每隔 3.8 秒自然眨眼 120ms)
@@ -962,25 +962,33 @@ export default function Board({
         if (isBlinking) {
           // 灵动眨眼微表情：眼皮自然闭合成两道清澈微弧
           ctx.strokeStyle = '#0F172A';
-          ctx.lineWidth = 1.3;
+          ctx.lineWidth = 1.35;
           ctx.lineCap = 'round';
           ctx.beginPath();
-          ctx.moveTo(head.x * CELL + e1x - 1.8, head.y * CELL + e1y);
-          ctx.lineTo(head.x * CELL + e1x + 1.8, head.y * CELL + e1y);
-          ctx.moveTo(head.x * CELL + e2x - 1.8, head.y * CELL + e2y);
-          ctx.lineTo(head.x * CELL + e2x + 1.8, head.y * CELL + e2y);
+          ctx.moveTo(head.x * CELL + e1x - 2.1, head.y * CELL + e1y);
+          ctx.lineTo(head.x * CELL + e1x + 2.1, head.y * CELL + e1y);
+          ctx.moveTo(head.x * CELL + e2x - 2.1, head.y * CELL + e2y);
+          ctx.lineTo(head.x * CELL + e2x + 2.1, head.y * CELL + e2y);
           ctx.stroke();
         } else {
+          // 常态明眸微放大雕琢：眼白 2.2 -> 2.6px，瞳孔 1.2 -> 1.45px，附带灵秀高光
           ctx.fillStyle = '#FFFFFF';
           ctx.beginPath();
-          ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.2, 0, Math.PI * 2);
-          ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.2, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e1x, head.y * CELL + e1y, 2.6, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e2x, head.y * CELL + e2y, 2.6, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = '#0F172A';
           ctx.beginPath();
-          ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.2, 0, Math.PI * 2);
-          ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.2, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e1x + px, head.y * CELL + e1y + py, 1.45, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e2x + px, head.y * CELL + e2y + py, 1.45, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 瞳孔灵动微高光点 (黑白分明更添萌动感)
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(head.x * CELL + e1x + px - 0.45, head.y * CELL + e1y + py - 0.45, 0.45, 0, Math.PI * 2);
+          ctx.arc(head.x * CELL + e2x + px - 0.45, head.y * CELL + e2y + py - 0.45, 0.45, 0, Math.PI * 2);
           ctx.fill();
         }
       }
