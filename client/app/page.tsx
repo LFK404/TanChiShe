@@ -13,7 +13,7 @@ import Tutorial from '@/components/Tutorial';
 import Achievements from '@/components/Achievements';
 import InGameToast, { ToastItem } from '@/components/InGameToast';
 import TrajectoryCardModal from '@/components/TrajectoryCardModal';
-import { checkAndUnlockAchievements, AchievementTier } from '@/utils/achievements';
+import { checkAndUnlockAchievements, Achievement, AchievementTier } from '@/utils/achievements';
 import { sound } from '@/utils/audio';
 
 export default function Home() {
@@ -34,10 +34,13 @@ export default function Home() {
   const [historyArtRecord, setHistoryArtRecord] = useState<LocalMatchRecord | null>(null);
 
   // 添加局中即时微弹窗 (NCU HOME 极简微拟态勋章体系)
-  const addToast = useCallback((text: string, tier: AchievementTier = 'BRONZE', color?: string) => {
-    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    setToasts((prev) => [...prev.slice(-3), { id, text, tier, color }]);
-  }, []);
+  const addToast = useCallback(
+    (text: string, tier: AchievementTier = 'BRONZE', color?: string, achievement?: Achievement) => {
+      const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      setToasts((prev) => [...prev.slice(-3), { id, text, tier, color, achievement }]);
+    },
+    []
+  );
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -325,7 +328,7 @@ export default function Home() {
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
-      addToast(`解锁成就: [${ach.name}]`, ach.tier);
+      addToast(`解锁成就: [${ach.name}]`, ach.tier, ach.color, ach);
     });
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, steps, user?.username, addToast]);
 

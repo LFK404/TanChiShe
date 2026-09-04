@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
-import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
+import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier, CATEGORY_INFO } from '@/utils/achievements';
 import { NCUAchievementIcon } from './NCUIcon';
 
 interface Props {
@@ -198,13 +198,13 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                           {ach.name}
                         </h4>
                         <span
-                          className={`text-[9.5px] font-mono font-bold px-1.5 py-0.2 rounded-md shrink-0 ${
+                          className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md shrink-0 ${
                             isUnlocked
                               ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                               : 'bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500'
                           }`}
                         >
-                          {ach.code}
+                          {CATEGORY_INFO[ach.category]?.name} · {ach.code}
                         </span>
                       </div>
 

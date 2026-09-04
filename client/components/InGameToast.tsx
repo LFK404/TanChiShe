@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { NCUCrestBadge } from './NCUIcon';
-import { AchievementTier } from '@/utils/achievements';
+import { NCUCrestBadge, NCUAchievementIcon } from './NCUIcon';
+import { Achievement, AchievementTier } from '@/utils/achievements';
 
 export interface ToastItem {
   id: string;
   text: string;
   color?: string;
   tier?: AchievementTier;
+  achievement?: Achievement;
 }
 
 interface Props {
@@ -27,8 +28,6 @@ export default function InGameToast({ toasts, onRemove }: Props) {
     </div>
   );
 }
-
-
 
 function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: string) => void }) {
   const [visible, setVisible] = useState(false);
@@ -50,17 +49,21 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
 
   return (
     <div
-      className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-800 bg-white/95 backdrop-blur-md border border-slate-200/80 shadow-xs flex items-center gap-2.5 ${
+      className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2.5 ${
         visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95'
       }`}
     >
-      {/* NCU HOME 微拟态勋章微缩版 */}
-      <NCUCrestBadge tier={toast.tier} unlocked size={22} />
+      {/* NCU HOME 纯悬浮专属微拟态成就勋章 */}
+      {toast.achievement ? (
+        <NCUAchievementIcon achievement={toast.achievement} unlocked size={26} />
+      ) : (
+        <NCUCrestBadge tier={toast.tier} unlocked size={22} />
+      )}
 
       {/* 成就解锁文字 */}
       <div className="flex items-center gap-1.5 tracking-tight text-[11.5px] sm:text-xs">
-        <span className="font-bold text-slate-900">{toast.text}</span>
-        <span className="text-[10px] font-bold text-[#10B981] bg-emerald-50 px-1.5 py-0.2 rounded-full">
+        <span className="font-bold text-slate-900 dark:text-white">{toast.text}</span>
+        <span className="text-[10px] font-bold text-[#10B981] bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded-full">
           成就达成
         </span>
       </div>
