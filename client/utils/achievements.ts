@@ -49,55 +49,55 @@ export const CATEGORY_INFO: Record<AchievementCategory, { name: string; iconSymb
 
 export const ACHIEVEMENTS: Achievement[] = [
   // -------------------------------------------------------------
-  // 1. 得分突破系列 (Score) —— 5枚，从易到难全面增难，终极大跨越
+  // 1. 得分突破系列 (Score) —— 5枚，从易到难全面增难 (200 ➔ 500 ➔ 800 ➔ 1400 ➔ 2500)
   // -------------------------------------------------------------
   {
-    id: 'score_150',
+    id: 'score_200',
     code: 'SC-01',
     name: '崭露锋芒',
     category: 'score',
     level: 1,
-    description: '单局得分突破 150 分',
+    description: '单局得分突破 200 分',
     flavor: '方寸之间，锋芒初露',
     tier: 'BRONZE',
     color: '#10B981',
-    check: (s) => s.score >= 150,
+    check: (s) => s.score >= 200,
   },
   {
-    id: 'score_350',
+    id: 'score_500',
     code: 'SC-02',
     name: '得分好手',
     category: 'score',
     level: 2,
-    description: '单局得分突破 350 分',
+    description: '单局得分突破 500 分',
     flavor: '走位行云流水，手感渐入佳境',
     tier: 'SILVER',
     color: '#38BDF8',
-    check: (s) => s.score >= 350,
+    check: (s) => s.score >= 500,
   },
   {
-    id: 'score_700',
+    id: 'score_800',
     code: 'SC-03',
     name: '得分大师',
     category: 'score',
     level: 3,
-    description: '单局得分突破 700 分',
+    description: '单局得分突破 800 分',
     flavor: '气贯长虹，节奏尽在掌握',
     tier: 'GOLD',
     color: '#F59E0B',
-    check: (s) => s.score >= 700,
+    check: (s) => s.score >= 800,
   },
   {
-    id: 'score_1200',
+    id: 'score_1400',
     code: 'SC-04',
     name: '登峰造极',
     category: 'score',
     level: 4,
-    description: '单局得分突破 1200 分',
+    description: '单局得分突破 1400 分',
     flavor: '会当凌绝顶，傲视群雄',
     tier: 'DIAMOND',
     color: '#8B5CF6',
-    check: (s) => s.score >= 1200,
+    check: (s) => s.score >= 1400,
   },
   {
     id: 'score_2500',
@@ -113,7 +113,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
 
   // -------------------------------------------------------------
-  // 2. 蛇身长度系列 (Length) —— 4枚，微调中间难度与平滑最难跨度
+  // 2. 蛇身长度系列 (Length) —— 4枚，微调难度 (20 ➔ 40 ➔ 60 ➔ 100 节)
   // -------------------------------------------------------------
   {
     id: 'length_20',
@@ -128,16 +128,16 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.length >= 20,
   },
   {
-    id: 'length_38',
+    id: 'length_40',
     code: 'LN-02',
     name: '蜿蜒游龙',
     category: 'length',
     level: 2,
-    description: '蛇身长度达到 38 节',
+    description: '蛇身长度达到 40 节',
     flavor: '穿行于身躯狭隙，优雅如丝',
     tier: 'SILVER',
     color: '#38BDF8',
-    check: (s) => s.length >= 38,
+    check: (s) => s.length >= 40,
   },
   {
     id: 'length_60',
@@ -152,20 +152,20 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.length >= 60,
   },
   {
-    id: 'length_90',
+    id: 'length_100',
     code: 'LN-04',
     name: '吞天巨蟒',
     category: 'length',
     level: 4,
-    description: '蛇身长度达到 90 节惊人篇章',
-    flavor: '九曲回肠，近乎填满整个方寸世界',
+    description: '蛇身长度达到 100 节惊人篇章',
+    flavor: '百节盘龙，近乎填满整个方寸世界',
     tier: 'DIAMOND',
     color: '#0099FF',
-    check: (s) => s.length >= 90,
+    check: (s) => s.length >= 100,
   },
 
   // -------------------------------------------------------------
-  // 3. 生存时间系列 (Time) —— 4枚，微调中间难度与平滑最难跨度
+  // 3. 生存时间系列 (Time) —— 4枚，微调难度 (60s ➔ 120s ➔ 200s ➔ 300s)
   // -------------------------------------------------------------
   {
     id: 'time_60',
@@ -204,56 +204,56 @@ export const ACHIEVEMENTS: Achievement[] = [
     check: (s) => s.duration >= 200,
   },
   {
-    id: 'time_320',
+    id: 'time_300',
     code: 'TM-04',
     name: '岁月不朽',
     category: 'time',
     level: 4,
-    description: '单局坚持存活超过 320 秒 (5分20秒)',
+    description: '单局坚持存活超过 300 秒 (5分钟)',
     flavor: '在极致移速中静水流深，与光阴同寿',
     tier: 'DIAMOND',
     color: '#8B5CF6',
-    check: (s) => s.duration >= 320,
+    check: (s) => s.duration >= 300,
   },
 
   // -------------------------------------------------------------
-  // 4. 极限移速系列 (Speed) —— 4枚，增加2个下位，微调中间难度
+  // 4. 极限移速系列 (Speed) —— 4枚，微调难度 (1.3x ➔ 1.6x ➔ 2.0x ➔ 2.5x 极限)
   // -------------------------------------------------------------
   {
-    id: 'speed_1_2',
+    id: 'speed_1_3',
     code: 'SP-01',
     name: '小试破风',
     category: 'speed',
     level: 1,
-    description: '单局移速突破 1.2x 档位 (125ms以内)',
+    description: '单局移速突破 1.3x 档位 (115ms以内)',
     flavor: '初尝加速，微风拂面',
     tier: 'BRONZE',
     color: '#10B981',
-    check: (s) => s.speedMs <= 125,
+    check: (s) => s.speedMs <= 115,
   },
   {
-    id: 'speed_1_5',
+    id: 'speed_1_6',
     code: 'SP-02',
     name: '疾步如飞',
     category: 'speed',
     level: 2,
-    description: '单局移速突破 1.5x 档位 (100ms以内)',
+    description: '单局移速突破 1.6x 档位 (94ms以内)',
     flavor: '身轻如燕，转向如风',
     tier: 'SILVER',
     color: '#38BDF8',
-    check: (s) => s.speedMs <= 100,
+    check: (s) => s.speedMs <= 94,
   },
   {
-    id: 'speed_1_8',
+    id: 'speed_2_0',
     code: 'SP-03',
     name: '追风掣电',
     category: 'speed',
     level: 3,
-    description: '单局移速突破 1.8x 档位 (83ms以内)',
+    description: '单局移速突破 2.0x 档位 (75ms以内)',
     flavor: '心跳脉冲与残影交织，指尖破空',
     tier: 'GOLD',
     color: '#F59E0B',
-    check: (s) => s.speedMs <= 83,
+    check: (s) => s.speedMs <= 75,
   },
   {
     id: 'speed_2_5',
