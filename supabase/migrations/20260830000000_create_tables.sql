@@ -25,11 +25,15 @@ CREATE TABLE IF NOT EXISTS game_records (
     duration BIGINT NOT NULL DEFAULT 0,
     replay_seed BIGINT NOT NULL DEFAULT 0,
     replay_inputs TEXT,
+    session_nonce VARCHAR(64),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 用户战绩时间轴查询索引
 CREATE INDEX IF NOT EXISTS idx_records_username ON game_records (username, created_at DESC);
+
+-- 防重复消费与幂等结算唯一索引
+CREATE UNIQUE INDEX IF NOT EXISTS idx_game_records_session_nonce ON game_records (session_nonce);
 
 -- 3. 开启行级安全防护 (Row Level Security)，防止通过 Supabase 公网 Data API 非法越权读写
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
