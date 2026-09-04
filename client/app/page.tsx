@@ -43,9 +43,12 @@ export default function Home() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // 当前对局防伪 Token 与种子 (支持后台预取，实现 0ms 瞬间开局)
+  // 预取下一局对局防伪 Token 与种子 (支持后台预取，实现 0ms 瞬间开局)
   const sessionRef = useRef<{ sessionToken: string; seed: number } | null>(null);
+  // 当前正在进行中对局专属绑定的 Session (开局时独占锁定，杜绝混用与二次消费)
+  const activeSessionRef = useRef<{ sessionToken: string; seed: number } | null>(null);
   const isFetchingSession = useRef(false);
+  const isSettlingRef = useRef(false);
 
   // 记录本局已触发的局中里程碑集合，避免同局重复弹窗
   const firedMilestonesRef = useRef<Set<string>>(new Set());
@@ -160,13 +163,19 @@ export default function Home() {
 
       if (!user) return;
 
-      const currentSession = sessionRef.current;
-      sessionRef.current = null; // 消费当前 session
+      // 结算防重入互斥锁：杜绝定格动画、多事件源或按键连击触发重复提交
+      if (isSettlingRef.current) return;
+      isSettlingRef.current = true;
+
+      // 独占消费当前局 Session，消费后立即置空，杜绝重复消费相同 Nonce
+      const currentSession = activeSessionRef.current;
+      activeSessionRef.current = null;
 
       // 静默为下一局预取新 session
       prefetchSession();
 
       if (!currentSession) {
+        isSettlingRef.current = false;
         refreshBoard();
         return;
       }
@@ -203,6 +212,7 @@ export default function Home() {
         } catch {}
         addToast('当前处于离线模式 · 单机战绩已在本地存盘', 'BRONZE');
       } finally {
+        isSettlingRef.current = false;
         // 沉淀最近 5 局战绩得分走势
         try {
           const history = JSON.parse(localStorage.getItem('snake_recent_scores') || '[]');
@@ -318,36 +328,46 @@ export default function Home() {
     });
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, user?.username, addToast]);
 
-  // 开始新对局 (优先命中预取 Token，0ms 零延迟启动)
+  // 开始新对局 (独占锁定当前局 Session，杜绝混用与二次消费，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {
     firedMilestonesRef.current.clear();
+    isSettlingRef.current = false;
+
     if (!user) {
+      activeSessionRef.current = null;
       startGame(Date.now());
       return;
     }
 
     if (sessionRef.current) {
-      const { seed } = sessionRef.current;
-      startGame(seed);
+      // 命中预取：立即独占转移到当前局并清空公共槽，杜绝混用
+      activeSessionRef.current = sessionRef.current;
+      sessionRef.current = null;
+      // 异步提前为下一局预取新会话
+      prefetchSession();
+      startGame(activeSessionRef.current.seed);
       return;
     }
 
-    // 若未命中预取，快速即时拉取
+    // 若未命中预取，快速即时拉取并独占锁定
     try {
       const res = await apiStartGame(user.token);
       if (res.ok && res.data) {
-        sessionRef.current = {
+        activeSessionRef.current = {
           sessionToken: res.data.sessionToken,
           seed: res.data.seed,
         };
+        prefetchSession();
         startGame(res.data.seed);
       } else {
+        activeSessionRef.current = null;
         startGame(Date.now());
       }
     } catch {
+      activeSessionRef.current = null;
       startGame(Date.now());
     }
-  }, [user, startGame]);
+  }, [user, startGame, prefetchSession]);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);
