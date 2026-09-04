@@ -82,25 +82,25 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
+        className="w-full max-w-xl bg-white dark:bg-[#0A0F1D] rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
       >
         {/* 顶部荣耀仪表盘 */}
-        <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-gradient-to-b from-[#F8FAFC] to-white relative">
+        <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-b from-[#F8FAFC] to-white dark:from-slate-900/60 dark:to-[#0A0F1D] relative">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-[#EBF8FF] dark:bg-[#0099FF]/20 text-[#0099FF] dark:text-sky-300 flex items-center justify-center">
                 <Trophy size={20} strokeWidth={2} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 text-base sm:text-lg tracking-tight">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base sm:text-lg tracking-tight">
                     成就殿堂
                   </h3>
-                  <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] text-[#0099FF]">
+                  <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] dark:bg-[#0099FF]/20 text-[#0099FF] dark:text-sky-300">
                     24 勋章
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   已点亮 <strong className="text-[#0099FF] font-mono">{unlockedCount}</strong> / {totalCount} 枚荣耀勋章 ({progressPercent}%)
                 </p>
               </div>
@@ -108,14 +108,14 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer shrink-0 text-sm font-bold"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer shrink-0 text-sm font-bold"
             >
               ✕
             </button>
           </div>
 
           {/* 晶体平滑进度条 */}
-          <div className="mt-3.5 w-full bg-slate-100 h-2 rounded-full overflow-hidden p-0.5">
+          <div className="mt-3.5 w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5">
             <div
               className="bg-gradient-to-r from-[#66CCFF] to-[#0099FF] h-full rounded-full transition-all duration-500 shadow-xs"
               style={{ width: `${progressPercent}%` }}
@@ -128,8 +128,8 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
               onClick={() => setActiveTier('ALL')}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer whitespace-nowrap ${
                 activeTier === 'ALL'
-                  ? 'bg-[#0F172A] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-[#0F172A] dark:bg-white text-white dark:text-[#0F172A] shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               全部 ({unlockedCount}/{totalCount})
@@ -148,7 +148,7 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                   className={`px-2.5 py-1 rounded-full flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
                     isSelected
                       ? 'text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                   style={{
                     backgroundColor: isSelected ? cfg.color : undefined,
@@ -178,8 +178,8 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                     key={ach.id}
                     className={`p-3 rounded-2xl border transition-all flex items-start gap-3 relative overflow-hidden group ${
                       isUnlocked
-                        ? 'bg-white border-slate-200/90 shadow-2xs hover:border-[#0099FF]/50'
-                        : 'bg-slate-50/50 border-dashed border-slate-200 opacity-60'
+                        ? 'bg-white dark:bg-slate-900/60 border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-[#0099FF]/50'
+                        : 'bg-slate-50/50 dark:bg-slate-900/20 border-dashed border-slate-200 dark:border-slate-800 opacity-60'
                     }`}
                   >
                     {/* 左侧：NCU HOME 微拟态专属勋章 */}
@@ -192,7 +192,7 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                       <div className="flex items-center justify-between gap-1">
                         <h4
                           className={`text-xs font-bold truncate ${
-                            isUnlocked ? 'text-slate-900' : 'text-slate-500'
+                            isUnlocked ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-500'
                           }`}
                         >
                           {ach.name}
@@ -200,20 +200,20 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                         <span
                           className={`text-[9.5px] font-mono font-bold px-1.5 py-0.2 rounded-md shrink-0 ${
                             isUnlocked
-                              ? 'bg-slate-100 text-slate-700'
-                              : 'bg-slate-100 text-slate-400'
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                              : 'bg-slate-100 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500'
                           }`}
                         >
                           {ach.code}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2">
                         {ach.description}
                       </p>
 
-                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100/80">
-                        <span className="text-[10px] text-slate-400 italic truncate max-w-[130px]">
+                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100/80 dark:border-slate-800/80">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate max-w-[130px]">
                           {ach.flavor}
                         </span>
                         <span

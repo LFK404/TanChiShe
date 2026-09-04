@@ -3,7 +3,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Point } from '@/types';
 import { TrajectoryEvent } from '@/hooks/useSnake';
-import { Download, Copy, Check, Sparkles } from 'lucide-react';
 import { sound } from '@/utils/audio';
 import { haptics } from '@/utils/haptics';
 
@@ -387,31 +386,26 @@ export default function TrajectoryCardModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 shadow-2xl relative max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-md bg-white dark:bg-[#0A0F1D] rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 dark:border-slate-800 shadow-2xl relative max-h-[92vh] overflow-y-auto select-none"
       >
-        {/* 顶部标题与关闭 */}
-        <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
-              <Sparkles size={16} strokeWidth={2.2} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-800">对局走位艺术卡片</h3>
-              <p className="text-[10px] text-slate-400">基于您本局真实微操轨迹演算生成</p>
-            </div>
+        {/* 顶部标题与关闭 (极简现代主义，杜绝花哨矢量图标) */}
+        <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white">对局走位艺术卡片</h3>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500">基于您本局真实微操轨迹演算生成</p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer font-bold text-xs"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer font-bold text-xs"
           >
             ✕
           </button>
         </div>
 
         {/* 核心海报展示区 */}
-        <div className="my-4 w-full flex justify-center bg-[#F8FAFC] rounded-2xl p-2.5 border border-slate-200/70 shadow-inner">
+        <div className="my-4 w-full flex justify-center bg-[#F8FAFC] dark:bg-slate-900/60 rounded-2xl p-2.5 border border-slate-200/70 dark:border-slate-800 shadow-inner">
           {isGenerating ? (
-            <div className="h-72 flex items-center justify-center text-xs text-slate-400 gap-2">
+            <div className="h-72 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 gap-2">
               <span className="inline-block w-4 h-4 border-2 border-[#0099FF] border-t-transparent rounded-full animate-spin" />
               正在将本局走位拓扑渲染为抽象艺术...
             </div>
@@ -427,29 +421,19 @@ export default function TrajectoryCardModal({
           )}
         </div>
 
-        {/* 底部操作按钮栏 */}
+        {/* 底部操作按钮栏 (纯文字极简质感，不使用矢量图标) */}
         <div className="w-full grid grid-cols-2 gap-2.5 pt-1">
           <button
             onClick={handleCopy}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-[0.98] text-slate-700 font-bold text-xs transition-all cursor-pointer border border-slate-200/60"
+            className="py-2.5 px-3 rounded-2xl bg-[#F1F5F9] dark:bg-slate-800 hover:bg-[#E2E8F0] dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 font-bold text-xs transition-all cursor-pointer border border-slate-200/60 dark:border-slate-700 text-center"
           >
-            {fallbackNotice ? (
-              <Check size={14} className="text-[#0099FF]" />
-            ) : copied ? (
-              <Check size={14} className="text-[#10B981]" />
-            ) : (
-              <Copy size={14} />
-            )}
-            <span>
-              {fallbackNotice ? '已为您直接下载' : copied ? '已复制图片' : '复制卡片'}
-            </span>
+            {fallbackNotice ? '已为您直接下载' : copied ? '已复制图片' : '复制卡片'}
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.98] text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
+            className="py-2.5 px-3 rounded-2xl bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.98] text-white font-bold text-xs transition-all cursor-pointer shadow-xs text-center"
           >
-            <Download size={14} />
-            <span>保存高清海报</span>
+            保存高清海报
           </button>
         </div>
       </div>
