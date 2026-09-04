@@ -444,9 +444,16 @@ export default function Board({
     }
   };
 
-  // 监听得分变化，精确捕捉连击、吞咽波、粉尘瓦解与音效反馈
+  // 监听得分变化，精确捕捉连击、吞咽波、粉尘瓦解与音效反馈 (支持开局重置视觉残余)
   useEffect(() => {
-    if (score > prevScoreRef.current) {
+    if (score < prevScoreRef.current) {
+      // 重新开局：清空上一局残留的视觉特效与时间戳缓存
+      fenceSpawnTimeRef.current.clear();
+      particlesRef.current = [];
+      floatingTextsRef.current = [];
+      confettiRef.current = [];
+      digestionWavesRef.current = [];
+    } else if (score > prevScoreRef.current) {
       const diff = score - prevScoreRef.current;
       const head = snakeRef.current[0] || { x: 10, y: 12 };
       const now = Date.now();
@@ -535,13 +542,13 @@ export default function Board({
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // 处理屏幕震颤偏移
+    // 处理屏幕震颤偏移 (暂停状态下冻结震颤帧数，解除暂停后顺畅衰减)
     if (shakeRef.current.frames > 0) {
+      if (!isPaused) shakeRef.current.frames -= 1;
       const s = shakeRef.current.intensity;
       const ox = (Math.random() - 0.5) * s * 2;
       const oy = (Math.random() - 0.5) * s * 2;
       ctx.translate(ox, oy);
-      shakeRef.current.frames -= 1;
     }
 
     // 1. 快速绘制预渲染的极简静态网格底板
@@ -617,18 +624,13 @@ export default function Board({
       ctx.fill();
     }
 
-    // 4. 绘制金色幸运果 (双态光晕：常态呼吸 / 临期 5~8s 急速红金频闪 + 果冻弹跳)
+    // 4. 绘制金色幸运果 (双态光晕：常态呼吸 / 临期<=3s 急速红金频闪，严格由物理步数驱动)
     const bonus = bonusRef.current;
     if (bonus) {
       const bx = bonus.x * CELL + CELL / 2;
       const by = bonus.y * CELL + CELL / 2;
-      const elapsed = Date.now() - bonusSpawnTimeRef.current;
-      const isExpiring = elapsed >= 5000;
-      let bScale = 1;
-      if (elapsed < 220 && elapsed > 0) {
-        const p = elapsed / 220;
-        bScale = 1 + 0.32 * Math.sin(p * Math.PI) * (1 - p * 0.4);
-      }
+      const isExpiring = bonusRemainSec <= 3.0 && !isWaitingStart;
+      const bScale = 1;
       const pulse = (1 + Math.sin(Date.now() / 150) * 0.08) * bScale;
 
       let glowColor = 'rgba(245, 158, 11, 0.22)';
@@ -989,13 +991,15 @@ export default function Board({
       }
     }
 
-    // 8. 更新并绘制粒子微特效
+    // 8. 更新并绘制粒子微特效 (暂停状态下完全冻结生命周期与位移)
     const activeParticles: Particle[] = [];
     particlesRef.current.forEach((p) => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life += 1;
-      p.alpha = Math.max(0, 1 - p.life / p.maxLife);
+      if (!isPaused) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life += 1;
+        p.alpha = Math.max(0, 1 - p.life / p.maxLife);
+      }
       if (p.life < p.maxLife) {
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.alpha;
@@ -1008,16 +1012,18 @@ export default function Board({
     particlesRef.current = activeParticles;
     ctx.globalAlpha = 1;
 
-    // 10. 更新并绘制四色彩纸欢庆礼花 (重力加速度与空气阻力)
+    // 10. 更新并绘制四色彩纸欢庆礼花 (重力加速度与空气阻力，暂停时物理冻结)
     const activeConfetti: Confetti[] = [];
     confettiRef.current.forEach((c) => {
-      c.x += c.vx;
-      c.y += c.vy;
-      c.vy += 0.16; // 柔和重力加速度
-      c.vx *= 0.98; // 空气阻力
-      c.rot += c.vRot;
-      c.life += 1;
-      c.alpha = Math.max(0, 1 - c.life / c.maxLife);
+      if (!isPaused) {
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += 0.16; // 柔和重力加速度
+        c.vx *= 0.98; // 空气阻力
+        c.rot += c.vRot;
+        c.life += 1;
+        c.alpha = Math.max(0, 1 - c.life / c.maxLife);
+      }
       if (c.life < c.maxLife) {
         ctx.save();
         ctx.translate(c.x, c.y);
@@ -1031,12 +1037,14 @@ export default function Board({
     });
     confettiRef.current = activeConfetti;
 
-    // 11. 更新并绘制连击飘字特效 (带果冻弹性缩放回弹)
+    // 11. 更新并绘制连击飘字特效 (带果冻弹性缩放回弹，暂停时冻结)
     const activeTexts: FloatingText[] = [];
     floatingTextsRef.current.forEach((ft) => {
-      ft.y -= 0.65;
-      ft.life += 1;
-      ft.alpha = Math.max(0, 1 - ft.life / ft.maxLife);
+      if (!isPaused) {
+        ft.y -= 0.65;
+        ft.life += 1;
+        ft.alpha = Math.max(0, 1 - ft.life / ft.maxLife);
+      }
       if (ft.life < ft.maxLife) {
         const p = Math.min(1, ft.life / 7);
         const scale = ft.life < 7 ? 1.4 - 0.4 * p : 1.0;
@@ -1062,7 +1070,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart]);
 
   // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
