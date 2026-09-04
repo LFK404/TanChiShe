@@ -33,7 +33,7 @@ export default function Home() {
   });
   const [historyArtRecord, setHistoryArtRecord] = useState<LocalMatchRecord | null>(null);
 
-  // 添加局中即时微弹窗 (南大家园微拟态勋章体系)
+  // 添加局中即时微弹窗 (NCU HOME 极简微拟态勋章体系)
   const addToast = useCallback((text: string, tier: AchievementTier = 'BRONZE', color?: string) => {
     const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     setToasts((prev) => [...prev.slice(-3), { id, text, tier, color }]);

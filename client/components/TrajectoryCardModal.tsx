@@ -398,6 +398,7 @@ export default function TrajectoryCardModal({
             </div>
           ) : (
             imageSrc && (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={imageSrc}
                 alt="对局走位艺术卡片"

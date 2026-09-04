@@ -1,15 +1,11 @@
-// PWA 静态资源缓存控制与离线回退策略 (v2 全量高光双轨音效与矢量资源离线预存)
-const CACHE_NAME = 'tanchishe-pwa-v2';
+// PWA 静态资源缓存控制与离线回退策略 (v3 极简双轨无缝 BGM 与矢量资源离线预存)
+const CACHE_NAME = 'tanchishe-pwa-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.webmanifest',
   '/icon.svg',
-  '/audio/menu_bgm.mp3',
-  '/audio/bgm.mp3',
-  '/audio/ready_go.mp3',
-  '/audio/victory.mp3',
-  '/audio/achievement_grand.mp3',
-  '/audio/replay_intro.mp3',
+  '/audio/Afternoon_Geometry.mp3',
+  '/audio/Victory_at_the_Arcade.mp3',
 ];
 
 // 1. 安装阶段：预缓存核心静态资产与双轨 BGM / 高光 Jingle
