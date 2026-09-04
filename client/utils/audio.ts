@@ -397,7 +397,7 @@ class SoundManager {
     return this.muted;
   }
 
-  // 移速动态心跳脉冲与高光声场开扬联动 (<= 82ms 激活 3200Hz 明亮声场与 1.05x 微加速)
+  // 移速动态心跳脉冲与高光声场开扬联动 (<= 88ms 激活 3200Hz 明亮声场与 1.05x 微加速)
   private heartbeatTimer: NodeJS.Timeout | null = null;
 
   updateGameSpeed(speedMs: number) {
@@ -406,13 +406,13 @@ class SoundManager {
     let targetRate = 1.0;
     let targetFreq = 2600;
 
-    if (speedMs <= 82) {
+    if (speedMs <= 88) {
       // 破风狂飙 (1.7x+): 升速至 1.05x，滤波放开至 3200Hz 亮调开扬，启动 55Hz 脉冲
       targetRate = 1.05;
       targetFreq = 3200;
       this.startHeartbeat();
-    } else if (speedMs <= 108) {
-      // 紧凑节奏: 1.02x 微加速，2850Hz 清亮声场
+    } else if (speedMs <= 115) {
+      // 紧凑节奏 (1.3x+): 1.02x 微加速，2850Hz 清亮声场
       targetRate = 1.02;
       targetFreq = 2850;
       this.stopHeartbeat();

@@ -754,9 +754,9 @@ export default function Board({
       }
     }
 
-    // 6. 极速狂飙运动残影 (speedMs <= 82，即 1.7x 破风档以上开启)
+    // 6. 极速狂飙运动残影 (speedMs <= 88，即 1.7x 破风档以上开启)
     const head = snake[0];
-    if (speedMs <= 82 && isPlaying && !isPaused && !isGameOver && head) {
+    if (speedMs <= 88 && isPlaying && !isPaused && !isGameOver && head) {
       const lastTrail = motionTrailsRef.current[0];
       if (!lastTrail || lastTrail.x !== head.x || lastTrail.y !== head.y) {
         motionTrailsRef.current.unshift({ x: head.x, y: head.y, alpha: 0.35 });
