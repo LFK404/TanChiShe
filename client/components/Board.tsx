@@ -382,10 +382,10 @@ export default function Board({
     const cx = gridX * CELL + CELL / 2;
     const cy = gridY * CELL + CELL / 2;
     const colors = ['#F59E0B', '#FBBF24', '#FEF3C7', '#FFFFFF'];
-    const count = 20;
+    const count = 28;
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
-      const speed = 3.6 + Math.random() * 2.8; // 瞬间高爆发初速
+      const speed = 4.0 + Math.random() * 3.2; // 瞬间高爆发初速
       const isStar = i % 3 === 0; // 30% 经典四芒星曜
       const isCoreGlow = i % 4 === 0;
       spawnFromPool({
@@ -395,13 +395,13 @@ export default function Board({
         vy: Math.sin(angle) * speed,
         color: colors[i % colors.length],
         coreColor: isCoreGlow ? '#FFFFFF' : undefined,
-        size: isStar ? 3.2 + Math.random() * 1.5 : 1.8 + Math.random() * 1.6,
+        size: isStar ? 4.8 + Math.random() * 2.2 : 2.8 + Math.random() * 1.8,
         drag: 0.88, // 强空气阻尼：瞬间炸开后悬停减速
         gravity: 0.04,
         shape: isStar ? 'star' : 'circle',
         rot: Math.random() * Math.PI * 2,
         vRot: (Math.random() - 0.5) * 0.25,
-        maxLife: 22 + Math.floor(Math.random() * 10),
+        maxLife: 26 + Math.floor(Math.random() * 10),
       });
     }
   }, []);
@@ -410,10 +410,10 @@ export default function Board({
   const spawnFruitParticles = useCallback((gridX: number, gridY: number) => {
     const cx = gridX * CELL + CELL / 2;
     const cy = gridY * CELL + CELL / 2;
-    const count = 12;
+    const count = 16;
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
-      const speed = 2.8 + Math.random() * 2.0;
+      const speed = 3.2 + Math.random() * 2.2;
       const isLeaf = i % 4 === 0; // 25% 翡翠绿嫩叶
       spawnFromPool({
         x: cx,
@@ -422,13 +422,13 @@ export default function Board({
         vy: Math.sin(angle) * speed,
         color: isLeaf ? '#10B981' : i % 2 === 0 ? '#EF4444' : '#F87171',
         coreColor: isLeaf ? '#A7F3D0' : '#FECACA',
-        size: isLeaf ? 2.6 + Math.random() * 1.2 : 1.6 + Math.random() * 1.5,
+        size: isLeaf ? 3.8 + Math.random() * 1.8 : 2.6 + Math.random() * 1.8,
         drag: 0.89,
         gravity: 0.05,
         shape: isLeaf ? 'leaf' : 'circle',
         rot: Math.random() * Math.PI * 2,
         vRot: (Math.random() - 0.5) * 0.2,
-        maxLife: 18 + Math.floor(Math.random() * 8),
+        maxLife: 22 + Math.floor(Math.random() * 8),
       });
     }
   }, []);
@@ -491,7 +491,7 @@ export default function Board({
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 0.7, // 向上轻抛
         color: colors[i % colors.length],
-        size: 2.2 + Math.random() * 1.5,
+        size: 3.2 + Math.random() * 1.8,
         drag: 0.91,
         gravity: 0.12, // 砖石瓦解重力下坠
         shape: 'voxel',
@@ -1199,6 +1199,12 @@ export default function Board({
       ctx.globalAlpha = p.alpha;
       ctx.translate(p.x, p.y);
       if (p.rot) ctx.rotate(p.rot);
+
+      // 为中大粒子注入多巴胺微晶发光光晕 (Glow Halo)
+      if (p.size >= 2.4) {
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = Math.min(5, p.size * 0.9);
+      }
 
       if (p.shape === 'star') {
         // 南大家园经典圆润四芒微星
