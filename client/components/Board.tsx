@@ -115,12 +115,44 @@ const drawRoundRect = (
   }
 };
 
-// 粒子爆发微特效实体
+type ParticleShape = 'circle' | 'star' | 'leaf' | 'voxel' | 'spark';
+
+// 粒子爆发微特效实体 (支持对象池零GC复用与高阶物理阻尼、自转与多形态)
 interface Particle {
-  x: number; y: number; vx: number; vy: number;
-  color: string; size: number; alpha: number;
-  life: number; maxLife: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  coreColor?: string;
+  size: number;
+  alpha: number;
+  life: number;
+  maxLife: number;
+  drag: number;
+  gravity?: number;
+  shape: ParticleShape;
+  rot?: number;
+  vRot?: number;
+  active: boolean;
 }
+
+const PARTICLE_POOL_SIZE = 160;
+const createParticlePool = (): Particle[] =>
+  Array.from({ length: PARTICLE_POOL_SIZE }, () => ({
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    color: '#FFFFFF',
+    size: 2,
+    alpha: 0,
+    life: 0,
+    maxLife: 20,
+    drag: 0.9,
+    shape: 'circle',
+    active: false,
+  }));
 
 // 浮空得分/连击微文字实体
 interface FloatingText {
@@ -178,7 +210,7 @@ export default function Board({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  const particlesRef = useRef<Particle[]>(createParticlePool());
   const motionTrailsRef = useRef<{ x: number; y: number; alpha: number }[]>([]);
   const floatingTextsRef = useRef<FloatingText[]>([]);
   const confettiRef = useRef<Confetti[]>([]);
@@ -317,26 +349,158 @@ export default function Board({
     shakeRef.current = { frames, intensity };
   };
 
-  // 吃到果实时在对应格子爆发多巴胺微光粒子
-  const spawnParticles = (gridX: number, gridY: number, color: string, count = 12) => {
-    const centerX = gridX * CELL + CELL / 2;
-    const centerY = gridY * CELL + CELL / 2;
+  // 从预分配对象池中复用或置换激活粒子 (Zero-GC 零垃圾回收微引擎)
+  const spawnFromPool = (props: Omit<Particle, 'active' | 'life' | 'alpha'>) => {
+    const pool = particlesRef.current;
+    let p = pool.find((item) => !item.active);
+    if (!p) {
+      p = pool.reduce(
+        (oldest, item) => (item.life / item.maxLife > oldest.life / oldest.maxLife ? item : oldest),
+        pool[0]
+      );
+    }
+    p.x = props.x;
+    p.y = props.y;
+    p.vx = props.vx;
+    p.vy = props.vy;
+    p.color = props.color;
+    p.coreColor = props.coreColor;
+    p.size = props.size;
+    p.alpha = 1;
+    p.life = 0;
+    p.maxLife = props.maxLife;
+    p.drag = props.drag;
+    p.gravity = props.gravity;
+    p.shape = props.shape;
+    p.rot = props.rot || 0;
+    p.vRot = props.vRot || 0;
+    p.active = true;
+  };
+
+  // 吃到金色幸运果：高初速瞬间爆裂 + 强空气阻尼悬停 + 经典南大家园四芒微星曜与流金微粒
+  const spawnBonusParticles = useCallback((gridX: number, gridY: number) => {
+    const cx = gridX * CELL + CELL / 2;
+    const cy = gridY * CELL + CELL / 2;
+    const colors = ['#F59E0B', '#FBBF24', '#FEF3C7', '#FFFFFF'];
+    const count = 20;
     for (let i = 0; i < count; i++) {
-      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5);
-      const speed = 0.8 + Math.random() * 2.2;
-      particlesRef.current.push({
-        x: centerX,
-        y: centerY,
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const speed = 3.6 + Math.random() * 2.8; // 瞬间高爆发初速
+      const isStar = i % 3 === 0; // 30% 经典四芒星曜
+      const isCoreGlow = i % 4 === 0;
+      spawnFromPool({
+        x: cx,
+        y: cy,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        color,
-        size: 1.5 + Math.random() * 2,
-        alpha: 1,
-        life: 0,
-        maxLife: 16 + Math.floor(Math.random() * 8),
+        color: colors[i % colors.length],
+        coreColor: isCoreGlow ? '#FFFFFF' : undefined,
+        size: isStar ? 3.2 + Math.random() * 1.5 : 1.8 + Math.random() * 1.6,
+        drag: 0.88, // 强空气阻尼：瞬间炸开后悬停减速
+        gravity: 0.04,
+        shape: isStar ? 'star' : 'circle',
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.25,
+        maxLife: 22 + Math.floor(Math.random() * 10),
       });
     }
-  };
+  }, []);
+
+  // 吃到普通红苹果：珊瑚红多汁果肉微粒 + 翡翠绿嫩叶碎屑微切片
+  const spawnFruitParticles = useCallback((gridX: number, gridY: number) => {
+    const cx = gridX * CELL + CELL / 2;
+    const cy = gridY * CELL + CELL / 2;
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const speed = 2.8 + Math.random() * 2.0;
+      const isLeaf = i % 4 === 0; // 25% 翡翠绿嫩叶
+      spawnFromPool({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: isLeaf ? '#10B981' : i % 2 === 0 ? '#EF4444' : '#F87171',
+        coreColor: isLeaf ? '#A7F3D0' : '#FECACA',
+        size: isLeaf ? 2.6 + Math.random() * 1.2 : 1.6 + Math.random() * 1.5,
+        drag: 0.89,
+        gravity: 0.05,
+        shape: isLeaf ? 'leaf' : 'circle',
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.2,
+        maxLife: 18 + Math.floor(Math.random() * 8),
+      });
+    }
+  }, []);
+
+  // 连击飞驰或极限移速下的蛇尾流光微星轨 (低频轻巧发射，寿命仅9帧，绝不干扰视线)
+  const spawnSpeedTrailParticle = useCallback((tailX: number, tailY: number, isCombo: boolean) => {
+    spawnFromPool({
+      x: tailX * CELL + CELL / 2 + (Math.random() - 0.5) * 4,
+      y: tailY * CELL + CELL / 2 + (Math.random() - 0.5) * 4,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: (Math.random() - 0.5) * 0.6,
+      color: isCombo ? '#FBBF24' : '#38BDF8',
+      coreColor: '#FFFFFF',
+      size: 1.4 + Math.random() * 1.0,
+      drag: 0.84,
+      shape: 'spark',
+      rot: Math.random() * Math.PI * 2,
+      maxLife: 9,
+    });
+  }, []);
+
+  // 死亡撞墙冲击波爆发粒子
+  const spawnDeathExplosion = useCallback((gridX: number, gridY: number) => {
+    const cx = gridX * CELL + CELL / 2;
+    const cy = gridY * CELL + CELL / 2;
+    const colors = ['#EF4444', '#F87171', '#FCA5A5', '#FFFFFF'];
+    for (let i = 0; i < 24; i++) {
+      const angle = (Math.PI * 2 * i) / 24 + (Math.random() - 0.5) * 0.3;
+      const speed = 3.6 + Math.random() * 3.2;
+      spawnFromPool({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: colors[i % colors.length],
+        coreColor: '#FFFFFF',
+        size: 2.0 + Math.random() * 2.2,
+        drag: 0.87,
+        gravity: 0.06,
+        shape: i % 4 === 0 ? 'star' : 'circle',
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.3,
+        maxLife: 26 + Math.floor(Math.random() * 10),
+      });
+    }
+  }, []);
+
+  // 吃到红苹果清空栅栏时爆发体素砖石瓦解小碎块 (带角速度与微重力，逼真崩解打击感)
+  const spawnCrumbleParticles = useCallback((gridX: number, gridY: number) => {
+    const cx = gridX * CELL + CELL / 2;
+    const cy = gridY * CELL + CELL / 2;
+    const colors = ['#94A3B8', '#CBD5E1', '#64748B'];
+    const count = 5;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.4 + Math.random() * 2.2;
+      spawnFromPool({
+        x: cx + (Math.random() - 0.5) * 6,
+        y: cy + (Math.random() - 0.5) * 6,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 0.7, // 向上轻抛
+        color: colors[i % colors.length],
+        size: 2.2 + Math.random() * 1.5,
+        drag: 0.91,
+        gravity: 0.12, // 砖石瓦解重力下坠
+        shape: 'voxel',
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.3,
+        maxLife: 22 + Math.floor(Math.random() * 8),
+      });
+    }
+  }, []);
 
   // 在吃果位置生成飘字反馈 (延长寿命并强化视觉存在感)
   const spawnFloatingText = (gridX: number, gridY: number, text: string, color: string) => {
@@ -366,27 +530,6 @@ export default function Board({
     prevSpeedMsRef.current = speedMs;
   }, [speedMs, isPlaying, isPaused, isGameOver]);
 
-  // 吃到红苹果清空栅栏时爆发浅灰粉尘消散粒子 (强化瓦解打击感)
-  const spawnCrumbleParticles = (gridX: number, gridY: number) => {
-    const centerX = gridX * CELL + CELL / 2;
-    const centerY = gridY * CELL + CELL / 2;
-    for (let i = 0; i < 8; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 0.5 + Math.random() * 1.6;
-      particlesRef.current.push({
-        x: centerX + (Math.random() - 0.5) * 8,
-        y: centerY + (Math.random() - 0.5) * 8,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        color: '#94A3B8',
-        size: 1.2 + Math.random() * 1.6,
-        alpha: 0.85,
-        life: 0,
-        maxLife: 16 + Math.floor(Math.random() * 8),
-      });
-    }
-  };
-
   // 破纪录 / 高分加冕时屏幕两侧喷射 NCU HOME 四色彩纸礼花
   const spawnConfetti = () => {
     const colors = ['#66CCFF', '#10B981', '#EF4444', '#F59E0B', '#8B5CF6'];
@@ -411,9 +554,11 @@ export default function Board({
   // 监听得分变化，精确捕捉连击、吞咽波、粉尘瓦解与音效反馈 (支持开局重置视觉残余)
   useEffect(() => {
     if (score < prevScoreRef.current) {
-      // 重新开局：清空上一局残留的视觉特效与时间戳缓存
+      // 重新开局：清空上一局残留的视觉特效与时间戳缓存，重置粒子对象池
       fenceSpawnTimeRef.current.clear();
-      particlesRef.current = [];
+      particlesRef.current.forEach((p) => {
+        p.active = false;
+      });
       floatingTextsRef.current = [];
       confettiRef.current = [];
       digestionWavesRef.current = [];
@@ -435,9 +580,9 @@ export default function Board({
       const currentCombo = comboCount || 1;
 
       if (isBonusFruit) {
-        // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，多巴胺微光粒子
+        // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，高初速多巴胺微星曜爆发
         triggerShake(3, 1.2);
-        spawnParticles(head.x, head.y, '#F59E0B', 18);
+        spawnBonusParticles(head.x, head.y);
 
         if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
@@ -448,9 +593,9 @@ export default function Board({
           spawnFloatingText(head.x, head.y, `+${diff} 金果 ${currentCombo}连击! (+${extra})`, '#D97706');
         }
       } else {
-        // 普通红苹果：轻柔微震 (2帧/0.8px)，清空栅栏并爆发强化粉尘消散粒子
+        // 普通红苹果：轻柔微震 (2帧/0.8px)，清空栅栏并爆发珊瑚红果肉与翡翠绿嫩叶粒子
         triggerShake(2, 0.8);
-        spawnParticles(head.x, head.y, '#EF4444', 10);
+        spawnFruitParticles(head.x, head.y);
         fenceRef.current.forEach((k) => {
           const [fx, fy] = k.split(',').map(Number);
           spawnCrumbleParticles(fx, fy);
@@ -468,22 +613,22 @@ export default function Board({
       }
     }
     prevScoreRef.current = score;
-  }, [score, snakeRef, fenceRef, comboCount]);
+  }, [score, snakeRef, fenceRef, comboCount, spawnBonusParticles, spawnFruitParticles, spawnCrumbleParticles]);
 
-  // 监听游戏结束，触发死亡轻微震屏 (6帧/2.5px)、粒子消散与高光礼花
+  // 监听游戏结束，触发死亡轻微震屏 (6帧/2.5px)、冲击波粒子消散与高光礼花
   useEffect(() => {
     if (isGameOver && !prevGameOverRef.current) {
       triggerShake(6, 2.5);
       const head = snakeRef.current[0];
       if (head) {
-        spawnParticles(head.x, head.y, '#EF4444', 24);
+        spawnDeathExplosion(head.x, head.y);
       }
       if (score >= 100) {
         spawnConfetti();
       }
     }
     prevGameOverRef.current = isGameOver;
-  }, [isGameOver, snakeRef, score]);
+  }, [isGameOver, snakeRef, score, spawnDeathExplosion]);
 
   // 初始化 Canvas 视网膜高清分辨率 (DPR 物理像素无损映射)
   useEffect(() => {
@@ -637,6 +782,14 @@ export default function Board({
     const inCombo = (comboCount || 0) >= 3 && comboElapsed >= 0 && comboElapsed < 3000;
     const isEndingSoon = inCombo && comboElapsed >= 2000; // 剩余 1 秒快终止
     const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.024) > 0;
+
+    // 连击飞驰或极限移速状态下蛇尾向后留下的流光微星轨 (低频轻量，寿命仅9帧，绝不干扰走位)
+    if (isPlaying && !isPaused && !isGameOver && snake.length >= 3 && (inCombo || speedMs <= 95)) {
+      if (Math.random() < 0.32) {
+        const tail = snake[snake.length - 1];
+        spawnSpeedTrailParticle(tail.x, tail.y, inCombo);
+      }
+    }
 
     if (snake.length > 1) {
       const len = snake.length;
@@ -990,25 +1143,82 @@ export default function Board({
       }
     }
 
-    // 8. 更新并绘制粒子微特效 (暂停状态下完全冻结生命周期与位移)
-    const activeParticles: Particle[] = [];
-    particlesRef.current.forEach((p) => {
+    // 8. 更新并绘制粒子微特效 (零 GC 对象池单循环复用，支持多形态与高阶阻尼物理)
+    const pool = particlesRef.current;
+    for (let i = 0; i < pool.length; i++) {
+      const p = pool[i];
+      if (!p.active) continue;
+
       if (!isPaused) {
         p.x += p.vx;
         p.y += p.vy;
+        p.vx *= p.drag;
+        p.vy *= p.drag;
+        if (p.gravity) p.vy += p.gravity;
+        if (p.vRot) p.rot = (p.rot || 0) + p.vRot;
         p.life += 1;
         p.alpha = Math.max(0, 1 - p.life / p.maxLife);
       }
-      if (p.life < p.maxLife) {
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-        activeParticles.push(p);
+
+      if (p.life >= p.maxLife || p.alpha <= 0.01) {
+        p.active = false;
+        continue;
       }
-    });
-    particlesRef.current = activeParticles;
+
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      if (p.rot) ctx.rotate(p.rot);
+
+      if (p.shape === 'star') {
+        // 南大家园经典圆润四芒微星
+        const r = p.size;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.quadraticCurveTo(0, 0, 0, r);
+        ctx.quadraticCurveTo(0, 0, -r, 0);
+        ctx.quadraticCurveTo(0, 0, 0, -r);
+        ctx.fill();
+        if (p.coreColor) {
+          ctx.fillStyle = p.coreColor;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 0.38, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (p.shape === 'voxel') {
+        // 栅栏瓦解崩碎体素小石块
+        ctx.fillStyle = p.color;
+        const s = p.size;
+        ctx.fillRect(-s / 2, -s / 2, s, s);
+      } else if (p.shape === 'leaf') {
+        // 翡翠多巴胺嫩叶碎屑
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size * 1.35, p.size * 0.7, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.shape === 'spark') {
+        // 连击流光微星轨
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // 基础多巴胺微光圆粒
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        if (p.coreColor) {
+          ctx.fillStyle = p.coreColor;
+          ctx.beginPath();
+          ctx.arc(0, 0, Math.max(0.6, p.size * 0.45), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
     ctx.globalAlpha = 1;
 
     // 10. 更新并绘制四色彩纸欢庆礼花 (重力加速度与空气阻力，暂停时物理冻结)
@@ -1069,7 +1279,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart, spawnSpeedTrailParticle]);
 
   // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {

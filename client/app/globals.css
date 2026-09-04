@@ -163,4 +163,25 @@ body {
   animation: toast-jelly-out 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* 弹窗弹出瞬间多巴胺星尘礼花动画 */
+@keyframes toast-sparkle-drift {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.2) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.45), calc(var(--dy) * 0.45)) scale(1.15) rotate(45deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0) rotate(180deg);
+  }
+}
+
+.animate-toast-sparkle {
+  animation: toast-sparkle-drift 0.55s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+
 
