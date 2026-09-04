@@ -8,7 +8,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Sparkles,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import { NCUCrestBadge } from './NCUIcon';
 
-// 战局终了段位微拟态勋章加冕组件 (基于统一 NCUCrestBadge 极简实现)
+// 战局终了段位微拟态勋章加冕组件 (显式点亮高饱和多彩徽标与柔光)
 function SettleTierCrest({ score }: { score: number }) {
   const tier =
     score >= 800
@@ -31,20 +30,20 @@ function SettleTierCrest({ score }: { score: number }) {
 
   const badgeConfig =
     tier === 'DIAMOND'
-      ? { label: '钻石', color: '#8B5CF6' }
+      ? { label: '钻石', color: '#0099FF' }
       : tier === 'GOLD'
       ? { label: '黄金', color: '#F59E0B' }
       : tier === 'SILVER'
       ? { label: '白银', color: '#64748B' }
       : tier === 'BRONZE'
-      ? { label: '青铜', color: '#D97706' }
+      ? { label: '青铜', color: '#10B981' }
       : null;
 
   if (!tier || !badgeConfig) return null;
 
   return (
     <div className="flex flex-col items-center gap-1.5 animate-in zoom-in-90 duration-300">
-      <NCUCrestBadge tier={tier} size={48} className="drop-shadow-sm" />
+      <NCUCrestBadge tier={tier} unlocked={true} size={50} className="drop-shadow-md" />
       <span className="text-[11px] font-bold" style={{ color: badgeConfig.color }}>
         {badgeConfig.label}段位
       </span>
@@ -176,41 +175,6 @@ export default function Board({
     });
     setShowArtModal(true);
   }, [trajectoryRef, trajectoryEventsRef]);
-
-  const [copiedSummary, setCopiedSummary] = useState(false);
-
-  // 复制极简 ASCII 纯文本对局战报 (零 Emoji，等宽国际主义终端排版)
-  const handleCopySummary = useCallback(async () => {
-    const effectiveSpeed = Math.round((BASE_SPEED_MS / speedMs) * 10) / 10;
-    const summaryText = [
-      '┌── GAME RECAP // RETRO SNAKE ──────────┐',
-      `│ SCORE    : ${String(score).padEnd(27, ' ')}│`,
-      `│ LENGTH   : ${String(length + ' BLOCKS').padEnd(27, ' ')}│`,
-      `│ DURATION : ${String(duration + 's').padEnd(27, ' ')}│`,
-      `│ SPEED    : ${String(effectiveSpeed + 'x').padEnd(27, ' ')}│`,
-      `│ MAX COMBO: ${String((maxCombo || 0) + ' HITS').padEnd(27, ' ')}│`,
-      `│ CAUSE    : ${String(deathReason || 'NORMAL').padEnd(27, ' ')}│`,
-      '├───────────────────────────────────────┤',
-      '│ NCU HOME : https://zhixu.online       │',
-      '└───────────────────────────────────────┘',
-    ].join('\n');
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(summaryText);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = summaryText;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-      setCopiedSummary(true);
-      haptics.trigger('snap');
-      setTimeout(() => setCopiedSummary(false), 1500);
-    } catch {}
-  }, [score, length, duration, speedMs, maxCombo, deathReason]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -1347,40 +1311,40 @@ export default function Board({
 
         {/* 游戏结束结算面板 (极简 NCU HOME 现代主义几何卡片) */}
         {isGameOver && (
-          <div className="absolute inset-0 z-30 bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200 text-[#0F172A] dark:text-white">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.8 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 font-bold text-xs mb-2.5">
+          <div className="absolute inset-0 z-30 bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-[6px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200 text-[#0F172A] dark:text-white">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] dark:bg-[#0099FF]/20 text-[#0099FF] dark:text-sky-300 font-bold text-xs mb-2.5 shadow-2xs">
               <span>{isReplay ? '观摩播放结束' : '游戏结束'}</span>
             </div>
 
-            {/* 荣耀加冕：NCU HOME 微拟态段位勋章 */}
+            {/* 荣耀加冕：NCU HOME 微拟态段位勋章 (点亮高饱和多彩微光) */}
             <div className="mb-2">
               <SettleTierCrest score={score} />
             </div>
 
-            <div className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white font-mono tracking-tight mb-1.5">
+            <div className="text-3xl sm:text-4xl font-black text-[#0F172A] dark:text-white font-mono tracking-tight mb-1 tabular-nums">
               {score} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">分</span>
             </div>
 
-            {/* 真实死因复盘与玩家战况点评 (纯净极简现代主义) */}
-            <div className="flex flex-col items-center gap-1 mb-3">
+            {/* 真实死因复盘与玩家战况点评 (人文极简现代主义，杜绝粗糙方括号) */}
+            <div className="flex flex-col items-center gap-1 mb-3.5">
               {deathReason && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 text-xs font-semibold shadow-2xs border border-slate-200/60 dark:border-slate-700">
-                  <span className="font-mono text-[10px] text-slate-400 font-bold">[死因]</span>
-                  <span>{deathReason}</span>
+                <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-100/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200/60 dark:border-slate-700">
+                  <span className="text-slate-400 text-[11px]">死因</span>
+                  <span className="font-bold">{deathReason}</span>
                 </div>
               )}
-              <span className="text-xs text-slate-400 font-medium">
+              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
                 {(() => {
-                  if (score >= 1000) return '[TOP] 登峰造极 · 破千荣耀时刻';
-                  if (score >= 600) return '[FAST] 极速破风 · 走位游刃有余';
-                  if (maxCombo >= 5) return '[COMBO] 连击大师 · 节拍掌控入微';
-                  if (score < 100) return '[FATAL] 猝不及防 · 反应未及走位';
-                  return '[END] 战局定格 · 距新纪录一步之遥';
+                  if (score >= 1000) return '登峰造极 · 破千荣耀时刻';
+                  if (score >= 600) return '极速破风 · 走位游刃有余';
+                  if (maxCombo >= 5) return '连击大师 · 节拍掌控入微';
+                  if (score < 100) return '初试身手 · 循序渐进';
+                  return '战局定格 · 距新纪录一步之遥';
                 })()}
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300 mb-4 bg-[#F8FAFC] dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 px-4 py-2.5 rounded-2xl shadow-xs">
+            <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300 mb-4 bg-[#F8FAFC] dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 px-4 py-2.5 rounded-2xl shadow-xs">
               <div className="flex flex-col items-center">
                 <span className="text-[10px] text-slate-400">蛇身长度</span>
                 <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length}</strong>
@@ -1402,19 +1366,11 @@ export default function Board({
             {isReplay ? (
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleCopySummary}
-                  className="px-3 py-2 bg-[#F1F5F9] dark:bg-slate-800 hover:bg-[#E2E8F0] dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 rounded-full text-xs font-bold font-mono cursor-pointer shadow-xs transition-all border border-slate-200/60 dark:border-slate-700"
-                  title="复制极简等宽文本战报"
-                >
-                  {copiedSummary ? '[已复制]' : '战报'}
-                </button>
-                <button
                   onClick={handleOpenArtModal}
-                  className="px-3.5 py-2 bg-[#F1F5F9] dark:bg-slate-800 hover:bg-[#E2E8F0] dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all border border-slate-200/60 dark:border-slate-700"
+                  className="px-4 py-2 bg-[#F1F5F9] dark:bg-slate-800 hover:bg-[#E2E8F0] dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 rounded-full text-xs font-bold cursor-pointer shadow-xs transition-all border border-slate-200/60 dark:border-slate-700"
                   title="生成走位艺术卡片"
                 >
-                  <Sparkles size={13} className="text-[#0099FF]" />
-                  <span>走位卡片</span>
+                  走位卡片
                 </button>
                 <button
                   onClick={onRestartReplay || onStart}
@@ -1431,24 +1387,16 @@ export default function Board({
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 flex-wrap justify-center">
-                <button
-                  onClick={handleCopySummary}
-                  className="px-3.5 py-2.5 bg-[#F8FAFC] dark:bg-slate-800 hover:bg-[#F1F5F9] dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-full text-xs font-bold font-mono cursor-pointer shadow-xs transition-all"
-                  title="复制极简等宽文本战报"
-                >
-                  {copiedSummary ? '[已复制]' : '复制战报'}
-                </button>
+              <div className="flex items-center gap-2.5 flex-wrap justify-center">
                 <button
                   onClick={handleOpenArtModal}
-                  className="px-3.5 py-2.5 bg-[#F8FAFC] dark:bg-slate-800 hover:bg-[#F1F5F9] dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                  className="px-4 py-2.5 bg-[#F8FAFC] dark:bg-slate-800 hover:bg-[#F1F5F9] dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 rounded-full text-xs sm:text-sm font-bold cursor-pointer shadow-xs transition-all"
                 >
-                  <Sparkles size={14} className="text-[#0099FF]" />
-                  <span>走位卡片</span>
+                  走位卡片
                 </button>
                 <button
                   onClick={onStart}
-                  className="px-5 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <RotateCcw size={14} />
                   <span>再来一局</span>
