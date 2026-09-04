@@ -824,9 +824,9 @@ export default function Board({
             // 快终止急促频闪预警
             color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
           } else {
-            // 连击进行中：角频率放缓至 0.48，金色波峰温和覆盖 4~5 节
-            const rawWave = Math.sin(nowTime / 160 - i * 0.48);
-            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 1.3) : 0;
+            // 连击进行中：角频率 0.38 展宽至 5~6 节，周期 150ms 精准实现波速提升三分之一
+            const rawWave = Math.sin(nowTime / 150 - i * 0.38);
+            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 1.15) : 0;
             // 数学级连续 RGB 线性插值：过渡至浓郁纯正流金橙黄 [245, 158, 11] (#F59E0B)
             const r = Math.round(baseR + (245 - baseR) * goldIntensity);
             const g = Math.round(baseG + (158 - baseG) * goldIntensity);
@@ -972,7 +972,7 @@ export default function Board({
           ctx.shadowColor = 'rgba(239, 68, 68, 0.85)';
           ctx.shadowBlur = 7;
         } else {
-          const headPulse = Math.sin(nowTime / 160);
+          const headPulse = Math.sin(nowTime / 150);
           headColor = headPulse > 0.2 ? '#FBBF24' : '#66CCFF';
           ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
           ctx.shadowBlur = 6;
