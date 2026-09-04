@@ -326,9 +326,15 @@ export default function Home() {
       steps,
     }, user?.username);
 
-    newlyUnlocked.forEach((ach) => {
+    // 按段位稀有度降序排序，确保钻石与黄金等高阶压轴成就优先登场
+    const tierWeight: Record<string, number> = { DIAMOND: 4, GOLD: 3, SILVER: 2, BRONZE: 1 };
+    const sorted = [...newlyUnlocked].sort(
+      (a, b) => (tierWeight[b.tier] || 0) - (tierWeight[a.tier] || 0)
+    );
+
+    sorted.forEach((ach) => {
       sound.playAchievement();
-      addToast(`解锁成就: [${ach.name}]`, ach.tier, ach.color, ach);
+      addToast(ach.name, ach.tier, ach.color, ach);
     });
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, steps, user?.username, addToast]);
 
