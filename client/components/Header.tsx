@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { User } from '@/types';
 import { sound } from '@/utils/audio';
 import { haptics, HapticMode } from '@/utils/haptics';
-import { Trophy, HelpCircle, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { Trophy, HelpCircle, Volume2, VolumeX, LogOut, Sun, Moon } from 'lucide-react';
 
 interface Props {
   user: User;
@@ -14,14 +14,51 @@ interface Props {
   onOpenAchievements?: () => void;
 }
 
-// 页面顶部导航栏：南大家园极简排版与纯净微拟态控制中心
+// 页面顶部导航栏：极简现代主义排版与纯净微拟态控制中心
 export default function Header({ user, onLogout, onOpenTutorial, onOpenAchievements }: Props) {
   const [isMuted, setIsMuted] = useState(sound.muted);
   const [bgmVol, setBgmVol] = useState(Math.round(sound.bgmVolume * 100));
   const [sfxVol, setSfxVol] = useState(Math.round(sound.sfxVolume * 100));
   const [hapticMode, setHapticMode] = useState<HapticMode>(() => haptics.mode);
   const [showAudioPopover, setShowAudioPopover] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('snake_theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const shouldDark = saved === 'dark' || (!saved && prefersDark);
+      document.documentElement.classList.toggle('dark', shouldDark);
+      return shouldDark;
+    } catch {
+      return false;
+    }
+  });
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  // 监听操作系统级深浅色主题切换广播
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      const saved = localStorage.getItem('snake_theme');
+      if (!saved) {
+        setIsDark(e.matches);
+        document.documentElement.classList.toggle('dark', e.matches);
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const handleToggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    try {
+      localStorage.setItem('snake_theme', next ? 'dark' : 'light');
+    } catch {}
+    haptics.trigger('ui');
+  };
 
   // 点击浮层外部自动收起
   useEffect(() => {
@@ -101,8 +138,17 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
         </div>
       </div>
 
-      {/* 右侧：成就殿堂、指南弹窗、分轨音频设置与退出按钮 */}
+      {/* 右侧：日夜切换、成就殿堂、指南弹窗、分轨音频设置与退出按钮 */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 relative">
+        {/* 日夜深空墨蓝模式切换 (纯矢量超椭圆轮廓，零 Emoji) */}
+        <button
+          onClick={handleToggleTheme}
+          title={isDark ? '切换至明亮模式' : '切换至深空墨蓝夜间模式'}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
+        >
+          {isDark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+        </button>
+
         {onOpenAchievements && (
           <button
             onClick={onOpenAchievements}

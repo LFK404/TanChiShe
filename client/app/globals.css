@@ -23,6 +23,21 @@
   --shadow-modal: 0 12px 36px rgba(15, 23, 42, 0.16);
 }
 
+.dark {
+  --primary-cyan: #38BDF8;
+  --primary-dark: #0099FF;
+  --primary-light: #0F172A;
+  --primary-subtle: #1E293B;
+
+  --text-main: #F8FAFC;
+  --text-body: #CBD5E1;
+  --text-muted: #64748B;
+
+  --bg-page: #111827;
+  --bg-workspace: #0A0F1D;
+  --border-line: #1E293B;
+}
+
 html,
 body {
   background-color: var(--bg-workspace);
@@ -32,6 +47,49 @@ body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   overscroll-behavior-x: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark body {
+  background-color: #0A0F1D;
+  color: #F8FAFC;
+}
+
+.dark .bg-white {
+  background-color: #111827 !important;
+  border-color: #1E293B !important;
+}
+
+.dark .bg-\[\#F8FAFC\] {
+  background-color: #0F172A !important;
+  border-color: #1E293B !important;
+}
+
+.dark .text-\[\#0F172A\] {
+  color: #F8FAFC !important;
+}
+
+.dark .text-slate-700 {
+  color: #E2E8F0 !important;
+}
+
+.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/60,
+.dark .border-slate-100 {
+  border-color: #1E293B !important;
+}
+
+.dark .bg-slate-100,
+.dark .bg-slate-100\/90,
+.dark .bg-slate-100\/95,
+.dark .bg-slate-100\/75,
+.dark .bg-\[\#F1F5F9\] {
+  background-color: #1E293B !important;
+  color: #E2E8F0 !important;
 }
 
 /* 隐藏滚动条同时保持滚动 */

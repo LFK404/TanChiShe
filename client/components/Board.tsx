@@ -305,29 +305,41 @@ export default function Board({
     });
   }, []);
 
-  // 离屏 Canvas 预渲染静态网格背景 (极大减少主线程绘制开销)
+  // 离屏 Canvas 预渲染静态网格背景 (自适应深空墨蓝夜间态与明亮态，监听主题切换热重绘)
   useEffect(() => {
-    const offscreen = document.createElement('canvas');
-    offscreen.width = GRID * CELL;
-    offscreen.height = GRID * CELL;
-    const offCtx = offscreen.getContext('2d');
-    if (offCtx) {
-      offCtx.fillStyle = '#FFFFFF';
-      offCtx.fillRect(0, 0, GRID * CELL, GRID * CELL);
-      offCtx.strokeStyle = 'rgba(226, 232, 240, 0.4)';
-      offCtx.lineWidth = 0.5;
-      for (let i = 0; i <= GRID; i++) {
-        offCtx.beginPath();
-        offCtx.moveTo(i * CELL, 0);
-        offCtx.lineTo(i * CELL, GRID * CELL);
-        offCtx.stroke();
-        offCtx.beginPath();
-        offCtx.moveTo(0, i * CELL);
-        offCtx.lineTo(GRID * CELL, i * CELL);
-        offCtx.stroke();
+    const renderBg = () => {
+      const offscreen = document.createElement('canvas');
+      offscreen.width = GRID * CELL;
+      offscreen.height = GRID * CELL;
+      const offCtx = offscreen.getContext('2d');
+      if (offCtx) {
+        const isDark = document.documentElement.classList.contains('dark');
+        offCtx.fillStyle = isDark ? '#0F172A' : '#FFFFFF';
+        offCtx.fillRect(0, 0, GRID * CELL, GRID * CELL);
+        offCtx.strokeStyle = isDark ? 'rgba(51, 65, 85, 0.35)' : 'rgba(226, 232, 240, 0.4)';
+        offCtx.lineWidth = 0.5;
+        for (let i = 0; i <= GRID; i++) {
+          offCtx.beginPath();
+          offCtx.moveTo(i * CELL, 0);
+          offCtx.lineTo(i * CELL, GRID * CELL);
+          offCtx.stroke();
+          offCtx.beginPath();
+          offCtx.moveTo(0, i * CELL);
+          offCtx.lineTo(GRID * CELL, i * CELL);
+          offCtx.stroke();
+        }
       }
-    }
-    offscreenBgRef.current = offscreen;
+      offscreenBgRef.current = offscreen;
+    };
+
+    renderBg();
+
+    const observer = new MutationObserver(() => {
+      renderBg();
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
   }, []);
 
   // 触发屏幕轻微震颤动效
