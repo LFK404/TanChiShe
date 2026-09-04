@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
 import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
-import { NCUCrestBadge } from './NCUIcon';
+import { NCUAchievementIcon } from './NCUIcon';
 
 interface Props {
   isOpen: boolean;
@@ -97,7 +97,7 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                     成就殿堂
                   </h3>
                   <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EBF8FF] dark:bg-[#0099FF]/20 text-[#0099FF] dark:text-sky-300">
-                    24 勋章
+                    {totalCount} 勋章
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -182,9 +182,9 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                         : 'bg-slate-50/50 dark:bg-slate-900/20 border-dashed border-slate-200 dark:border-slate-800 opacity-60'
                     }`}
                   >
-                    {/* 左侧：NCU HOME 微拟态专属勋章 */}
+                    {/* 左侧：NCU HOME 纯悬浮专属成长勋章 */}
                     <div className="shrink-0 pt-0.5">
-                      <NCUCrestBadge tier={ach.tier} unlocked={isUnlocked} size={42} />
+                      <NCUAchievementIcon achievement={ach} unlocked={isUnlocked} size={42} />
                     </div>
 
                     {/* 右侧：成就名称、说明、段位代号 */}

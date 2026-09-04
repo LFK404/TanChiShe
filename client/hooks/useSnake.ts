@@ -129,6 +129,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const deathReasonRef = useRef<string>('');
   const durationRef = useRef<number>(0);
   const stepsRef = useRef<number>(0);
+  const [steps, setSteps] = useState<number>(0);
   const bonusCountRef = useRef<number>(0);
   const comboCountRef = useRef<number>(0);
   const totalElapsedMsRef = useRef<number>(0);
@@ -235,6 +236,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     sound.stopBgmWithTapeDrop();
     sound.playGameOver();
 
+    setSteps(stepsRef.current);
     // 维持受击定格 60ms 后才正式弹出结算面板 (动作游戏打击感灵魂 Hit-Stop)
     setTimeout(() => {
       setIsGameOver(true);
@@ -312,6 +314,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       durationRef.current = 0;
       setScore(0);
       setDuration(0);
+      setSteps(0);
       setLength(3);
       setBonusCount(0);
       speedMsRef.current = BASE_SPEED_MS;
@@ -397,6 +400,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       durationRef.current = 0;
       setScore(0);
       setDuration(0);
+      setSteps(0);
       setLength(3);
       setBonusCount(0);
       setIsGameOver(false);
@@ -524,6 +528,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     if (currentDur !== durationRef.current) {
       durationRef.current = currentDur;
       setDuration(currentDur);
+      setSteps(stepsRef.current);
     }
 
     // 如果处于电竞对局回放模式，从录像映射表中消费当前 tick 的转向输入
@@ -909,6 +914,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
     duration,
     length,
     speedMs,
+    steps,
     bonusCount,
     comboCount,
     maxCombo,

@@ -240,6 +240,7 @@ export default function Home() {
     duration,
     length,
     speedMs,
+    steps,
     bonusCount,
     comboCount,
     maxCombo,
@@ -311,7 +312,7 @@ export default function Home() {
   useEffect(() => {
     if (!isPlaying || isGameOver || isReplay) return;
 
-    // 检查 24 枚成就系统是否达成点亮 (仅在达成新成就时低频轻提示，杜绝跑马灯刷屏骚扰)
+    // 检查成就系统是否达成点亮 (仅在达成新成就时低频轻提示，杜绝跑马灯刷屏骚扰)
     const newlyUnlocked = checkAndUnlockAchievements({
       score,
       length,
@@ -319,14 +320,14 @@ export default function Home() {
       maxCombo,
       bonusCount,
       speedMs,
-      steps: 0,
+      steps,
     }, user?.username);
 
     newlyUnlocked.forEach((ach) => {
       sound.playAchievement();
       addToast(`解锁成就: [${ach.name}]`, ach.tier);
     });
-  }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, user?.username, addToast]);
+  }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, steps, user?.username, addToast]);
 
   // 开始新对局 (独占锁定当前局 Session，杜绝混用与二次消费，0ms 零延迟启动)
   const handleStartGame = useCallback(async () => {
