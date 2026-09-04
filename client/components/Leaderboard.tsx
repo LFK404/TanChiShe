@@ -47,14 +47,23 @@ function ScoreSparkline({ scores }: { scores: number[] }) {
   );
 }
 
+// 格式化耗时（支持秒与分秒自适应，0容错）
+function formatDuration(seconds?: number): string {
+  if (!seconds || seconds <= 0) return '--';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m${s > 0 ? ` ${s}s` : ''}`;
+}
+
 // 1~6 名专属多巴胺多色几何徽标配置 (金·红·绿·紫·天青·活力青)
 const BADGE_STYLES: Record<number, string> = {
-  1: 'bg-[#FEF3C7] text-[#D97706]',
-  2: 'bg-[#FEE2E2] text-[#EF4444]',
-  3: 'bg-[#DCFCE7] text-[#16A34A]',
-  4: 'bg-[#EDE9FE] text-[#7C3AED]',
-  5: 'bg-[#E0F2FE] text-[#0284C7]',
-  6: 'bg-[#CFFAFE] text-[#0891B2]',
+  1: 'bg-[#FEF3C7] dark:bg-[#FEF3C7]/20 text-[#D97706] dark:text-[#FBBF24]',
+  2: 'bg-[#FEE2E2] dark:bg-[#FEE2E2]/20 text-[#EF4444] dark:text-[#F87171]',
+  3: 'bg-[#DCFCE7] dark:bg-[#DCFCE7]/20 text-[#16A34A] dark:text-[#4ADE80]',
+  4: 'bg-[#EDE9FE] dark:bg-[#EDE9FE]/20 text-[#7C3AED] dark:text-[#A78BFA]',
+  5: 'bg-[#E0F2FE] dark:bg-[#E0F2FE]/20 text-[#0284C7] dark:text-[#38BDF8]',
+  6: 'bg-[#CFFAFE] dark:bg-[#CFFAFE]/20 text-[#0891B2] dark:text-[#22D3EE]',
 };
 
 // 全服 Top 10 竞技风云榜组件 (极简现代排版，零 AI 模板感)
@@ -87,19 +96,20 @@ export default function Leaderboard({
     }
   }
 
-  const getBadgeStyle = (rank: number) => BADGE_STYLES[rank] || 'bg-[#F1F5F9] text-[#64748B]';
+  const getBadgeStyle = (rank: number) =>
+    BADGE_STYLES[rank] || 'bg-[#F1F5F9] dark:bg-slate-800 text-[#64748B] dark:text-slate-400';
 
   return (
-    <div className="bg-white p-5 rounded-3xl flex flex-col select-none border border-slate-200/80 shadow-xs">
+    <div className="bg-white dark:bg-[#0F172A] p-5 rounded-3xl flex flex-col select-none border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
       {/* 榜单标题与分类切换胶囊 */}
       <div className="flex justify-between items-center pb-2.5">
-        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono">
+        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 text-xs font-bold font-mono">
           <button
             onClick={() => setTab('GLOBAL')}
             className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
               tab === 'GLOBAL'
-                ? 'bg-white text-[#0099FF] shadow-2xs'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-700 text-[#0099FF] shadow-2xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             风云榜
@@ -108,8 +118,8 @@ export default function Leaderboard({
             onClick={() => setTab('LOCAL')}
             className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
               tab === 'LOCAL'
-                ? 'bg-white text-[#0099FF] shadow-2xs'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white dark:bg-slate-700 text-[#0099FF] shadow-2xs'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             个人档案
@@ -118,12 +128,12 @@ export default function Leaderboard({
         {tab === 'GLOBAL' ? (
           <button
             onClick={onRefresh}
-            className="text-[11px] text-[#94A3B8] hover:text-[#0099FF] transition-colors cursor-pointer font-medium"
+            className="text-[11px] text-[#94A3B8] hover:text-[#0099FF] dark:text-slate-400 dark:hover:text-[#0099FF] transition-colors cursor-pointer font-medium"
           >
             刷新
           </button>
         ) : (
-          <span className="text-[10px] text-slate-400 font-mono">近 10 局</span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">近 10 局</span>
         )}
       </div>
 
@@ -135,18 +145,20 @@ export default function Leaderboard({
               {[1, 2, 3, 4, 5].map((idx) => (
                 <div
                   key={idx}
-                  className="h-8.5 rounded-xl bg-slate-100/75 animate-pulse flex items-center px-3 justify-between"
+                  className="h-8.5 rounded-xl bg-slate-100/75 dark:bg-slate-800/50 animate-pulse flex items-center px-3 justify-between"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-lg bg-slate-200/80" />
-                    <div className="w-16 h-3 rounded bg-slate-200/80" />
+                    <div className="w-5 h-5 rounded-lg bg-slate-200/80 dark:bg-slate-700/60" />
+                    <div className="w-16 h-3 rounded bg-slate-200/80 dark:bg-slate-700/60" />
                   </div>
-                  <div className="w-8 h-3 rounded bg-slate-200/80" />
+                  <div className="w-12 h-3 rounded bg-slate-200/80 dark:bg-slate-700/60" />
                 </div>
               ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="text-center py-6 text-xs text-slate-400 font-normal">暂无上榜记录</div>
+            <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500 font-normal">
+              暂无上榜记录
+            </div>
           ) : (
             items.slice(0, 10).map((u, i) => {
               const rank = i + 1;
@@ -157,7 +169,9 @@ export default function Leaderboard({
                 <div
                   key={u.username}
                   className={`flex items-center justify-between p-2 rounded-xl transition-colors ${
-                    isMe ? 'bg-[#EBF8FF] text-[#0099FF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                    isMe
+                      ? 'bg-[#EBF8FF] dark:bg-[#0099FF]/10 text-[#0099FF] font-bold'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -170,24 +184,32 @@ export default function Leaderboard({
                     </span>
                     <span className="truncate text-xs">{u.username}</span>
                     {isMe && (
-                      <span className="text-[10px] text-[#0099FF] font-semibold bg-white/80 px-1 rounded-sm shrink-0 border border-[#0099FF]/20">
+                      <span className="text-[10px] text-[#0099FF] font-semibold bg-white/80 dark:bg-slate-800 px-1 rounded-sm shrink-0 border border-[#0099FF]/20">
                         我
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2.5 shrink-0">
                     {/* 一键观摩高手通关走位 */}
                     {hasReplay && onWatchReplay && (
                       <button
                         onClick={() => onWatchReplay(u)}
                         title={`观摩 ${u.username} 的通关走位`}
-                        className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#EBF8FF] text-[#0099FF] hover:bg-[#0099FF] hover:text-white transition-all cursor-pointer shadow-2xs"
+                        className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#EBF8FF] dark:bg-[#0099FF]/15 text-[#0099FF] hover:bg-[#0099FF] hover:text-white transition-all cursor-pointer shadow-2xs"
                       >
                         回放
                       </button>
                     )}
-                    <span className="font-mono text-xs font-bold text-[#0F172A] tabular-nums">{u.highScore}</span>
+                    {/* 得分与最佳耗时结构化呈现 */}
+                    <div className="flex flex-col items-end">
+                      <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-white tabular-nums leading-tight">
+                        {u.highScore}
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono tabular-nums leading-tight">
+                        {formatDuration(u.bestDuration)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -196,7 +218,7 @@ export default function Leaderboard({
         ) : (
           /* 本地个人档案流水列表 (最近 10 局对局档案，支持调起海报复盘) */
           localHistory.length === 0 ? (
-            <div className="text-center py-7 text-xs text-slate-400 font-medium">
+            <div className="text-center py-7 text-xs text-slate-400 dark:text-slate-500 font-medium">
               尚无本地对局记录，完成一局后自动归档
             </div>
           ) : (
@@ -204,22 +226,22 @@ export default function Leaderboard({
               {localHistory.map((rec, i) => (
                 <div
                   key={rec.id}
-                  className="flex items-center justify-between p-2 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-slate-100 text-xs transition-colors"
+                  className="flex items-center justify-between p-2 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/40 hover:bg-[#F1F5F9] dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/60 text-xs transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-mono font-bold text-slate-400 text-[11px] w-5 shrink-0">
+                    <span className="font-mono font-bold text-slate-400 dark:text-slate-500 text-[11px] w-5 shrink-0">
                       #{String(i + 1).padStart(2, '0')}
                     </span>
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-black text-slate-800 tabular-nums">
+                        <span className="font-mono font-black text-slate-800 dark:text-slate-100 tabular-nums">
                           {rec.score}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                           {rec.duration}s · {rec.length}节
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 truncate font-mono">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-mono">
                         {rec.deathReason ? `[${rec.deathReason}]` : '[常规完赛]'}
                       </span>
                     </div>
@@ -227,7 +249,7 @@ export default function Leaderboard({
 
                   <button
                     onClick={() => onViewHistoryArt?.(rec)}
-                    className="px-2 py-0.5 bg-white hover:bg-[#EBF8FF] text-[#0099FF] rounded-lg border border-slate-200/80 text-[10.5px] font-bold font-mono transition-all shrink-0 cursor-pointer shadow-2xs"
+                    className="px-2 py-0.5 bg-white dark:bg-slate-800 hover:bg-[#EBF8FF] dark:hover:bg-[#0099FF]/20 text-[#0099FF] rounded-lg border border-slate-200/80 dark:border-slate-700 text-[10.5px] font-bold font-mono transition-all shrink-0 cursor-pointer shadow-2xs"
                     title="回看此局走位艺术卡片"
                   >
                     走位海报
@@ -241,20 +263,27 @@ export default function Leaderboard({
 
       {/* 底部当前玩家排位评语与个人最佳名次展示 */}
       {currentUser && (
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-[#94A3B8]">
-          <div className="flex items-center gap-1.5">
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-[#94A3B8] dark:text-slate-400">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span>我的最佳:</span>
-            <strong className="font-mono font-bold text-[#0F172A] tabular-nums">{currentUser.highScore} 分</strong>
+            <strong className="font-mono font-bold text-[#0F172A] dark:text-white tabular-nums">
+              {currentUser.highScore} 分
+            </strong>
+            {currentUser.bestDuration > 0 && (
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono tabular-nums">
+                ({formatDuration(currentUser.bestDuration)})
+              </span>
+            )}
             {myRank > 0 ? (
               <span className="text-[10.5px] text-[#0099FF] font-medium">(第 {myRank} 名)</span>
             ) : currentUser.highScore > 0 ? (
-              <span className="text-[10px] text-slate-400">(未进前10)</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">(未进前10)</span>
             ) : null}
           </div>
 
           <div className="flex items-center gap-2.5">
             {recentScores && recentScores.length >= 2 && (
-              <div className="hidden sm:flex items-center gap-1 text-[10.5px] text-slate-400">
+              <div className="hidden sm:flex items-center gap-1 text-[10.5px] text-slate-400 dark:text-slate-500">
                 <span>近态</span>
                 <ScoreSparkline scores={recentScores} />
               </div>
