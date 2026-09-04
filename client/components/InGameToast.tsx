@@ -54,7 +54,7 @@ function ToastCard({ toast, onRemove }: { toast: ToastItem; onRemove: (id: strin
         visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-3 scale-95'
       }`}
     >
-      {/* 南大家园多巴胺微拟态勋章微缩版 */}
+      {/* NCU HOME 微拟态勋章微缩版 */}
       <NCUCrestBadge tier={toast.tier} unlocked size={22} />
 
       {/* 成就解锁文字 */}

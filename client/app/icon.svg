@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" version="1.1">
   <defs>
-    <!-- 头部南大家园天青微渐变 (#38BDF8 -> #0099FF) -->
+    <!-- 头部 NCU HOME 天青微渐变 (#38BDF8 -> #0099FF) -->
     <linearGradient id="headGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38BDF8" />
       <stop offset="100%" stop-color="#0099FF" />
@@ -19,10 +19,10 @@
     </filter>
   </defs>
 
-  <!-- 1. 南大家园纯白超椭圆底座与极细浅灰边线 -->
+  <!-- 1. NCU HOME 纯白超椭圆底座与极细浅灰边线 -->
   <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
 
-  <!-- 2. 南大家园四色微标 (顶部点睛) -->
+  <!-- 2. NCU HOME 四色微标 (顶部点睛) -->
   <circle cx="11" cy="7.5" r="1.3" fill="#0099FF" />
   <circle cx="15" cy="7.5" r="1.3" fill="#F59E0B" />
   <circle cx="19" cy="7.5" r="1.3" fill="#10B981" />
@@ -47,7 +47,7 @@
   <!-- 节5: 顶横向上攀升节 (深天蓝) -->
   <rect x="16.5" y="14.5" width="8" height="8" rx="2.4" fill="#0099FF" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
-  <!-- 节6: 蛇头 (右上方顶层方块，南大家园渐变，昂首朝右) -->
+  <!-- 节6: 蛇头 (右上方顶层方块，NCU HOME 渐变，昂首朝右) -->
   <rect x="24" y="14.5" width="8.8" height="8.8" rx="2.6" fill="url(#headGrad)" stroke="#FFFFFF" stroke-width="0.8" filter="url(#tileShadow)" />
 
   <!-- 蛇头灵动双眸 (专注注视右上前方红苹果) -->

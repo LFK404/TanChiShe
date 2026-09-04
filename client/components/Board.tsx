@@ -417,7 +417,7 @@ export default function Board({
     }
   };
 
-  // 破纪录 / 高分加冕时屏幕两侧喷射南大家园四色彩纸礼花
+  // 破纪录 / 高分加冕时屏幕两侧喷射 NCU HOME 四色彩纸礼花
   const spawnConfetti = () => {
     const colors = ['#66CCFF', '#10B981', '#EF4444', '#F59E0B', '#8B5CF6'];
     for (let i = 0; i < 36; i++) {
@@ -767,7 +767,7 @@ export default function Board({
       }
     });
 
-    // 7. 绘制蛇头 (南大家园天青蓝 #66CCFF + 连击濒危频闪 + 纯白晶体描边 + 灵动双眼视线追踪)
+    // 7. 绘制蛇头 (NCU HOME 天青蓝 #66CCFF + 连击濒危频闪 + 纯白晶体描边 + 灵动双眼视线追踪)
     if (head) {
       ctx.save();
       let headColor = '#66CCFF';
@@ -1300,14 +1300,14 @@ export default function Board({
           </div>
         )}
 
-        {/* 游戏结束结算面板 (极简南大家园现代主义几何卡片) */}
+        {/* 游戏结束结算面板 (极简 NCU HOME 现代主义几何卡片) */}
         {isGameOver && (
           <div className="absolute inset-0 bg-white/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.8 rounded-full bg-rose-50 text-rose-500 font-bold text-xs mb-2.5">
               <span>{isReplay ? '观摩播放结束' : '游戏结束'}</span>
             </div>
 
-            {/* 荣耀加冕：南大家园多巴胺微拟态段位勋章 */}
+            {/* 荣耀加冕：NCU HOME 微拟态段位勋章 */}
             <div className="mb-2">
               <SettleTierCrest score={score} />
             </div>
@@ -1516,7 +1516,7 @@ export default function Board({
                   <ChevronLeft size={26} />
                 </button>
 
-                {/* 中心静息盲操凹核 (南大家园四色多巴胺微核心) */}
+                {/* 中心静息盲操凹核 (NCU HOME 四色微核心) */}
                 <div className="w-9 h-9 rounded-full bg-slate-200/70 border border-white flex items-center justify-center shadow-inner pointer-events-none">
                   <div className="grid grid-cols-2 gap-1 opacity-70">
                     <span className="w-1 h-1 rounded-full bg-[#66CCFF]" />

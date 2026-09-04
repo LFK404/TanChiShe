@@ -1,4 +1,4 @@
-// 24 枚成就系统核心定义与达成检测引擎 (南大家园多巴胺微拟态设计)
+// 24 枚成就系统核心定义与达成检测引擎 (NCU HOME 极简微拟态设计)
 
 export type AchievementTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'DIAMOND';
 

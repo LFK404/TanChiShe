@@ -172,7 +172,7 @@ export default function TrajectoryCardModal({
           strokeColor = 'rgba(102, 204, 255, 0.4)';
           lineWidth = 2.8;
         } else if (prog < 0.65) {
-          // 中盘：南大深天蓝
+          // 中盘：NCU HOME 深天蓝
           strokeColor = 'rgba(0, 153, 255, 0.55)';
           lineWidth = 3.6;
         } else if (prog < 0.88) {
@@ -275,7 +275,7 @@ export default function TrajectoryCardModal({
     drawStat(430, 'COMBO // 极速连击', `×${maxCombo}`, maxCombo >= 3 ? '#D97706' : '#0F172A');
     drawStat(610, 'STEPS // 运筹步数', `${steps} TICKS`, '#8B5CF6');
 
-    // 9. 底部签名与 28% 超椭圆南大家园拟物朱文印章
+    // 9. 底部签名与 28% 超椭圆 NCU HOME 拟物朱文印章
     const footerY = 1070;
     ctx.fillStyle = '#64748B';
     ctx.font = '13px -apple-system, sans-serif';

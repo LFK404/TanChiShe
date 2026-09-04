@@ -167,7 +167,7 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                         : 'bg-slate-50/50 border-dashed border-slate-200 opacity-60'
                     }`}
                   >
-                    {/* 左侧：南大家园多巴胺微拟态专属勋章 */}
+                    {/* 左侧：NCU HOME 微拟态专属勋章 */}
                     <div className="shrink-0 pt-0.5">
                       <NCUCrestBadge tier={ach.tier} unlocked={isUnlocked} size={42} />
                     </div>

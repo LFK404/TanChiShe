@@ -191,7 +191,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
             />
           )}
 
-          {/* 南大家园极简风音频分轨调节浮层卡片 */}
+          {/* NCU HOME 极简风音频分轨调节浮层卡片 */}
           {showAudioPopover && (
             <div className="absolute right-0 top-full mt-2 w-56 p-3.5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">

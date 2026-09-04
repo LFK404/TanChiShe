@@ -1,18 +1,29 @@
 // PWA 静态资源缓存控制与离线回退策略 (v3 极简双轨无缝 BGM 与矢量资源离线预存)
 const CACHE_NAME = 'tanchishe-pwa-v3';
-const ASSETS_TO_CACHE = [
+
+// 核心应用壳资源 (几 KB 级别，必须 100% 毫秒级安装完成)
+const CORE_SHELL_ASSETS = [
   '/',
   '/manifest.webmanifest',
   '/icon.svg',
+];
+
+// 大体积音频资源 (约 3.7MB，独立异步容错预存，不阻塞 PWA 离线安装)
+const AUDIO_ASSETS = [
   '/audio/Afternoon_Geometry.mp3',
   '/audio/Victory_at_the_Arcade.mp3',
 ];
 
-// 1. 安装阶段：预缓存核心静态资产与双轨 BGM / 高光 Jingle
+// 1. 安装阶段：强保证预缓存核心壳资产，渐进式静默预存音频
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // 优先确保核心页面瞬间就绪
+      await cache.addAll(CORE_SHELL_ASSETS);
+      // 异步容错预拉音频，即使弱网单曲失败也不影响离线玩核心游戏
+      AUDIO_ASSETS.forEach((url) => {
+        cache.add(url).catch(() => {});
+      });
     })
   );
   self.skipWaiting();

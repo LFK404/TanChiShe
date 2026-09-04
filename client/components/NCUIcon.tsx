@@ -178,64 +178,7 @@ export function DiamondCrestIcon({ unlocked = false, size = 40, className = '' }
   );
 }
 
-// 5. 南大家园风·实心音量微标 (纯正实心圆角小音箱)
-export function NCUVolumeIcon({ isMuted = false, size = 18, className = '' }: { isMuted?: boolean; size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={`shrink-0 ${className}`}>
-      {/* 实心扬声器箱体 */}
-      <path
-        d="M4 9 H8 L13 4 V20 L8 15 H4 C3.45 15, 3 14.55, 3 14 V10 C3 9.45, 3.45 9, 4 9 Z"
-        fill="currentColor"
-      />
-      {isMuted ? (
-        /* 静音斜线 */
-        <path d="M17 9 L22 14 M22 9 L17 14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-      ) : (
-        /* 饱满声波圆弧 */
-        <path
-          d="M16 8.5 C17.5 10, 17.5 14, 16 15.5 M19 6 C22 9, 22 15, 19 18"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-        />
-      )}
-    </svg>
-  );
-}
-
-// 6. 南大家园风·实心新手指南微标
-export function NCUTutorialIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={`shrink-0 ${className}`}>
-      <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="currentColor" opacity="0.15" />
-      <path
-        d="M12 7 C10.5 7, 9.5 8, 9.5 9.2 H11 C11 8.7, 11.4 8.3, 12 8.3 C12.6 8.3, 13 8.7, 13 9.2 C13 10, 11.8 10.3, 11.8 11.8 H12.2"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      <circle cx="12" cy="15.2" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-// 7. 南大家园风·实心成就殿堂徽标
-export function NCUTrophyIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={`shrink-0 ${className}`}>
-      <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="currentColor" opacity="0.15" />
-      <path
-        d="M8 7 H16 V11 C16 13.2, 14.2 15, 12 15 C9.8 15, 8 13.2, 8 11 V7 Z"
-        fill="currentColor"
-      />
-      <path d="M12 15 V18 M9 18 H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M8 8.5 H6 C5.4 8.5, 5 8.9, 5 9.5 C5 11, 6 12, 8 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M16 8.5 H18 C18.6 8.5, 19 8.9, 19 9.5 C19 11, 18 12, 16 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// 8. 南大家园规则步骤双色微标 (01, 02, 03, 04)
+// 5. NCU HOME 规则步骤双色微标 (01, 02, 03, 04)
 export function NCUNumberBadge({ num, color = '#0099FF', bg = '#EBF8FF' }: { num: string; color?: string; bg?: string }) {
   return (
     <span
@@ -247,7 +190,7 @@ export function NCUNumberBadge({ num, color = '#0099FF', bg = '#EBF8FF' }: { num
   );
 }
 
-// 9. 统一南大家园段位勋章解析与呈现组件 (消灭各业务组件中的重复 switch-case 冗余)
+// 6. 统一 NCU HOME 段位勋章解析与呈现组件 (消灭各业务组件中的重复 switch-case 冗余)
 export function NCUCrestBadge({
   tier = 'BRONZE',
   unlocked = false,

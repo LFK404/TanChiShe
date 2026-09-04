@@ -8,13 +8,13 @@ interface Props {
   onLogin: (e: React.FormEvent) => void;
 }
 
-// 玩家登录与免密自动激活组件 (南大家园极简现代主义，纯净留白无AI感设计)
+// 玩家登录与免密自动激活组件 (NCU HOME 极简现代主义，纯净留白设计)
 export default function Login({ form, error, setForm, onLogin }: Props) {
   return (
     <div className="w-full max-w-[360px] bg-white rounded-3xl p-7 sm:p-8 border border-slate-200/80 select-none text-[#0F172A] transition-all">
-      {/* 头部：南大家园经典超椭圆微拟态品牌标识与四色微标 */}
+      {/* 头部：NCU HOME 经典超椭圆微拟态品牌标识与四色微标 */}
       <div className="flex flex-col items-center text-center mb-6">
-        {/* 南大家园标志性四色多巴胺图腾微点 */}
+        {/* NCU HOME 标志性四色微点 */}
         <div className="flex items-center gap-1.5 mb-3.5 opacity-85">
           <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
           <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
@@ -79,7 +79,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
           </div>
         )}
 
-        {/* 南大家园深天蓝主交互按钮 */}
+        {/* NCU HOME 深天蓝主交互按钮 */}
         <button
           type="submit"
           className="w-full mt-1.5 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.98] text-white font-bold text-sm rounded-2xl transition-all cursor-pointer shadow-xs flex items-center justify-center"
@@ -87,7 +87,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
           开始游戏
         </button>
 
-        {/* 底部无感自动入库轻提示与南大水印 */}
+        {/* 底部无感自动入库轻提示与 NCU HOME 水印 */}
         <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
           <span>首次登录自动注册激活</span>
           <span className="font-mono text-[10px] text-slate-300">NCU HOME</span>
