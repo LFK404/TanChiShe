@@ -478,7 +478,7 @@ export default function Board({
         if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
         } else if (currentCombo === 2) {
-          spawnFloatingText(head.x, head.y, '+30 2连击! (下次+5)', '#D97706');
+          spawnFloatingText(head.x, head.y, '+30 (2连击)', '#D97706');
         } else {
           const extra = (currentCombo - 2) * 5;
           spawnFloatingText(head.x, head.y, `+${diff} 金果 ${currentCombo}连击! (+${extra})`, '#D97706');
@@ -496,7 +496,7 @@ export default function Board({
         if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+10', '#10B981');
         } else if (currentCombo === 2) {
-          spawnFloatingText(head.x, head.y, '+10 2连击! (下次+5)', '#0099FF');
+          spawnFloatingText(head.x, head.y, '+10 (2连击)', '#0099FF');
         } else {
           const extra = (currentCombo - 2) * 5;
           spawnFloatingText(head.x, head.y, `+${diff} ${currentCombo}连击! (+${extra})`, '#0099FF');
@@ -669,7 +669,8 @@ export default function Board({
     const comboElapsed = (totalElapsedMs !== undefined && lastEatElapsedMs !== undefined && lastEatElapsedMs >= 0)
       ? (totalElapsedMs - lastEatElapsedMs)
       : (nowTime - (lastEatTimestamp || 0));
-    const inCombo = (comboCount || 0) >= 2 && comboElapsed >= 0 && comboElapsed < 3000;
+    // 3 连击起激活全蛇身炫彩特效，2 连击保持轻量专注，长时间游戏不眼花
+    const inCombo = (comboCount || 0) >= 3 && comboElapsed >= 0 && comboElapsed < 3000;
     const isEndingSoon = inCombo && comboElapsed >= 2000; // 剩余 1 秒快终止
     const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.024) > 0;
 
@@ -682,12 +683,12 @@ export default function Board({
         let color = ratio > 0.6 ? '#38BDF8' : ratio > 0.3 ? '#7DD3FC' : '#BAE6FD';
         if (inCombo) {
           if (endingBlink) {
-            // 快终止频闪：急促橙红亮起
-            color = i % 2 === 0 ? '#F59E0B' : '#EF4444';
+            // 快终止提醒：温和暖橙提示，杜绝刺眼斑马纹高频交替
+            color = ratio > 0.5 ? '#F59E0B' : '#FB923C';
           } else {
-            // 连击进行中：耀金高光流光穿梭
-            const wave = 0.5 + 0.5 * Math.sin(nowTime / 150 - i * 0.4);
-            color = wave > 0.6 ? '#F59E0B' : ratio > 0.5 ? '#38BDF8' : '#7DD3FC';
+            // 连击进行中：温润柔和的慢周期金光呼吸（800ms 舒缓波动，极佳护眼）
+            const wave = 0.5 + 0.5 * Math.sin(nowTime / 800 - i * 0.2);
+            color = wave > 0.65 ? '#FBBF24' : ratio > 0.5 ? '#38BDF8' : '#7DD3FC';
           }
         }
 
@@ -719,13 +720,7 @@ export default function Board({
         const cornerRadius = isCorner ? 6 : 4;
 
         ctx.save();
-        if (inCombo && !endingBlink) {
-          ctx.shadowColor = '#F59E0B';
-          ctx.shadowBlur = 4;
-        } else if (endingBlink) {
-          ctx.shadowColor = '#EF4444';
-          ctx.shadowBlur = 6;
-        }
+        // 移除身体节的发虚模糊阴影，保持极简锐利与护眼
 
         ctx.fillStyle = color;
         ctx.beginPath();
@@ -797,11 +792,11 @@ export default function Board({
       if (inCombo) {
         if (endingBlink) {
           headColor = '#F59E0B';
-          ctx.shadowColor = '#EF4444';
-          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#F59E0B';
+          ctx.shadowBlur = 4;
         } else {
           ctx.shadowColor = '#F59E0B';
-          ctx.shadowBlur = 5;
+          ctx.shadowBlur = 3;
         }
       }
 
