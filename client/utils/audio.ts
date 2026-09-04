@@ -220,7 +220,7 @@ class SoundManager {
     this.loopTimer = setTimeout(scheduleNext, Math.max(100, stepInterval * 1000));
   }
 
-  // 平滑淡出并终止当前所有活动的 BGM 节点
+  // 平滑淡出并终止当前所有活动的 BGM 节点 (同步清空引用，彻底消除异步定时器清理新音轨的致命竞态)
   private stopActiveSources(fadeSec = 0.15) {
     if (this.loopTimer) {
       clearTimeout(this.loopTimer);
@@ -228,22 +228,23 @@ class SoundManager {
     }
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    this.activeSources.forEach(({ source, gain }) => {
+    const oldSources = [...this.activeSources];
+    this.activeSources = []; // 立即同步置空当前活动声源，绝不延时覆盖新音轨
+    oldSources.forEach(({ source, gain }) => {
       try {
         gain.gain.setValueAtTime(gain.gain.value, now);
         gain.gain.linearRampToValueAtTime(0.001, now + fadeSec);
         source.stop(now + fadeSec + 0.05);
       } catch {}
     });
-    setTimeout(() => {
-      this.activeSources = [];
-    }, fadeSec * 1000 + 50);
   }
 
   // 播放大厅/待机界面温馨几何 BGM
   startMenuBgm() {
     this.currentMode = 'MENU';
+    this.isBgmPaused = false;
     this.stopHeartbeat();
+    this.restoreFilterFreq();
     if (this.muted) return;
     this.playTrackSeamless(MENU_BGM_URL);
   }
@@ -251,8 +252,21 @@ class SoundManager {
   // 播放局内对局元气街机 BGM
   startInGameBgm() {
     this.currentMode = 'INGAME';
+    this.isBgmPaused = false;
+    this.restoreFilterFreq();
     if (this.muted) return;
     this.playTrackSeamless(INGAME_BGM_URL);
+  }
+
+  // 恢复滤波器频率到标准工作频率 (2600Hz)
+  private restoreFilterFreq() {
+    if (this.ctx && this.masterFilter) {
+      try {
+        const now = this.ctx.currentTime;
+        const targetFreq = this.currentTargetFilterFreq || 2600;
+        this.masterFilter.frequency.setTargetAtTime(targetFreq, now, 0.08);
+      } catch {}
+    }
   }
 
   // 兼容别名

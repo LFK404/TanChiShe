@@ -119,6 +119,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const isWaitingStartRef = useRef(false);
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const menuBgmTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [deathReason, setDeathReason] = useState<string>('');
   const deathReasonRef = useRef<string>('');
   const durationRef = useRef<number>(0);
@@ -235,9 +236,11 @@ export function useSnake(onGameOver?: GameOverCallback) {
       setIsPlaying(false);
     }, 60);
 
-    // 局后平滑切回温馨大厅 BGM
-    setTimeout(() => {
+    // 局后平滑切回温馨大厅 BGM (句柄守护，开局时立即取消，杜绝偷跑打架)
+    if (menuBgmTimerRef.current) clearTimeout(menuBgmTimerRef.current);
+    menuBgmTimerRef.current = setTimeout(() => {
       sound.startMenuBgm();
+      menuBgmTimerRef.current = null;
     }, 1200);
     if (!isReplayRef.current) {
       const dur = Math.max(1, Math.floor((Date.now() - stateRef.current.start - pausedMsRef.current) / 1000));
@@ -257,6 +260,10 @@ export function useSnake(onGameOver?: GameOverCallback) {
   const startGame = useCallback(
     (seed?: number) => {
       sound.unlockAudio();
+      if (menuBgmTimerRef.current) {
+        clearTimeout(menuBgmTimerRef.current);
+        menuBgmTimerRef.current = null;
+      }
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;

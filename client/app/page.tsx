@@ -413,7 +413,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-start p-3 sm:p-5 relative overflow-x-hidden">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0F1D] flex flex-col items-center justify-start p-3 sm:p-5 relative overflow-x-hidden transition-colors">
       {!user ? (
         /* 未登录态：居中登录/注册卡片 */
         <div className="w-full min-h-[85vh] flex items-center justify-center relative z-10">
@@ -435,10 +435,10 @@ export default function Home() {
           {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white tracking-tight">
                 贪吃蛇
               </h1>
-              <p className="mt-0.5 text-xs text-slate-400 font-medium">
+              <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500 font-medium">
                 极简几何 · 现代竞技
               </p>
             </div>
@@ -450,7 +450,7 @@ export default function Home() {
                 <span className="w-2 h-2 rounded-full bg-[#10B981]" />
                 <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
               </div>
-              <div className="flex items-baseline gap-2 sm:gap-3 font-black text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#CBD5E1]">
+              <div className="flex items-baseline gap-2 sm:gap-3 font-black text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#CBD5E1] dark:text-slate-700">
                 <span>NCU</span>
                 <span>HOME</span>
               </div>

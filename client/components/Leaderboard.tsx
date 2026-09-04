@@ -49,7 +49,7 @@ function ScoreSparkline({ scores }: { scores: number[] }) {
 
 // 格式化耗时（支持秒与分秒自适应，0容错）
 function formatDuration(seconds?: number): string {
-  if (!seconds || seconds <= 0) return '--';
+  if (!seconds || seconds <= 0) return '';
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -201,14 +201,16 @@ export default function Leaderboard({
                         回放
                       </button>
                     )}
-                    {/* 得分与最佳耗时结构化呈现 */}
-                    <div className="flex flex-col items-end">
-                      <span className="font-mono text-xs font-bold text-[#0F172A] dark:text-white tabular-nums leading-tight">
+                    {/* 得分与耗时同行呈现：耗时直接显示在得分后面 */}
+                    <div className="flex items-baseline gap-1.5 shrink-0 font-mono tabular-nums">
+                      <span className="text-xs font-bold text-[#0F172A] dark:text-white">
                         {u.highScore}
                       </span>
-                      <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-mono tabular-nums leading-tight">
-                        {formatDuration(u.bestDuration)}
-                      </span>
+                      {u.bestDuration > 0 && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal">
+                          ({formatDuration(u.bestDuration)})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -263,36 +265,37 @@ export default function Leaderboard({
 
       {/* 底部当前玩家排位评语与个人最佳名次展示 */}
       {currentUser && (
-        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-[#94A3B8] dark:text-slate-400">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span>我的最佳:</span>
-            <strong className="font-mono font-bold text-[#0F172A] dark:text-white tabular-nums">
-              {currentUser.highScore} 分
-            </strong>
-            {currentUser.bestDuration > 0 && (
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono tabular-nums">
-                ({formatDuration(currentUser.bestDuration)})
-              </span>
-            )}
-            {myRank > 0 ? (
-              <span className="text-[10.5px] text-[#0099FF] font-medium">(第 {myRank} 名)</span>
-            ) : currentUser.highScore > 0 ? (
-              <span className="text-[10px] text-slate-400 dark:text-slate-500">(未进前10)</span>
-            ) : null}
-          </div>
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 text-xs text-[#94A3B8] dark:text-slate-400">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span>我的最佳:</span>
+              <strong className="font-mono font-bold text-[#0F172A] dark:text-white tabular-nums">
+                {currentUser.highScore} 分
+              </strong>
+              {currentUser.bestDuration > 0 && (
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono tabular-nums">
+                  ({formatDuration(currentUser.bestDuration)})
+                </span>
+              )}
+              {myRank > 0 ? (
+                <span className="text-[10.5px] text-[#0099FF] font-medium">(第 {myRank} 名)</span>
+              ) : currentUser.highScore > 0 ? (
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">(未进前10)</span>
+              ) : null}
+            </div>
 
-          <div className="flex items-center gap-2.5">
-            {recentScores && recentScores.length >= 2 && (
-              <div className="hidden sm:flex items-center gap-1 text-[10.5px] text-slate-400 dark:text-slate-500">
-                <span>近态</span>
-                <ScoreSparkline scores={recentScores} />
-              </div>
-            )}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <span>超越</span>
-              <span className="font-mono font-bold text-[#0099FF] tabular-nums">{beatPercent}%</span>
+              <span className="font-mono font-bold text-[#0099FF] dark:text-[#38BDF8] tabular-nums">{beatPercent}%</span>
             </div>
           </div>
+
+          {recentScores && recentScores.length >= 2 && (
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-100/60 dark:border-slate-800/60 text-[11px] text-slate-400 dark:text-slate-500">
+              <span>近 {recentScores.length} 局得分走势</span>
+              <ScoreSparkline scores={recentScores} />
+            </div>
+          )}
         </div>
       )}
     </div>

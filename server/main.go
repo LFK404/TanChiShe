@@ -218,6 +218,12 @@ func main() {
 				})
 			}
 
+			// 保持客户端传入的有效 Bearer Token
+			authHeader := c.GetHeader("Authorization")
+			if strings.HasPrefix(authHeader, "Bearer ") {
+				user.Token = strings.TrimPrefix(authHeader, "Bearer ")
+			}
+
 			c.JSON(http.StatusOK, gin.H{
 				"code":        200,
 				"isNewRecord": isNew,

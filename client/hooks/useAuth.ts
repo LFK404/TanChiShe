@@ -58,10 +58,15 @@ export function useAuth() {
     try { localStorage.removeItem(KEY); } catch {}
   }, []);
 
-  // 游戏破纪录后同步内存与本地持久化数据
+  // 游戏破纪录后同步内存与本地持久化数据 (防御性合并，确保原有 token 永不丢失)
   const updateUser = useCallback((u: User) => {
-    setUser(u);
-    try { localStorage.setItem(KEY, JSON.stringify({ user: u, form })); } catch {}
+    setUser((prev) => {
+      const mergedUser: User = { ...u, token: u.token || prev?.token };
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ user: mergedUser, form }));
+      } catch {}
+      return mergedUser;
+    });
   }, [form]);
 
   return { user, form, error, setForm, login, logout, updateUser };
