@@ -778,8 +778,8 @@ export default function Board({
     const comboElapsed = (totalElapsedMs !== undefined && lastEatElapsedMs !== undefined && lastEatElapsedMs >= 0)
       ? (totalElapsedMs - lastEatElapsedMs)
       : (nowTime - (lastEatTimestamp || 0));
-    // 2 连击起激活全蛇身炫彩流金与频闪特效，即刻爽快反馈
-    const inCombo = (comboCount || 0) >= 2 && comboElapsed >= 0 && comboElapsed < 3000;
+    // 严格 3 连击起激活全蛇身流金环绕与频闪特效，2 连击保持轻量专注
+    const inCombo = (comboCount || 0) >= 3 && comboElapsed >= 0 && comboElapsed < 3000;
     const isEndingSoon = inCombo && comboElapsed >= 2000; // 剩余 1 秒快终止
     const endingBlink = isEndingSoon && Math.sin((comboElapsed - 2000) * 0.025) > 0;
 
@@ -797,26 +797,26 @@ export default function Board({
         const seg = snake[i];
         const ratio = 1 - i / len;
 
-        // 基底天青晶体渐变
-        let color = ratio > 0.6 ? '#38BDF8' : ratio > 0.25 ? '#7DD3FC' : '#BAE6FD';
+        // 基底天青晶体平滑色彩 (蛇头天青 #38BDF8 [56,189,248] -> 蛇尾冰蓝 #7DD3FC [125,211,252])
+        const baseR = Math.round(56 + (1 - ratio) * 69);
+        const baseG = Math.round(189 + (1 - ratio) * 22);
+        const baseB = Math.round(248 + (1 - ratio) * 4);
+        let color = `rgb(${baseR},${baseG},${baseB})`;
+        let goldIntensity = 0;
+
         if (inCombo) {
           if (endingBlink) {
             // 快终止急促频闪预警
             color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
           } else {
-            // 连击进行中：160ms 灵动流光与柔和连续色彩渐变 (Soft Golden Shimmer)
-            const wave = 0.5 + 0.5 * Math.sin(nowTime / 160 - i * 0.42);
-            // 根据波形平滑过渡：波峰亮金 -> 暖金过渡 -> 天青蓝 -> 冰蓝
-            if (wave > 0.72) {
-              color = '#FDE047'; // 亮流金高光
-            } else if (wave > 0.48) {
-              color = '#F59E0B'; // 暖流金
-            } else if (wave > 0.25) {
-              // 柔和过渡带：金辉融入天青
-              color = ratio > 0.5 ? '#38BDF8' : '#7DD3FC';
-            } else {
-              color = ratio > 0.5 ? '#0EA5E9' : '#38BDF8';
-            }
+            // 连击进行中：短波长(0.72) + 幂次聚焦(2.2) 缩短金色纹路至精短流火光梭(2~3节)
+            const rawWave = Math.sin(nowTime / 160 - i * 0.72);
+            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 2.2) : 0;
+            // 数学级连续 RGB 线性插值，天青蓝与亮流金柔和交融，绝无硬切色块
+            const r = Math.round(baseR + (253 - baseR) * goldIntensity);
+            const g = Math.round(baseG + (224 - baseG) * goldIntensity);
+            const b = Math.round(baseB + (71 - baseB) * goldIntensity);
+            color = `rgb(${r},${g},${b})`;
           }
         }
 
@@ -854,9 +854,10 @@ export default function Board({
             ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
             ctx.shadowBlur = 6;
           } else {
-            const glowAlpha = 0.6 + 0.25 * Math.sin(nowTime / 160 - i * 0.42);
+            // 全身金光随流光微动柔和呼吸，光晕温润
+            const glowAlpha = 0.4 + 0.35 * goldIntensity;
             ctx.shadowColor = `rgba(245, 158, 11, ${glowAlpha.toFixed(2)})`;
-            ctx.shadowBlur = 5;
+            ctx.shadowBlur = 3 + 3 * goldIntensity;
           }
         }
 
@@ -874,9 +875,9 @@ export default function Board({
 
         // 晶体描边：连击时泛出温润流动金光，平时纯白晶莹
         if (inCombo && !endingBlink) {
-          const strokeWave = Math.sin(nowTime / 160 - i * 0.42);
-          ctx.strokeStyle = strokeWave > 0.1 ? 'rgba(254, 240, 138, 0.95)' : 'rgba(255, 255, 255, 0.75)';
-          ctx.lineWidth = strokeWave > 0.1 ? 1.0 : 0.8;
+          const strokeAlpha = (0.75 + 0.2 * goldIntensity).toFixed(2);
+          ctx.strokeStyle = goldIntensity > 0.4 ? `rgba(254, 240, 138, ${strokeAlpha})` : `rgba(255, 255, 255, ${strokeAlpha})`;
+          ctx.lineWidth = goldIntensity > 0.4 ? 1.0 : 0.8;
         } else if (inCombo && endingBlink) {
           ctx.strokeStyle = 'rgba(255, 237, 213, 0.9)';
           ctx.lineWidth = 0.8;
@@ -886,15 +887,14 @@ export default function Board({
         }
         ctx.stroke();
 
-        // 连击能量行波流光微核 (在能量波峰节内部点亮极微小的高光核，动感十足)
-        const shimmerPeak = Math.sin(nowTime / 160 - i * 0.42);
-        if (inCombo && !endingBlink && shimmerPeak > 0.7 && bulge <= 0.05) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        // 连击能量行波流光微核 (在流金光梭中心点亮精巧高光核)
+        if (inCombo && !endingBlink && goldIntensity > 0.75 && bulge <= 0.05) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
           ctx.beginPath();
           ctx.arc(
             seg.x * CELL + 1 + (CELL - 2) / 2,
             seg.y * CELL + 1 + (CELL - 2) / 2,
-            1.8,
+            1.6,
             0,
             Math.PI * 2
           );
