@@ -4,8 +4,8 @@ import { sound } from '@/utils/audio';
 import { haptics, HapticType } from '@/utils/haptics';
 import { Mulberry32 } from '@/utils/prng';
 
-// 游戏物理网格常量 (24x24 格子，单格 20px)
-export const GRID = 24;
+// 游戏物理网格常量 (25x25 格子，单格 20px)
+export const GRID = 25;
 export const CELL = 20;
 export const BASE_SPEED_MS = 150; // 基础速度 (约 6.7 格/秒，温和从容)
 export const MIN_SPEED_MS = 60;   // 极速上限 (2.5x 速度，约 16.7 格/秒)
@@ -515,7 +515,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
           sound.resumeBgm();
           vibrate('move');
         }
-      }, 360);
+      }, 1000); // 严格标准 1000ms 每拍，实现真实完整的 3 秒恢复预备倒计时
     }
   }, [vibrate]);
 

@@ -630,14 +630,22 @@ export default function Board({
     prevGameOverRef.current = isGameOver;
   }, [isGameOver, snakeRef, score, spawnDeathExplosion]);
 
-  // 初始化 Canvas 视网膜高清分辨率 (DPR 物理像素无损映射)
+  // 初始化与视口缩放时维护 Canvas 视网膜高清分辨率 (DPR 物理像素无损映射)
   useEffect(() => {
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 3);
-    const size = GRID * CELL;
-    cvs.width = Math.round(size * dpr);
-    cvs.height = Math.round(size * dpr);
+    const updateCanvasResolution = () => {
+      const cvs = canvasRef.current;
+      if (!cvs) return;
+      const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 3);
+      const size = GRID * CELL;
+      const expectedSize = Math.round(size * dpr);
+      if (cvs.width !== expectedSize || cvs.height !== expectedSize) {
+        cvs.width = expectedSize;
+        cvs.height = expectedSize;
+      }
+    };
+    updateCanvasResolution();
+    window.addEventListener('resize', updateCanvasResolution);
+    return () => window.removeEventListener('resize', updateCanvasResolution);
   }, []);
 
   // 主渲染流程 (Canvas 2D 极简现代主义绘制引擎)
@@ -648,6 +656,13 @@ export default function Board({
     if (!ctx) return;
 
     const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 3);
+    const expectedSize = Math.round(GRID * CELL * dpr);
+    // 防御性分辨率校准：彻底杜绝 React VDOM 重渲染覆盖 DOM 物理分辨率导致的画面裁切与 2 倍放大错位
+    if (cvs.width !== expectedSize || cvs.height !== expectedSize) {
+      cvs.width = expectedSize;
+      cvs.height = expectedSize;
+    }
+
     ctx.save();
     ctx.scale(dpr, dpr);
 
@@ -1404,7 +1419,7 @@ export default function Board({
   };
 
   return (
-    <div className="bg-white dark:bg-[#0F172A] p-4 sm:p-5 rounded-3xl flex flex-col items-center select-none border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
+    <div className="bg-white dark:bg-[#0F172A] p-2 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col items-center select-none border border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
       {/* 观摩回放模式专属横幅 */}
       {isReplay && (
         <div className="w-full mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#EBF8FF] to-[#E0F2FE] dark:from-[#0099FF]/10 dark:to-[#0099FF]/5 border border-[#66CCFF]/40 dark:border-[#0099FF]/30 text-[#0099FF] flex flex-col gap-2 text-xs font-bold animate-in fade-in shadow-2xs">
@@ -1503,9 +1518,9 @@ export default function Board({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
-        className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] dark:bg-[#0A0F1D] border border-slate-200/70 dark:border-slate-800 touch-none max-w-full shadow-inner select-none"
+        className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] dark:bg-[#0A0F1D] border border-slate-200/70 dark:border-slate-800 touch-none w-full max-w-full shadow-inner select-none"
       >
-        <canvas ref={canvasRef} width={GRID * CELL} height={GRID * CELL} className="block max-w-full h-auto aspect-square bg-[#F8FAFC] dark:bg-[#0A0F1D]" />
+        <canvas ref={canvasRef} className="block w-full max-w-full h-auto aspect-square bg-[#F8FAFC] dark:bg-[#0A0F1D]" />
 
         {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}
         {!isPlaying && !isGameOver && !isReplay && (

@@ -446,7 +446,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0F1D] flex flex-col items-center justify-start p-3 sm:p-5 relative overflow-x-hidden transition-colors">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0F1D] flex flex-col items-center justify-start px-1.5 py-2 sm:p-5 relative overflow-x-hidden transition-colors">
       {!user ? (
         /* 未登录态：居中登录/注册卡片 */
         <div className="w-full min-h-[85vh] flex items-center justify-center relative z-10">

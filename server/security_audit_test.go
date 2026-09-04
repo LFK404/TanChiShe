@@ -61,15 +61,15 @@ func TestAudit_IllegalTurnInterception(t *testing.T) {
 	illegalInputs := []engine.InputRecord{
 		{Tick: 0, Dir: "LEFT"},
 	}
-	// 直行 14 步必撞右墙
-	totalTicks := 14
+	// 直行 15 步必撞右墙 (GRID=25, 10+15=25 越界)
+	totalTicks := 15
 
 	_, _, _, isDead, err := engine.ReplayGame(seed, illegalInputs, totalTicks)
 	if err != nil {
 		t.Fatalf("重放异常: %v", err)
 	}
-	// 如果 LEFT 被非法执行，蛇会向左走从而不会在第 14 步撞右墙；
-	// 如果 LEFT 被正确过滤，蛇继续向右走并在第 14 步撞右墙死亡 (isDead=true)
+	// 如果 LEFT 被非法执行，蛇会向左走从而不会在第 15 步撞右墙；
+	// 如果 LEFT 被正确过滤，蛇继续向右走并在第 15 步撞右墙死亡 (isDead=true)
 	if !isDead {
 		t.Fatalf("【漏洞暴露】非法的 180 度掉头指令居然被执行了！")
 	}

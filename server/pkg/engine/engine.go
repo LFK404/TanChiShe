@@ -7,7 +7,7 @@ import (
 
 // 网格与物理参数常量
 const (
-	GRID          = 24
+	GRID          = 25
 	BASE_SPEED_MS = 150
 	MIN_SPEED_MS  = 60
 )

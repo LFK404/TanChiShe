@@ -46,14 +46,14 @@ func TestHMACTokenLifecycle(t *testing.T) {
 func TestReplayGameCrashWall(t *testing.T) {
 	seed := uint32(888888)
 	var inputs []engine.InputRecord
-	totalTicks := 14
+	totalTicks := 15
 
 	score, length, duration, isDead, err := engine.ReplayGame(seed, inputs, totalTicks)
 	if err != nil {
 		t.Fatalf("重放发生意外错误: %v", err)
 	}
 	if !isDead {
-		t.Fatalf("直走 14 步应当撞墙死亡，但返回存活")
+		t.Fatalf("直走 15 步应当撞墙死亡，但返回存活")
 	}
 	t.Logf("直走撞墙验证成功: 得分=%d, 长度=%d, 耗时=%ds, 死亡=%v", score, length, duration, isDead)
 }
