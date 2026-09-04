@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type AuthReq struct {
@@ -184,38 +185,48 @@ func main() {
 			inputsJSON, _ := json.Marshal(req.Inputs)
 			inputsStr := string(inputsJSON)
 
-			// 写入对局流水 (内含分布式唯一 Nonce 约束，防止多节点并发二次重放)
+			// 判定是否创下个人新纪录 (原子化安全条件更新并保存最高分录像轨迹)
+			isNew := verifiedScore > user.HighScore || (verifiedScore == user.HighScore && verifiedScore > 0 && (user.BestDuration == 0 || verifiedDuration < user.BestDuration))
+
+			// 数据库事务保障：原子化写入对局流水与更新用户最高分记录
 			if database.DB != nil {
-				record := database.GameRecord{
-					Username:     user.Username,
-					SessionNonce: payload.Nonce,
-					Score:        verifiedScore,
-					Duration:     verifiedDuration,
-					ReplaySeed:   int64(payload.Seed),
-					ReplayInputs: inputsStr,
-				}
-				if err := database.DB.Create(&record).Error; err != nil {
+				err := database.DB.Transaction(func(tx *gorm.DB) error {
+					record := database.GameRecord{
+						Username:     user.Username,
+						SessionNonce: payload.Nonce,
+						Score:        verifiedScore,
+						Duration:     verifiedDuration,
+						ReplaySeed:   int64(payload.Seed),
+						ReplayInputs: inputsStr,
+					}
+					if err := tx.Create(&record).Error; err != nil {
+						return fmt.Errorf("该对局已被结算消费或记录重复: %w", err)
+					}
+
+					if isNew {
+						user.HighScore = verifiedScore
+						user.BestDuration = verifiedDuration
+						user.ReplaySeed = int64(payload.Seed)
+						user.ReplayInputs = inputsStr
+						if err := tx.Model(user).Where("id = ?", user.ID).Updates(map[string]interface{}{
+							"high_score":    verifiedScore,
+							"best_duration": verifiedDuration,
+							"replay_seed":   int64(payload.Seed),
+							"replay_inputs": inputsStr,
+						}).Error; err != nil {
+							return fmt.Errorf("更新用户最高纪录失败: %w", err)
+						}
+					}
+					return nil
+				})
+
+				if err != nil {
 					c.JSON(http.StatusBadRequest, gin.H{
 						"code":    400,
-						"message": "该对局已被结算消费，禁止重复提交战绩",
+						"message": err.Error(),
 					})
 					return
 				}
-			}
-
-			// 判定是否创下个人新纪录 (原子化安全条件更新并保存最高分录像轨迹)
-			isNew := verifiedScore > user.HighScore || (verifiedScore == user.HighScore && verifiedScore > 0 && (user.BestDuration == 0 || verifiedDuration < user.BestDuration))
-			if isNew && database.DB != nil {
-				user.HighScore = verifiedScore
-				user.BestDuration = verifiedDuration
-				user.ReplaySeed = int64(payload.Seed)
-				user.ReplayInputs = inputsStr
-				database.DB.Model(user).Where("id = ?", user.ID).Updates(map[string]interface{}{
-					"high_score":    verifiedScore,
-					"best_duration": verifiedDuration,
-					"replay_seed":   int64(payload.Seed),
-					"replay_inputs": inputsStr,
-				})
 			}
 
 			// 保持客户端传入的有效 Bearer Token
@@ -245,8 +256,10 @@ func main() {
 			})
 		})
 
-		// 5. 获取 Top 10 全服排行榜
+		// 5. 获取 Top 10 全服排行榜 (禁止任何中间层强缓存，保障实时穿透)
 		api.GET("/leaderboard", func(c *gin.Context) {
+			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+			c.Header("Pragma", "no-cache")
 			var list []database.User
 			if database.DB != nil {
 				_ = database.DB.Where("high_score > 0 OR best_duration > 0").

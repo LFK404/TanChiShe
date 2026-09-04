@@ -58,6 +58,22 @@ func TestReplayGameCrashWall(t *testing.T) {
 	t.Logf("直走撞墙验证成功: 得分=%d, 长度=%d, 耗时=%ds, 死亡=%v", score, length, duration, isDead)
 }
 
+func TestReplayGameClientFrameJitterTolerance(t *testing.T) {
+	seed := uint32(888888)
+	var inputs []engine.InputRecord
+	// 模拟浏览器事件循环在撞墙瞬间多调度了数帧（例如 18 > 14）
+	totalTicks := 18
+
+	score, length, duration, isDead, err := engine.ReplayGame(seed, inputs, totalTicks)
+	if err != nil {
+		t.Fatalf("重放抗微时差发生意外拒单: %v", err)
+	}
+	if !isDead {
+		t.Fatalf("发生撞墙物理事实时必须返回死亡")
+	}
+	t.Logf("浏览器帧调度微时差容错验证通过: 真实得分=%d, 长度=%d, 耗时=%ds, 死亡=%v", score, length, duration, isDead)
+}
+
 func TestReplayGameCheatingRejection(t *testing.T) {
 	seed := uint32(888888)
 	var inputs []engine.InputRecord

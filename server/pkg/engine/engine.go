@@ -198,13 +198,10 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 		delta := dirDeltas[dir]
 		head := Point{X: snake[0].X + delta.X, Y: snake[0].Y + delta.Y}
 
-		// 4. 边界碰撞检测
+		// 4. 边界碰撞检测 (发生致命碰撞即判定战局终结，消除浏览器帧事件循环调度微小时间差误杀)
 		if head.X < 0 || head.X >= GRID || head.Y < 0 || head.Y >= GRID {
-			if tick == totalTicks-1 {
-				isDead = true
-				break
-			}
-			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞墙死亡", tick)
+			isDead = true
+			break
 		}
 
 		// 5. 自身身体碰撞检测
@@ -221,11 +218,8 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			}
 		}
 		if hitBody {
-			if tick == totalTicks-1 {
-				isDead = true
-				break
-			}
-			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞自身死亡", tick)
+			isDead = true
+			break
 		}
 
 		// 6. 吃到普通红苹果 (长身子 + 连击刷新 + 阶梯加分 + 清空栅栏 + 动态加速)
@@ -254,11 +248,8 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 
 		// 7. 残留栅栏碰撞检测
 		if fence[fmt.Sprintf("%d,%d", head.X, head.Y)] {
-			if tick == totalTicks-1 {
-				isDead = true
-				break
-			}
-			return 0, 0, 0, false, fmt.Errorf("蛇在第 %d 步提前撞栅栏死路", tick)
+			isDead = true
+			break
 		}
 
 		// 8. 吃到金色幸运果 (+30 分并纳入连击链，第3次起阶梯加分，保留栅栏)

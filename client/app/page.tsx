@@ -187,6 +187,9 @@ export default function Home() {
             sound.playVictory();
             addToast('刷新个人历史最佳纪录！', 'GOLD');
           }
+        } else if (!res.ok) {
+          // 结算若有异常明确提示用户，绝不静默吞掉
+          addToast(res.msg || '战绩同步遇到异常，已存入本地存盘', 'BRONZE');
         }
 
         // 刷新排行榜展示最新榜单

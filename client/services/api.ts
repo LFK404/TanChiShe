@@ -43,10 +43,16 @@ export const apiStartGame = (token?: string) =>
 export const apiSettleGame = (req: GameSettleRequest, token?: string) =>
   post<GameSettleResponse>('/api/game/settle', req, token);
 
-// 获取 Top 10 排行榜
+// 获取 Top 10 全服排行榜 (强制穿透中间层与浏览器缓存，保障实时同步)
 export async function apiLeaderboard(): Promise<User[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/leaderboard`);
+    const res = await fetch(`${API_BASE}/api/leaderboard?_t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
     const json = await res.json();
     return json.code === 200 ? json.data || [] : [];
   } catch {
