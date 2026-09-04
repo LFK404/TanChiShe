@@ -60,17 +60,17 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
     haptics.trigger('ui');
   };
 
-  // 点击浮层外部自动收起
+  // 点击浮层外部自动收起 (PointerEvent 全面兼容鼠标、触控屏与触控笔)
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: PointerEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setShowAudioPopover(false);
       }
     };
     if (showAudioPopover) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('pointerdown', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
   }, [showAudioPopover]);
 
   const handleToggleMute = () => {

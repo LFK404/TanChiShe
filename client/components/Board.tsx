@@ -1070,9 +1070,8 @@ export default function Board({
         targetDir = dy > 0 ? 'DOWN' : 'UP';
       }
 
-      // 执行转向与机械吸附触感
+      // 执行转向 (触感完全由 useSnake 物理状态机裁决，避免双重震动与反向掉头误震)
       onDirection(targetDir);
-      haptics.trigger('snap');
 
       // 连续滑行不断触：将当前触点重置为新起点，允许一笔划连续过弯
       touchStartPosRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
@@ -1125,7 +1124,6 @@ export default function Board({
   const handleDirBtn = (d: Direction) => {
     sound.unlockAudio();
     onDirection(d);
-    haptics.trigger('snap');
   };
 
   return (
@@ -1243,7 +1241,7 @@ export default function Board({
 
         {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}
         {!isPlaying && !isGameOver && !isReplay && (
-          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 select-none">
+          <div className="absolute inset-0 z-30 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 select-none">
             <button
               onClick={onStart}
               className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
@@ -1273,7 +1271,7 @@ export default function Board({
         {isPaused && (
           <div
             onClick={onTogglePause}
-            className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center text-[#0F172A] cursor-pointer"
+            className="absolute inset-0 z-30 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center text-[#0F172A] cursor-pointer"
           >
             <div className="w-12 h-12 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center mb-2">
               <Pause size={24} />
@@ -1302,7 +1300,7 @@ export default function Board({
 
         {/* 游戏结束结算面板 (极简 NCU HOME 现代主义几何卡片) */}
         {isGameOver && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-[4px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.8 rounded-full bg-rose-50 text-rose-500 font-bold text-xs mb-2.5">
               <span>{isReplay ? '观摩播放结束' : '游戏结束'}</span>
             </div>

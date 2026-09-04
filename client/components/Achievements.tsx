@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy } from 'lucide-react';
 import { ACHIEVEMENTS, getUnlockedAchievements, AchievementTier } from '@/utils/achievements';
 import { NCUCrestBadge } from './NCUIcon';
@@ -45,6 +45,21 @@ const TIER_CONFIG: Record<
 
 export default function Achievements({ isOpen, onClose, username }: Props) {
   const [activeTier, setActiveTier] = useState<AchievementTier | 'ALL'>('ALL');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

@@ -34,11 +34,13 @@ class SoundManager {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.muted = localStorage.getItem('tanchishe_muted') === 'true';
-      const savedBgm = localStorage.getItem('tanchishe_bgm_vol');
-      if (savedBgm !== null) this.bgmVolume = Math.max(0, Math.min(1, parseFloat(savedBgm) || 0));
-      const savedSfx = localStorage.getItem('tanchishe_sfx_vol');
-      if (savedSfx !== null) this.sfxVolume = Math.max(0, Math.min(1, parseFloat(savedSfx) || 0));
+      try {
+        this.muted = localStorage.getItem('tanchishe_muted') === 'true';
+        const savedBgm = localStorage.getItem('tanchishe_bgm_vol');
+        if (savedBgm !== null) this.bgmVolume = Math.max(0, Math.min(1, parseFloat(savedBgm) || 0));
+        const savedSfx = localStorage.getItem('tanchishe_sfx_vol');
+        if (savedSfx !== null) this.sfxVolume = Math.max(0, Math.min(1, parseFloat(savedSfx) || 0));
+      } catch {}
 
       // 预先静默预加载音频二进制数据至内存，实现开局 0ms 瞬间发声
       this.preloadTracks();
@@ -181,20 +183,41 @@ class SoundManager {
       };
     };
 
+    let lastSpawnTime = Date.now();
+
     // 立即启动第一个声轨
     spawnSource(true);
 
-    // 在到达 crossfade 临界前自动启动下一个声轨重叠交织
+    // 在到达 crossfade 临界前自动启动下一个声轨重叠交织 (支持暂停态低频探活与平滑自愈)
     const scheduleNext = () => {
+      if (this.loopTimer) {
+        clearTimeout(this.loopTimer);
+        this.loopTimer = null;
+      }
       this.loopTimer = setTimeout(() => {
-        if (this.currentTrackUrl === url && !this.isBgmPaused) {
-          spawnSource(false);
+        if (this.currentTrackUrl !== url) return;
+
+        // 若当前处于暂停状态，保持低频心跳轮询 (300ms)，杜绝调度链彻底断裂
+        if (this.isBgmPaused) {
           scheduleNext();
+          return;
         }
-      }, stepInterval * 1000);
+
+        const elapsed = Date.now() - lastSpawnTime;
+        if (elapsed >= (stepInterval - 0.2) * 1000) {
+          spawnSource(false);
+          lastSpawnTime = Date.now();
+          scheduleNext();
+        } else {
+          // 补偿剩余等待时间
+          const remaining = Math.max(100, stepInterval * 1000 - elapsed);
+          this.loopTimer = setTimeout(scheduleNext, remaining);
+        }
+      }, 300);
     };
 
-    scheduleNext();
+    // 首次调度定时器
+    this.loopTimer = setTimeout(scheduleNext, Math.max(100, stepInterval * 1000));
   }
 
   // 平滑淡出并终止当前所有活动的 BGM 节点
@@ -315,7 +338,9 @@ class SoundManager {
     const clamped = Math.max(0, Math.min(1, val));
     this.bgmVolume = clamped;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('tanchishe_bgm_vol', String(clamped));
+      try {
+        localStorage.setItem('tanchishe_bgm_vol', String(clamped));
+      } catch {}
     }
     if (this.ctx && this.bgmMasterGain) {
       const effective = this.muted ? 0 : 0.32 * clamped;
@@ -328,7 +353,9 @@ class SoundManager {
     const clamped = Math.max(0, Math.min(1, val));
     this.sfxVolume = clamped;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('tanchishe_sfx_vol', String(clamped));
+      try {
+        localStorage.setItem('tanchishe_sfx_vol', String(clamped));
+      } catch {}
     }
     if (this.ctx && this.sfxMasterGain) {
       const effective = this.muted ? 0 : clamped;
@@ -340,7 +367,9 @@ class SoundManager {
   toggleMute(): boolean {
     this.muted = !this.muted;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('tanchishe_muted', String(this.muted));
+      try {
+        localStorage.setItem('tanchishe_muted', String(this.muted));
+      } catch {}
     }
     if (this.ctx && this.bgmMasterGain && this.sfxMasterGain) {
       const now = this.ctx.currentTime;
@@ -474,6 +503,14 @@ class SoundManager {
         gain.connect(this.sfxMasterGain || this.masterFilter || this.ctx!.destination);
         osc.start(start);
         osc.stop(start + noteDur);
+
+        // 播放结束主动断开音频节点连接，杜绝 Web Audio 声卡拓扑泄漏
+        osc.onended = () => {
+          try {
+            osc.disconnect();
+            gain.disconnect();
+          } catch {}
+        };
       });
     } catch {}
   }

@@ -19,10 +19,14 @@ class HapticManager {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('tanchishe_haptics') as HapticMode | null;
-      if (saved === 'STRONG' || saved === 'SOFT' || saved === 'OFF') {
-        this.mode = saved;
-      } else {
+      try {
+        const saved = localStorage.getItem('tanchishe_haptics') as HapticMode | null;
+        if (saved === 'STRONG' || saved === 'SOFT' || saved === 'OFF') {
+          this.mode = saved;
+        } else {
+          this.mode = 'STRONG';
+        }
+      } catch {
         this.mode = 'STRONG';
       }
     }
@@ -32,7 +36,9 @@ class HapticManager {
   setMode(mode: HapticMode) {
     this.mode = mode;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('tanchishe_haptics', mode);
+      try {
+        localStorage.setItem('tanchishe_haptics', mode);
+      } catch {}
     }
     // 切换模式时给予测试震感反馈
     if (mode === 'STRONG') {

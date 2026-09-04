@@ -315,11 +315,24 @@ export default function TrajectoryCardModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     const timer = setTimeout(() => {
       generatePoster();
     }, 16);
-    return () => clearTimeout(timer);
-  }, [isOpen, generatePoster]);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(timer);
+    };
+  }, [isOpen, onClose, generatePoster]);
 
   const [fallbackNotice, setFallbackNotice] = useState(false);
 
@@ -368,8 +381,14 @@ export default function TrajectoryCardModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-md select-none animate-fade-in">
-      <div className="w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-md select-none animate-fade-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 shadow-2xl relative max-h-[92vh] overflow-y-auto"
+      >
         {/* 顶部标题与关闭 */}
         <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
