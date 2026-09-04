@@ -650,9 +650,15 @@ export default function Board({
             // 快终止提醒：温和暖橙提示，杜绝刺眼斑马纹高频交替
             color = ratio > 0.5 ? '#F59E0B' : '#FB923C';
           } else {
-            // 连击进行中：温润柔和的慢周期金光呼吸（800ms 舒缓波动，极佳护眼）
-            const wave = 0.5 + 0.5 * Math.sin(nowTime / 800 - i * 0.2);
-            color = wave > 0.65 ? '#FBBF24' : ratio > 0.5 ? '#38BDF8' : '#7DD3FC';
+            // 连击进行中：380ms 黄金能量行波 (Fluid Golden Wave)，流畅顺传恢复飞驰动感
+            const wave = Math.sin(nowTime / 380 - i * 0.45);
+            if (wave > 0.35) {
+              color = '#FBBF24'; // 璀璨亮金波峰
+            } else if (wave > -0.15) {
+              color = '#38BDF8'; // 天青蓝波腰
+            } else {
+              color = '#0284C7'; // 深空湛蓝波谷
+            }
           }
         }
 
@@ -698,10 +704,34 @@ export default function Board({
         );
         ctx.fill();
 
-        // 晶体纯白微描边 (密集折叠转弯时各节边界清晰透气)
-        ctx.strokeStyle = inCombo && endingBlink ? 'rgba(255, 237, 213, 0.9)' : 'rgba(255, 255, 255, 0.75)';
-        ctx.lineWidth = 0.8;
+        // 晶体描边：连击时泛出温润流动金光，平时纯白晶莹
+        if (inCombo && !endingBlink) {
+          const strokeWave = Math.sin(nowTime / 380 - i * 0.45);
+          ctx.strokeStyle = strokeWave > 0.2 ? 'rgba(254, 240, 138, 0.9)' : 'rgba(255, 255, 255, 0.75)';
+          ctx.lineWidth = strokeWave > 0.2 ? 1.0 : 0.8;
+        } else if (inCombo && endingBlink) {
+          ctx.strokeStyle = 'rgba(255, 237, 213, 0.9)';
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+          ctx.lineWidth = 0.8;
+        }
         ctx.stroke();
+
+        // 连击能量行波流光微核 (在能量波峰节内部点亮极微小的高光核，动感十足)
+        const wave = Math.sin(nowTime / 380 - i * 0.45);
+        if (inCombo && !endingBlink && wave > 0.65 && bulge <= 0.05) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+          ctx.beginPath();
+          ctx.arc(
+            seg.x * CELL + 1 + (CELL - 2) / 2,
+            seg.y * CELL + 1 + (CELL - 2) / 2,
+            1.8,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
 
         // 吞咽流光波经过当前节时：在关节内部叠加绘制晶莹发光核 (普通果晶白，金果流金)
         if (bulge > 0.05) {
@@ -759,8 +789,10 @@ export default function Board({
           ctx.shadowColor = '#F59E0B';
           ctx.shadowBlur = 4;
         } else {
+          const headPulse = Math.sin(nowTime / 380);
+          headColor = headPulse > 0.25 ? '#FBBF24' : '#66CCFF';
           ctx.shadowColor = '#F59E0B';
-          ctx.shadowBlur = 3;
+          ctx.shadowBlur = 4;
         }
       }
 
