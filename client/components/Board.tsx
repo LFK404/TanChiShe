@@ -824,13 +824,13 @@ export default function Board({
             // 快终止急促频闪预警
             color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
           } else {
-            // 连击进行中：短波长(0.72) + 幂次聚焦(2.2) 缩短金色纹路至精短流火光梭(2~3节)
-            const rawWave = Math.sin(nowTime / 160 - i * 0.72);
-            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 2.2) : 0;
-            // 数学级连续 RGB 线性插值，天青蓝与亮流金柔和交融，绝无硬切色块
-            const r = Math.round(baseR + (253 - baseR) * goldIntensity);
-            const g = Math.round(baseG + (224 - baseG) * goldIntensity);
-            const b = Math.round(baseB + (71 - baseB) * goldIntensity);
+            // 连击进行中：角频率放缓至 0.48，金色波峰温和覆盖 4~5 节
+            const rawWave = Math.sin(nowTime / 160 - i * 0.48);
+            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 1.3) : 0;
+            // 数学级连续 RGB 线性插值：过渡至浓郁纯正流金橙黄 [245, 158, 11] (#F59E0B)
+            const r = Math.round(baseR + (245 - baseR) * goldIntensity);
+            const g = Math.round(baseG + (158 - baseG) * goldIntensity);
+            const b = Math.round(baseB + (11 - baseB) * goldIntensity);
             color = `rgb(${r},${g},${b})`;
           }
         }
@@ -1035,9 +1035,9 @@ export default function Board({
         ctx.stroke();
       }
 
-      // 计算双眼在蛇头上的朝向偏移与视线追踪 (聚拢机敏间距 7.6px，面容神采奕奕)
-      let e1x = 6.2, e1y = 4.5;
-      let e2x = 13.8, e2y = 4.5;
+      // 计算双眼在蛇头上的朝向偏移与视线追踪 (后移1.5px留出前额自然留白，呆萌灵动)
+      let e1x = 6.2, e1y = 6.0;
+      let e2x = 13.8, e2y = 6.0;
       let px = 0, py = 0;
 
       if (snake.length > 1) {
@@ -1045,24 +1045,24 @@ export default function Board({
         const dx = head.x - next.x;
         const dy = head.y - next.y;
         if (dx === 1) {
-          // 向右移动：面朝右侧，双眼居右并收紧垂直间距
-          e1x = 15.5; e1y = 6.2;
-          e2x = 15.5; e2y = 13.8;
+          // 向右移动：面朝右侧，眼睛自最右边缘后移 1.5px (至 14.0px)
+          e1x = 14.0; e1y = 6.2;
+          e2x = 14.0; e2y = 13.8;
           px = 0.8; py = 0;
         } else if (dx === -1) {
-          // 向左移动：面朝左侧，双眼居左并收紧垂直间距
-          e1x = 4.5; e1y = 6.2;
-          e2x = 4.5; e2y = 13.8;
+          // 向左移动：面朝左侧，眼睛自最左边缘后移 1.5px (至 6.0px)
+          e1x = 6.0; e1y = 6.2;
+          e2x = 6.0; e2y = 13.8;
           px = -0.8; py = 0;
         } else if (dy === 1) {
-          // 向下移动：面朝下方，双眼居下并收紧水平间距
-          e1x = 6.2; e1y = 15.5;
-          e2x = 13.8; e2y = 15.5;
+          // 向下移动：面朝下方，眼睛自最下边缘后移 1.5px (至 14.0px)
+          e1x = 6.2; e1y = 14.0;
+          e2x = 13.8; e2y = 14.0;
           px = 0; py = 0.8;
         } else {
-          // 向上移动：面朝上方，双眼居上并收紧水平间距
-          e1x = 6.2; e1y = 4.5;
-          e2x = 13.8; e2y = 4.5;
+          // 向上移动：面朝上方，眼睛自最上边缘后移 1.5px (至 6.0px)
+          e1x = 6.2; e1y = 6.0;
+          e2x = 13.8; e2y = 6.0;
           px = 0; py = -0.8;
         }
       }
