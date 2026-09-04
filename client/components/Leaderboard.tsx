@@ -201,14 +201,14 @@ export default function Leaderboard({
                         回放
                       </button>
                     )}
-                    {/* 得分与耗时同行呈现：耗时直接显示在得分后面 */}
+                    {/* 得分与耗时同行呈现：耗时直接跟随于得分后，纯净无括号 */}
                     <div className="flex items-baseline gap-1.5 shrink-0 font-mono tabular-nums">
                       <span className="text-xs font-bold text-[#0F172A] dark:text-white">
                         {u.highScore}
                       </span>
                       {u.bestDuration > 0 && (
-                        <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal">
-                          ({formatDuration(u.bestDuration)})
+                        <span className="text-[10.5px] text-slate-400 dark:text-slate-400 font-normal">
+                          {formatDuration(u.bestDuration)}
                         </span>
                       )}
                     </div>
@@ -243,8 +243,8 @@ export default function Leaderboard({
                           {rec.duration}s · {rec.length}节
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-mono">
-                        {rec.deathReason ? `[${rec.deathReason}]` : '[常规完赛]'}
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                        {rec.deathReason ? rec.deathReason : '常规完赛'}
                       </span>
                     </div>
                   </div>
@@ -273,14 +273,14 @@ export default function Leaderboard({
                 {currentUser.highScore} 分
               </strong>
               {currentUser.bestDuration > 0 && (
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono tabular-nums">
-                  ({formatDuration(currentUser.bestDuration)})
+                <span className="text-[10.5px] text-slate-400 dark:text-slate-400 font-mono tabular-nums">
+                  {formatDuration(currentUser.bestDuration)}
                 </span>
               )}
               {myRank > 0 ? (
-                <span className="text-[10.5px] text-[#0099FF] font-medium">(第 {myRank} 名)</span>
+                <span className="text-[11px] text-[#0099FF] font-medium">第 {myRank} 名</span>
               ) : currentUser.highScore > 0 ? (
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">(未进前10)</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">未进前10</span>
               ) : null}
             </div>
 
