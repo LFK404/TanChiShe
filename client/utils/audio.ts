@@ -25,6 +25,8 @@ class SoundManager {
   private currentMode: BgmMode = 'NONE';
   private currentTrackUrl: string | null = null;
   private isBgmPaused = false;
+  private currentPlaybackRate = 1.0;
+  private currentTargetFilterFreq = 2600;
 
   public muted = false;
   public bgmVolume = 0.8; // 0.0 ~ 1.0
@@ -146,6 +148,7 @@ class SoundManager {
 
       const source = this.ctx.createBufferSource();
       source.buffer = buffer!;
+      source.playbackRate.value = this.currentPlaybackRate;
 
       const gain = this.ctx.createGain();
       source.connect(gain);
@@ -248,14 +251,15 @@ class SoundManager {
     }
   }
 
-  // 游戏继续：低通滤波清澈浮回 2600Hz + 音量平滑恢复
+  // 游戏继续：低通滤波清澈浮回 (2600Hz 或狂飙 3200Hz) + 音量平滑恢复
   resumeBgm() {
     this.isBgmPaused = false;
     if (this.muted) return;
     if (this.ctx && this.masterFilter && this.bgmMasterGain) {
       const now = this.ctx.currentTime;
       try {
-        this.masterFilter.frequency.setTargetAtTime(2600, now, 0.1);
+        const targetFreq = this.currentTargetFilterFreq || 2600;
+        this.masterFilter.frequency.setTargetAtTime(targetFreq, now, 0.1);
         const fullVol = 0.32 * this.bgmVolume;
         this.bgmMasterGain.gain.setTargetAtTime(fullVol, now, 0.1);
       } catch {}
@@ -271,6 +275,8 @@ class SoundManager {
   stopBgm() {
     this.currentMode = 'NONE';
     this.currentTrackUrl = null;
+    this.currentPlaybackRate = 1.0;
+    this.currentTargetFilterFreq = 2600;
     this.stopHeartbeat();
     this.stopActiveSources(0.2);
   }
@@ -348,14 +354,47 @@ class SoundManager {
     return this.muted;
   }
 
-  // 移速动态心跳脉冲联动 (<= 82ms 激活 55Hz 脉冲律动)
+  // 移速动态心跳脉冲与高光声场开扬联动 (<= 82ms 激活 3200Hz 明亮声场与 1.05x 微加速)
   private heartbeatTimer: NodeJS.Timeout | null = null;
 
   updateGameSpeed(speedMs: number) {
-    if (speedMs > 82) {
+    if (this.currentMode !== 'INGAME') return;
+
+    let targetRate = 1.0;
+    let targetFreq = 2600;
+
+    if (speedMs <= 82) {
+      // 破风狂飙 (1.7x+): 升速至 1.05x，滤波放开至 3200Hz 亮调开扬，启动 55Hz 脉冲
+      targetRate = 1.05;
+      targetFreq = 3200;
+      this.startHeartbeat();
+    } else if (speedMs <= 108) {
+      // 紧凑节奏: 1.02x 微加速，2850Hz 清亮声场
+      targetRate = 1.02;
+      targetFreq = 2850;
       this.stopHeartbeat();
     } else {
-      this.startHeartbeat();
+      // 基准巡航
+      targetRate = 1.0;
+      targetFreq = 2600;
+      this.stopHeartbeat();
+    }
+
+    this.currentPlaybackRate = targetRate;
+    this.currentTargetFilterFreq = targetFreq;
+
+    if (this.ctx && !this.isBgmPaused) {
+      const now = this.ctx.currentTime;
+      if (this.masterFilter) {
+        try {
+          this.masterFilter.frequency.setTargetAtTime(targetFreq, now, 0.2);
+        } catch {}
+      }
+      this.activeSources.forEach(({ source }) => {
+        try {
+          source.playbackRate.setTargetAtTime(targetRate, now, 0.25);
+        } catch {}
+      });
     }
   }
 

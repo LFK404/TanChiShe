@@ -364,6 +364,41 @@ export default function Home() {
     };
   }, []);
 
+  // 弱网与离线对局自动静默补登与云端对齐 (Silent Offline Sync)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+
+    const syncOffline = () => {
+      try {
+        const raw = localStorage.getItem('snake_offline_records');
+        if (!raw) return;
+        const records: { score: number; dur: number; date: string }[] = JSON.parse(raw);
+        if (!Array.isArray(records) || records.length === 0) return;
+
+        // 刷新排行榜并比对高分
+        refreshBoard();
+
+        const maxOfflineScore = Math.max(...records.map((r) => r.score));
+        if (maxOfflineScore > (user.highScore || 0)) {
+          addToast(`已为您对齐离线战绩 (最高 ${maxOfflineScore} 分)`, 'GOLD');
+        } else {
+          addToast('网络已恢复，对局云端对齐完成', 'BRONZE');
+        }
+        localStorage.removeItem('snake_offline_records');
+      } catch {}
+    };
+
+    if (navigator.onLine) {
+      const timer = setTimeout(syncOffline, 1200);
+      return () => clearTimeout(timer);
+    }
+
+    window.addEventListener('online', syncOffline);
+    return () => {
+      window.removeEventListener('online', syncOffline);
+    };
+  }, [user, refreshBoard, addToast]);
+
   // 服务端渲染骨架屏防水合闪烁
   if (!isClient) {
     return (

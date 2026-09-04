@@ -414,12 +414,12 @@ export function useSnake(onGameOver?: GameOverCallback) {
     const q = queueRef.current;
     const last = q.length > 0 ? q[q.length - 1] : dirRef.current;
     if (t !== last && !isOpp(last, t) && q.length < 2) {
-      const isSecondBuffer = q.length === 1;
+      const isBuffering = q.length > 0;
       q.push(t);
       inputsRef.current.push({ tick: tickCountRef.current, dir: t });
       sound.playMove();
-      // 双指令排队锁定触发段落感吸附微震，单指令触发灵动位移微震
-      vibrate(isSecondBuffer ? 'snap' : 'move');
+      // 第一指令触发即时轻震，第二指令入队缓冲触发机械段落卡扣感 (snap)
+      vibrate(isBuffering ? 'snap' : 'move');
     }
   }, [vibrate]);
 
