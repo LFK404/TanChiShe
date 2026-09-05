@@ -460,7 +460,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0F1D] flex flex-col items-center justify-start px-1.5 py-2 sm:p-5 relative overflow-x-hidden transition-colors">
+    <main className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-start px-1.5 py-2 sm:p-5 relative overflow-x-hidden">
       {!user ? (
         /* 未登录态：居中登录/注册卡片 */
         <div className="w-full min-h-[85vh] flex items-center justify-center relative z-10">
@@ -482,10 +482,10 @@ export default function Home() {
           {/* 页面主标题 + 右侧 NCU HOME 单行水印 */}
           <div className="px-1 pt-0.5 pb-0.5 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
                 贪吃蛇
               </h1>
-              <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500 font-medium">
+              <p className="mt-0.5 text-xs text-slate-400 font-medium">
                 极简几何 · 现代竞技
               </p>
             </div>
@@ -497,16 +497,7 @@ export default function Home() {
                 alt="NCUHOME"
                 width={212}
                 height={55}
-                className="h-8 sm:h-9 w-auto object-contain dark:hidden"
-                draggable={false}
-                priority
-              />
-              <Image
-                src="/ncuhome_logo_dark.png"
-                alt="NCUHOME"
-                width={212}
-                height={55}
-                className="h-8 sm:h-9 w-auto object-contain hidden dark:block"
+                className="h-8 sm:h-9 w-auto object-contain"
                 draggable={false}
                 priority
               />
@@ -578,15 +569,7 @@ export default function Home() {
               alt="NCUHOME"
               width={106}
               height={28}
-              className="h-4 w-auto object-contain dark:hidden opacity-85"
-              draggable={false}
-            />
-            <Image
-              src="/ncuhome_logo_dark.png"
-              alt="NCUHOME"
-              width={106}
-              height={28}
-              className="h-4 w-auto object-contain hidden dark:block opacity-85"
+              className="h-4 w-auto object-contain opacity-85"
               draggable={false}
             />
             <span>•</span>

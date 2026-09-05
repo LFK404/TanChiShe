@@ -16,7 +16,7 @@ interface GlyphProps {
 function getShadow(unlocked: boolean, glowColor: string) {
   return unlocked
     ? `drop-shadow-[0_0_9px_${glowColor}]`
-    : 'opacity-75 dark:opacity-65 hover:opacity-100 transition-opacity';
+    : 'opacity-75 hover:opacity-100 transition-opacity';
 }
 
 // ======================================================================
