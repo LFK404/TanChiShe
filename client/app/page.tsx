@@ -36,9 +36,15 @@ export default function Home() {
 
   // 添加局中即时微弹窗 (NCU HOME 极简微拟态勋章体系)
   const addToast = useCallback(
-    (text: string, tier: AchievementTier = 'BRONZE', color?: string, achievement?: Achievement) => {
+    (
+      text: string,
+      tier: AchievementTier = 'BRONZE',
+      color?: string,
+      achievement?: Achievement,
+      extraCount?: number
+    ) => {
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      setToasts((prev) => [...prev.slice(-3), { id, text, tier, color, achievement }]);
+      setToasts((prev) => [...prev.slice(-2), { id, text, tier, color, achievement, extraCount }]);
     },
     []
   );
@@ -327,16 +333,23 @@ export default function Home() {
       steps,
     }, user?.username);
 
-    // 按段位稀有度降序排序，确保钻石与黄金等高阶压轴成就优先登场
-    const tierWeight: Record<string, number> = { DIAMOND: 4, GOLD: 3, SILVER: 2, BRONZE: 1 };
-    const sorted = [...newlyUnlocked].sort(
-      (a, b) => (tierWeight[b.tier] || 0) - (tierWeight[a.tier] || 0)
-    );
+    if (newlyUnlocked.length > 0) {
+      // 按段位稀有度降序排序，确保钻石与黄金等高阶压轴成就优先登场
+      const tierWeight: Record<string, number> = { DIAMOND: 4, GOLD: 3, SILVER: 2, BRONZE: 1 };
+      const sorted = [...newlyUnlocked].sort(
+        (a, b) => (tierWeight[b.tier] || 0) - (tierWeight[a.tier] || 0)
+      );
 
-    sorted.forEach((ach) => {
+      // 取最高品质的成就作为高光主播报项，多余成就自动合并展示（+N 勋章），杜绝连珠炮刷屏
+      const topAch = sorted[0];
+      const extraCount = sorted.length > 1 ? sorted.length - 1 : undefined;
+
       sound.playAchievement();
-      addToast(ach.name, ach.tier, ach.color, ach);
-    });
+      // 异步分发微任务，避免在 effect 执行周期内同步调用 setState 引发级联渲染
+      queueMicrotask(() => {
+        addToast(topAch.name, topAch.tier, topAch.color, topAch, extraCount);
+      });
+    }
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, steps, user?.username, addToast]);
 
   // 开始新对局 (独占锁定当前局 Session，杜绝混用与二次消费，0ms 零延迟启动)
