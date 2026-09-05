@@ -16,24 +16,29 @@
   <!-- 1. NCU HOME 纯白超椭圆底座与极细浅灰边线 -->
   <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
 
-  <!-- 2. 南大家园官方 1:1 等轴测 3D 魔方品牌微标 (纯线条 Line Art 原版) -->
-  <g transform="translate(6.2, 5.8) scale(0.115)">
-    <!-- 三面浅色实体底板 (大面积通透留白) -->
-    <path d="M 50 12 L 83 31 L 50 50 L 17 31 Z" fill="#F0F9FF" />
-    <path d="M 17 31 L 50 50 L 50 88 L 17 69 Z" fill="#FFFBEB" />
-    <path d="M 50 50 L 83 31 L 83 69 L 50 88 Z" fill="#FFF1F2" />
+  <!-- 2. 南大家园官方 1:1 等轴测 3D 魔方品牌微标 (官方原版像素级复刻) -->
+  <g fill="none" transform="translate(4.5, 4.2) scale(0.23) translate(-15, -9)">
+    <!-- 1. 三面等轴测底板与开槽底色 -->
+    <polygon points="38,33.5 16,21 16,46 38,59" fill="#FFF4D5" />
+    <path d="M 38,38 L 29,33.5 C 25,32.5 23.5,35 23.5,39.5 C 23.5,43 25,44.5 28,46 L 38,51.5 Z" fill="#FFEEEC" />
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M 38,33.5 L 59.5,21 L 59.5,46 L 38,59 Z M 44.5,56 L 44.5,40 A 4 4 0 0 1 52.5,40 L 52.5,49 Z" fill="#FFEEEC" />
+    <path d="M 38,9.5 L 16,21 L 38,33.5 L 44,29 C 39,26.5 33,25 33,22.5 C 33,19 38,17 40,15 C 41.5,13 41,11 38,9.5 Z M 44,29 L 59.5,21 L 53,17.5 C 47.5,20 44,24 44,29 Z" fill="#E5F3FF" />
 
-    <!-- 顶面 U (天蓝 #0099FF 单线条) -->
-    <path d="M 50 12 L 17 31 L 50 50" stroke="#0099FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-    <path d="M 74 26 L 58 35 Q 46 41 46 31 Q 46 22 62 19" stroke="#0099FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-
-    <!-- 左面 C (橙黄 #F59E0B 单线条) -->
-    <path d="M 50 50 L 17 31 L 17 69 L 50 88" stroke="#F59E0B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-    <path d="M 50 57 L 35 60 Q 25 66 35 72 L 50 78" stroke="#F59E0B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-
-    <!-- 右面 n (珊瑚粉红 #FF5A5F 单线条) -->
-    <path d="M 50 88 L 50 50 L 83 31 L 83 69" stroke="#FF5A5F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-    <path d="M 62 81 L 62 68 Q 67.5 59 73 64 L 73 75" stroke="#FF5A5F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <!-- 2. 纯线条线框 (Line Art) -->
+    <g stroke="#FFBB00" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="16,21 16,46 38,59" />
+      <line x1="38" y1="33.5" x2="38" y2="51.5" />
+      <path d="M 38,38 L 29,33.5 C 25,32.5 23.5,35 23.5,39.5 C 23.5,43 25,44.5 28,46 L 38,51.5" fill="none" />
+    </g>
+    <g stroke="#FD675A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="38,33.5 59.5,21 59.5,46 38,59" />
+      <line x1="38" y1="51.5" x2="38" y2="59" />
+      <path d="M 38,59 L 44.5,54 L 44.5,40 A 4 4 0 0 1 52.5,40 L 52.5,49" fill="none" />
+    </g>
+    <g stroke="#31A0FE" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="38,9.5 16,21 38,33.5" />
+      <path d="M 38,9.5 C 40.5,11.5 42,13.5 39.5,15.5 C 36.5,18 32,19.5 32,22.5 C 32,25.5 38,26.5 43,23.5 C 48,20.5 53.5,18.5 59.5,21" fill="none" />
+    </g>
   </g>
 
   <!-- 3. 灵动曲折层叠方块贪吃蛇 (第3节往上提、第5节往下沉，蜿蜒生动) -->
