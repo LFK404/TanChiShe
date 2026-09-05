@@ -16,17 +16,54 @@
   <!-- 1. NCU HOME 纯白超椭圆底座与极细浅灰边线 -->
   <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
 
-  <!-- 2. 南大家园官方 3D 魔方品牌微标 (等轴测 U-C-n 三色微雕) -->
-  <g id="ncuCube">
-    <path d="M 11.5 6.5 L 15.2 8.6 L 11.5 10.7 L 7.8 8.6 Z" fill="#F0F9FF" />
-    <path d="M 7.8 8.6 L 11.5 10.7 L 11.5 15.0 L 7.8 12.9 Z" fill="#FFFBEB" />
-    <path d="M 11.5 10.7 L 15.2 8.6 L 15.2 12.9 L 11.5 15.0 Z" fill="#FFF1F2" />
+  <!-- 2. 南大家园官方 1:1 等轴测 3D 魔方品牌微标 (U-C-n 实体立体开槽雕刻) -->
+  <g transform="translate(6.2, 5.8) scale(0.115)">
+    <!-- 三面浅色实体底板 -->
+    <path d="M 50 10 L 85 30 L 50 50 L 15 30 Z" fill="#E8F4FC" />
+    <path d="M 15 30 L 50 50 L 50 90 L 15 70 Z" fill="#FCF8E8" />
+    <path d="M 50 50 L 85 30 L 85 70 L 50 90 Z" fill="#FCECEB" />
+
     <!-- 顶面 U (天蓝 #0099FF) -->
-    <path d="M 9.6 9.6 L 8.6 9.0 L 11.5 7.4 L 14.4 9.0 L 13.4 9.6" stroke="#0099FF" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" />
+    <path
+      d="M 64 18
+         L 50 10 
+         L 15 30 
+         L 50 50 
+         L 85 30 
+         L 74 24
+         L 57 34
+         C 47 40 37 32 44 25
+         L 64 18 Z"
+      fill="#0099FF"
+    />
+
     <!-- 左面 C (橙黄 #F59E0B) -->
-    <path d="M 10.7 11.4 L 8.6 10.2 L 8.6 12.2 L 10.7 13.4" stroke="#F59E0B" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" />
-    <!-- 右面 n (粉红 #FF5A5F) -->
-    <path d="M 12.3 14.1 L 12.3 12.1 L 14.4 11.0 L 14.4 13.0" stroke="#FF5A5F" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" />
+    <path
+      d="M 50 58
+         L 50 50 
+         L 15 30 
+         L 15 70 
+         L 50 90 
+         L 50 82
+         L 34 73
+         C 25 68 25 52 34 47
+         L 50 58 Z"
+      fill="#F59E0B"
+    />
+
+    <!-- 右面 n (珊瑚粉红 #FF5A5F) -->
+    <path
+      d="M 62 83
+         L 50 90 
+         L 50 50 
+         L 85 30 
+         L 85 70 
+         L 73 77
+         L 73 63
+         C 73 54 62 58 62 67
+         L 62 83 Z"
+      fill="#FF5A5F"
+    />
   </g>
 
   <!-- 3. 灵动曲折层叠方块贪吃蛇 (第3节往上提、第5节往下沉，蜿蜒生动) -->
