@@ -7,12 +7,6 @@
       <stop offset="100%" stop-color="#0099FF" />
     </linearGradient>
 
-    <!-- 经典红苹果微渐变 -->
-    <linearGradient id="appleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F87171" />
-      <stop offset="100%" stop-color="#EF4444" />
-    </linearGradient>
-
     <!-- 蛇身方块微阴影 (层叠微立体软影) -->
     <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="1" stdDeviation="0.8" flood-color="#0099FF" flood-opacity="0.22" />
@@ -22,11 +16,18 @@
   <!-- 1. NCU HOME 纯白超椭圆底座与极细浅灰边线 -->
   <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.2" />
 
-  <!-- 2. NCU HOME 四色微标 (顶部点睛) -->
-  <circle cx="11" cy="7.5" r="1.3" fill="#0099FF" />
-  <circle cx="15" cy="7.5" r="1.3" fill="#F59E0B" />
-  <circle cx="19" cy="7.5" r="1.3" fill="#10B981" />
-  <circle cx="23" cy="7.5" r="1.3" fill="#EC4899" />
+  <!-- 2. 南大家园官方 3D 魔方品牌微标 (等轴测 U-C-n 三色微雕) -->
+  <g id="ncuCube">
+    <path d="M 11.5 6.5 L 15.2 8.6 L 11.5 10.7 L 7.8 8.6 Z" fill="#F0F9FF" />
+    <path d="M 7.8 8.6 L 11.5 10.7 L 11.5 15.0 L 7.8 12.9 Z" fill="#FFFBEB" />
+    <path d="M 11.5 10.7 L 15.2 8.6 L 15.2 12.9 L 11.5 15.0 Z" fill="#FFF1F2" />
+    <!-- 顶面 U (天蓝 #0099FF) -->
+    <path d="M 9.6 9.6 L 8.6 9.0 L 11.5 7.4 L 14.4 9.0 L 13.4 9.6" stroke="#0099FF" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- 左面 C (橙黄 #F59E0B) -->
+    <path d="M 10.7 11.4 L 8.6 10.2 L 8.6 12.2 L 10.7 13.4" stroke="#F59E0B" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- 右面 n (粉红 #FF5A5F) -->
+    <path d="M 12.3 14.1 L 12.3 12.1 L 14.4 11.0 L 14.4 13.0" stroke="#FF5A5F" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
 
   <!-- 3. 灵动曲折层叠方块贪吃蛇 (第3节往上提、第5节往下沉，蜿蜒生动) -->
   <!-- 节0: 蛇尾 (左下方起始，浅淡冰蓝) -->
@@ -60,14 +61,17 @@
   <circle cx="30.3" cy="21.0" r="0.75" fill="#0F172A" />
   <circle cx="30.0" cy="20.6" r="0.3" fill="#FFFFFF" />
 
-  <!-- 4. 经典多巴胺红苹果与翠绿果叶 (位于右上方蛇头正前方) -->
-  <circle cx="38.5" cy="19" r="3.6" fill="url(#appleGrad)" />
-  <circle cx="37.3" cy="17.6" r="1.0" fill="#FFFFFF" opacity="0.65" />
+  <!-- 4. 游戏内 1:1 纯正多巴胺红苹果 (纯平高亮 + 水滴晶莹月牙高光 + 棕梗翠叶) -->
+  <circle cx="38.5" cy="18.5" r="3.6" fill="#EF4444" />
+  <circle cx="37.2" cy="17.2" r="1.1" fill="#FFFFFF" opacity="0.65" />
   <!-- 果梗 -->
-  <rect x="38.0" y="13.8" width="0.9" height="1.8" rx="0.4" fill="#78350F" />
+  <rect x="38.0" y="13.8" width="1.0" height="2.0" rx="0.5" fill="#78350F" />
   <!-- 翠绿嫩叶 -->
-  <path d="M38.5 14.6 C40.1 13.2 41.3 13.8 40.9 15.0 C39.7 15.5 39.0 14.9 38.5 14.6 Z" fill="#10B981" />
+  <ellipse cx="40.2" cy="14.8" rx="1.6" ry="1.0" transform="rotate(-25 40.2 14.8)" fill="#10B981" />
 
-  <!-- 5. 金色幸运星点缀 (右下方空位平衡，呼应 +30 金果) -->
-  <path d="M37.5 33 L38.3 35.0 L40.5 35.2 L38.8 36.5 L39.4 38.5 L37.5 37.4 L35.6 38.5 L36.2 36.5 L34.5 35.2 L36.7 35.0 Z" fill="#F59E0B" />
+  <!-- 5. 游戏内 1:1 金色幸运果与南大家园经典圆润四芒星曜 (双层光晕 + 晶莹高光核) -->
+  <circle cx="37.5" cy="35.5" r="4.8" fill="#F59E0B" opacity="0.22" />
+  <circle cx="37.5" cy="35.5" r="3.2" fill="#F59E0B" />
+  <path d="M 37.5 32.5 Q 37.5 35.5 40.5 35.5 Q 37.5 35.5 37.5 38.5 Q 37.5 35.5 34.5 35.5 Q 37.5 35.5 37.5 32.5 Z" fill="#FEF3C7" />
+  <circle cx="37.5" cy="35.5" r="0.9" fill="#FFFFFF" />
 </svg>
