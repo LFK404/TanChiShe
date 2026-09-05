@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
 import { useSnake } from '@/hooks/useSnake';
 import { apiStartGame, apiSettleGame, apiLeaderboard } from '@/services/api';
@@ -13,7 +14,6 @@ import Tutorial from '@/components/Tutorial';
 import Achievements from '@/components/Achievements';
 import InGameToast, { ToastItem } from '@/components/InGameToast';
 import TrajectoryCardModal from '@/components/TrajectoryCardModal';
-import NcuCubeIcon from '@/components/NcuCubeIcon';
 import { checkAndUnlockAchievements, Achievement, AchievementTier } from '@/utils/achievements';
 import { sound } from '@/utils/audio';
 
@@ -477,15 +477,26 @@ export default function Home() {
               </p>
             </div>
 
-            {/* 南大家园官方 3D 魔方徽标与彩色 NCUHOME 水印 (与官方品牌形象一模一样) */}
-            <div className="hidden sm:flex items-center gap-2.5 select-none pointer-events-none opacity-90 shrink-0 pl-2">
-              <NcuCubeIcon className="w-9 h-9 sm:w-10 sm:h-10 shrink-0" />
-              <div className="flex items-center font-black text-2xl sm:text-3xl tracking-tight leading-none">
-                <span className="text-[#FF5A5F]">N</span>
-                <span className="text-[#F59E0B]">C</span>
-                <span className="text-[#0099FF]">U</span>
-                <span className="text-[#262626] dark:text-slate-100 ml-0.5">HOME</span>
-              </div>
+            {/* 南大家园官方品牌全套徽标水印 (100% 官方原图免抠透明底素材) */}
+            <div className="hidden sm:flex items-center select-none pointer-events-none opacity-90 hover:opacity-100 transition-opacity shrink-0 pl-2">
+              <Image
+                src="/ncuhome_logo.png"
+                alt="NCUHOME"
+                width={212}
+                height={55}
+                className="h-8 sm:h-9 w-auto object-contain dark:hidden"
+                draggable={false}
+                priority
+              />
+              <Image
+                src="/ncuhome_logo_dark.png"
+                alt="NCUHOME"
+                width={212}
+                height={55}
+                className="h-8 sm:h-9 w-auto object-contain hidden dark:block"
+                draggable={false}
+                priority
+              />
             </div>
           </div>
 
@@ -547,15 +558,24 @@ export default function Home() {
             />
           </div>
 
-          {/* 极简底部署名 */}
-          <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-1.5 select-none">
-            <NcuCubeIcon className="w-3.5 h-3.5 inline-block shrink-0" />
-            <div className="flex items-center font-bold tracking-tight">
-              <span className="text-[#FF5A5F]">N</span>
-              <span className="text-[#F59E0B]">C</span>
-              <span className="text-[#0099FF]">U</span>
-              <span className="text-slate-600 dark:text-slate-300 ml-0.5">HOME</span>
-            </div>
+          {/* 极简底部署名 (南大家园官方品牌徽标) */}
+          <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
+            <Image
+              src="/ncuhome_logo.png"
+              alt="NCUHOME"
+              width={106}
+              height={28}
+              className="h-4 w-auto object-contain dark:hidden opacity-85"
+              draggable={false}
+            />
+            <Image
+              src="/ncuhome_logo_dark.png"
+              alt="NCUHOME"
+              width={106}
+              height={28}
+              className="h-4 w-auto object-contain hidden dark:block opacity-85"
+              draggable={false}
+            />
             <span>•</span>
             <span>贪吃蛇</span>
           </footer>
