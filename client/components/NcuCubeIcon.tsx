@@ -6,11 +6,8 @@ interface NcuCubeIconProps {
 }
 
 /**
- * 南大家园官方等轴测 3D 魔方品牌纯矢量徽标 (1:1 像素级原版复刻)
- * 严格按照官方原版构造：
- * 1. 顶面 (冰蓝底 #E8F4FC)：天蓝厚色带 (#0099FF) 沿外边缘环绕，右上边向内开出 U 型光滑圆底槽
- * 2. 左面 (米黄底 #FCF8E8)：橙黄厚色带 (#F59E0B) 沿外边缘环绕，垂直中棱向内开出 C 型半圆槽
- * 3. 右面 (淡粉底 #FCECEB)：珊瑚红厚色带 (#FF5A5F) 沿外边缘环绕，底边向上开出小写 n 型圆拱门
+ * 南大家园官方等轴测 3D 魔方品牌纯矢量徽标 (纯线条 Line Art 官方原版复刻)
+ * 特性：大面积浅色通透留白 + 纯单粗线条 (fill="none" + stroke) 勾勒 U-C-n 几何开槽
  */
 export default function NcuCubeIcon({ className = 'w-6 h-6', size }: NcuCubeIconProps) {
   const style = size ? { width: size, height: size } : undefined;
@@ -23,51 +20,63 @@ export default function NcuCubeIcon({ className = 'w-6 h-6', size }: NcuCubeIcon
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* 1. 三面等轴测浅色实体底板 */}
-      <path d="M 50 10 L 85 30 L 50 50 L 15 30 Z" fill="#E8F4FC" />
-      <path d="M 15 30 L 50 50 L 50 90 L 15 70 Z" fill="#FCF8E8" />
-      <path d="M 50 50 L 85 30 L 85 70 L 50 90 Z" fill="#FCECEB" />
+      {/* 1. 三面等轴测纯净浅色微透底板 (大面积留白，轻盈通透) */}
+      <path d="M 50 12 L 83 31 L 50 50 L 17 31 Z" fill="#F0F9FF" />
+      <path d="M 17 31 L 50 50 L 50 88 L 17 69 Z" fill="#FFFBEB" />
+      <path d="M 50 50 L 83 31 L 83 69 L 50 88 Z" fill="#FFF1F2" />
 
-      {/* 2. 顶面 U (天蓝 #0099FF)：外围包覆，右上开口 U 型槽 */}
+      {/* 2. 顶面：天蓝纯单粗线 U 形几何开槽 (fill="none") */}
+      {/* 顶面外棱线 */}
       <path
-        d="M 64 18
-           L 50 10 
-           L 15 30 
-           L 50 50 
-           L 85 30 
-           L 74 24
-           L 57 34
-           C 47 40 37 32 44 25
-           L 64 18 Z"
-        fill="#0099FF"
+        d="M 50 12 L 17 31 L 50 50"
+        stroke="#0099FF"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* 顶面右上开口 U 型槽线条 */}
+      <path
+        d="M 74 26 L 58 35 Q 46 41 46 31 Q 46 22 62 19"
+        stroke="#0099FF"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
 
-      {/* 3. 左面 C (橙黄 #F59E0B)：外围包覆，垂直中棱开口 C 型槽 */}
+      {/* 3. 左面：橙黄纯单粗线 C 形几何开槽 (fill="none") */}
+      {/* 左面外棱线 */}
       <path
-        d="M 50 58
-           L 50 50 
-           L 15 30 
-           L 15 70 
-           L 50 90 
-           L 50 82
-           L 34 73
-           C 25 68 25 52 34 47
-           L 50 58 Z"
-        fill="#F59E0B"
+        d="M 50 50 L 17 31 L 17 69 L 50 88"
+        stroke="#F59E0B"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* 左面右侧中棱开口 C 型槽线条 */}
+      <path
+        d="M 50 57 L 35 60 Q 25 66 35 72 L 50 78"
+        stroke="#F59E0B"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
 
-      {/* 4. 右面 n (珊瑚粉红 #FF5A5F)：外围包覆，底边向上开圆拱门 */}
+      {/* 4. 右面：珊瑚红纯单粗线 n 形圆拱门几何开槽 (fill="none") */}
+      {/* 右面外棱线 */}
       <path
-        d="M 62 83
-           L 50 90 
-           L 50 50 
-           L 85 30 
-           L 85 70 
-           L 73 77
-           L 73 63
-           C 73 54 62 58 62 67
-           L 62 83 Z"
-        fill="#FF5A5F"
+        d="M 50 88 L 50 50 L 83 31 L 83 69"
+        stroke="#FF5A5F"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* 右面底边开口 n 型圆拱门线条 */}
+      <path
+        d="M 62 81 L 62 68 Q 67.5 59 73 64 L 73 75"
+        stroke="#FF5A5F"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
