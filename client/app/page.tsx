@@ -13,6 +13,7 @@ import Tutorial from '@/components/Tutorial';
 import Achievements from '@/components/Achievements';
 import InGameToast, { ToastItem } from '@/components/InGameToast';
 import TrajectoryCardModal from '@/components/TrajectoryCardModal';
+import NcuCubeIcon from '@/components/NcuCubeIcon';
 import { checkAndUnlockAchievements, Achievement, AchievementTier } from '@/utils/achievements';
 import { sound } from '@/utils/audio';
 
@@ -476,16 +477,14 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="hidden sm:flex flex-col items-end leading-none select-none pointer-events-none opacity-80 shrink-0 pl-2">
-              <div className="flex items-center gap-1.5 mb-1.5 pr-0.5">
-                <span className="w-2 h-2 rounded-full bg-[#66CCFF]" />
-                <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-                <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
-              </div>
-              <div className="flex items-baseline gap-2 sm:gap-3 font-black text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#CBD5E1] dark:text-slate-700">
-                <span>NCU</span>
-                <span>HOME</span>
+            {/* 南大家园官方 3D 魔方徽标与彩色 NCUHOME 水印 (与官方品牌形象一模一样) */}
+            <div className="hidden sm:flex items-center gap-2.5 select-none pointer-events-none opacity-90 shrink-0 pl-2">
+              <NcuCubeIcon className="w-9 h-9 sm:w-10 sm:h-10 shrink-0" />
+              <div className="flex items-center font-black text-2xl sm:text-3xl tracking-tight leading-none">
+                <span className="text-[#FF5A5F]">N</span>
+                <span className="text-[#F59E0B]">C</span>
+                <span className="text-[#0099FF]">U</span>
+                <span className="text-[#262626] dark:text-slate-100 ml-0.5">HOME</span>
               </div>
             </div>
           </div>
@@ -549,14 +548,14 @@ export default function Home() {
           </div>
 
           {/* 极简底部署名 */}
-          <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-2 select-none">
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              <span className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
+          <footer className="mt-3 py-3 text-center text-[11.5px] text-[#94A3B8] flex flex-wrap items-center justify-center gap-1.5 select-none">
+            <NcuCubeIcon className="w-3.5 h-3.5 inline-block shrink-0" />
+            <div className="flex items-center font-bold tracking-tight">
+              <span className="text-[#FF5A5F]">N</span>
+              <span className="text-[#F59E0B]">C</span>
+              <span className="text-[#0099FF]">U</span>
+              <span className="text-slate-600 dark:text-slate-300 ml-0.5">HOME</span>
             </div>
-            <span>NCU HOME</span>
             <span>•</span>
             <span>贪吃蛇</span>
           </footer>
