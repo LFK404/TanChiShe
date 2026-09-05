@@ -46,7 +46,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         {children}
         {/* PWA Service Worker 离线缓存自动注册 */}
         <Script id="register-sw" strategy="afterInteractive">

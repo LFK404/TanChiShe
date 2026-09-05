@@ -179,7 +179,7 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
                     className={`p-3 rounded-2xl border transition-all flex items-start gap-3 relative overflow-hidden group ${
                       isUnlocked
                         ? 'bg-white dark:bg-slate-900/60 border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-[#0099FF]/50'
-                        : 'bg-slate-50/50 dark:bg-slate-900/20 border-dashed border-slate-200 dark:border-slate-800 opacity-60'
+                        : 'bg-slate-50/50 dark:bg-slate-900/30 border-dashed border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     {/* 左侧：NCU HOME 纯悬浮专属成长勋章 */}
