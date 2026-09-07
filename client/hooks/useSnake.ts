@@ -660,11 +660,12 @@ export function useSnake(
     }
     trajectoryRef.current.push(head);
 
-    // 4. 自身身体碰撞 (虚化果激活时豁免身体碰撞)
+    // 4. 自身身体碰撞 (严格检测全蛇身，虚化果激活时豁免身体碰撞)
     const isEatingApple = head.x === foodRef.current.x && head.y === foodRef.current.y;
     const collideBodyIndex = snakeRef.current.findIndex((p) => p.x === head.x && p.y === head.y);
     if (!isPhaseNow && collideBodyIndex !== -1) {
-      const reason = `追尾自身躯干 (第 ${collideBodyIndex + 1} 节)`;
+      const isTail = collideBodyIndex === snakeRef.current.length - 1;
+      const reason = isTail ? '撞击蛇尾固化死墙' : `追尾自身躯干 (第 ${collideBodyIndex + 1} 节)`;
       deathReasonRef.current = reason;
       setDeathReason(reason);
       gameOver();
@@ -705,8 +706,11 @@ export function useSnake(
       return;
     }
 
-    // 7. 吃到特殊幸运果 (金果+30分，冰果+10分减速3s，虚化果+10分穿墙2s)
+    // 7. 吃到特殊幸运果 (金果+30分，冰果+10分减速3s，虚化果+10分穿墙2s，波次重置清空死墙)
+    let isEatingBonus = false;
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
+      isEatingBonus = true;
+      fenceRef.current.clear();
       const currentType = bonusTypeRef.current;
       const baseFruitScore = currentType === 'GOLD' ? 30 : 10;
       const { currentCombo } = applyComboEat(baseFruitScore);
@@ -779,11 +783,13 @@ export function useSnake(
       setBonusRemainSec(bonusTypeRef.current === 'GOLD' ? 8.0 : bonusTypeRef.current === 'FROST' ? 3.0 : 2.0);
     }
 
-    // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (纯 Ref 高速步进，零 React 状态调度开销)
+    // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (吃特殊果实当步不留栅栏)
     stepsRef.current += 1;
     const nextSnake = [head, ...snakeRef.current];
     const tail = nextSnake.pop()!;
-    fenceRef.current.add(toKey(tail.x, tail.y));
+    if (!isEatingBonus) {
+      fenceRef.current.add(toKey(tail.x, tail.y));
+    }
     snakeRef.current = nextSnake;
   }, [gameOver, spawnFood, clearBonus, vibrate, speedMs]);
 

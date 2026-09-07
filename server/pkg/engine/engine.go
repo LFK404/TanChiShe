@@ -256,15 +256,10 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			break
 		}
 
-		// 5. 自身身体碰撞检测 (虚化果激活时豁免身体碰撞)
-		isEatingApple := (food != nil && head.X == food.X && head.Y == food.Y)
-		bodyToCheck := snake
-		if !isEatingApple {
-			bodyToCheck = snake[:len(snake)-1]
-		}
+		// 5. 自身身体碰撞检测 (严格检测全蛇身，虚化果激活时豁免身体碰撞)
 		hitBody := false
 		if phaseRemainingTicks == 0 {
-			for _, p := range bodyToCheck {
+			for _, p := range snake {
 				if p.X == head.X && p.Y == head.Y {
 					hitBody = true
 					break
@@ -277,6 +272,7 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 		}
 
 		// 6. 吃到普通红苹果 (长身子 + 连击刷新 + 阶梯加分 + 清空栅栏 + 动态加速)
+		isEatingApple := (food != nil && head.X == food.X && head.Y == food.Y)
 		if isEatingApple {
 			snake = append([]Point{head}, snake...)
 			if lastEatElapsedMs >= 0 && totalElapsedMs-lastEatElapsedMs <= 3000 {
@@ -312,8 +308,12 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			break
 		}
 
-		// 8. 吃到特殊幸运果 (金果+30分，冰果+10分减速3s，虚化果+10分穿墙2s)
+		// 8. 吃到特殊幸运果 (金果+30分，冰果+10分减速3s，虚化果+10分穿墙2s，波次重置清空死墙)
+		isEatingBonus := false
 		if bonusItem != nil && head.X == bonusItem.Point.X && head.Y == bonusItem.Point.Y {
+			isEatingBonus = true
+			fence = make(map[string]bool)
+
 			if lastEatElapsedMs >= 0 && totalElapsedMs-lastEatElapsedMs <= 3000 {
 				comboCount++
 			} else {
@@ -340,11 +340,13 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 		}
 
 		// 9. 特殊幸运果倒计时过期
-		// 10. 正常移动：蛇头前进，蛇尾留下栅栏
+		// 10. 正常移动：蛇头前进，蛇尾留下栅栏 (吃特殊果实波次重置当步不留栅栏)
 		nextSnake := append([]Point{head}, snake...)
 		tail := nextSnake[len(nextSnake)-1]
 		nextSnake = nextSnake[:len(nextSnake)-1]
-		fence[fmt.Sprintf("%d,%d", tail.X, tail.Y)] = true
+		if !isEatingBonus {
+			fence[fmt.Sprintf("%d,%d", tail.X, tail.Y)] = true
+		}
 		snake = nextSnake
 	}
 

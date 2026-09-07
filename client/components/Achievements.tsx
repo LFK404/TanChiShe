@@ -82,8 +82,13 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
+        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none relative"
       >
+        {/* 弹窗登场多巴胺微晶光芒粒子 */}
+        <span className="absolute -top-1 left-1/4 w-2 h-2 rounded-full bg-[#0099FF] pointer-events-none animate-ping opacity-80 duration-1000" />
+        <span className="absolute -bottom-1 right-1/4 w-2 h-2 rounded-full bg-[#F59E0B] pointer-events-none animate-ping opacity-80 duration-1000" />
+        <span className="absolute top-1/2 -left-1 w-1.5 h-1.5 rounded-full bg-[#10B981] pointer-events-none animate-ping opacity-70 duration-1000" />
+        <span className="absolute top-1/2 -right-1 w-1.5 h-1.5 rounded-full bg-[#8B5CF6] pointer-events-none animate-ping opacity-70 duration-1000" />
         {/* 顶部荣耀仪表盘 */}
         <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-gradient-to-b from-[#F8FAFC] to-white relative">
           <div className="flex items-center justify-between gap-3">

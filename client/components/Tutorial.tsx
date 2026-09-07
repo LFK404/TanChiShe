@@ -29,14 +29,19 @@ export default function Tutorial({ isOpen, onClose }: Props) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[4px] select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm select-none animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-7 flex flex-col text-[#0F172A] relative border border-slate-200/80 shadow-sm"
+        className="w-full max-w-md max-h-[85vh] bg-white rounded-3xl flex flex-col text-[#0F172A] relative border border-slate-200/80 shadow-sm overflow-hidden animate-in zoom-in-95 duration-200"
       >
-        {/* 顶部标题栏 */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+        {/* 弹窗登场微晶光芒微粒子 */}
+        <span className="absolute -top-1 left-1/4 w-2 h-2 rounded-full bg-[#66CCFF] pointer-events-none animate-ping opacity-80 duration-1000" />
+        <span className="absolute -bottom-1 right-1/4 w-2 h-2 rounded-full bg-[#F59E0B] pointer-events-none animate-ping opacity-80 duration-1000" />
+        <span className="absolute top-1/2 -left-1 w-1.5 h-1.5 rounded-full bg-[#10B981] pointer-events-none animate-ping opacity-70 duration-1000" />
+        <span className="absolute top-1/2 -right-1 w-1.5 h-1.5 rounded-full bg-[#8B5CF6] pointer-events-none animate-ping opacity-70 duration-1000" />
+        {/* 顶部标题栏 (固定吸顶) */}
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-2xl bg-[#EBF8FF] text-[#0099FF] flex items-center justify-center">
               <HelpCircle size={18} strokeWidth={2} />
@@ -54,80 +59,84 @@ export default function Tutorial({ isOpen, onClose }: Props) {
           </button>
         </div>
 
-        {/* 单一规则卡片底座 (内部5个条目层次饱满，浑然一体) */}
-        <div className="my-3.5 p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 flex flex-col divide-y divide-slate-200/60 max-h-[60vh] overflow-y-auto">
-          {/* 01 死路机制 */}
-          <div className="flex items-start gap-3 pb-2.5">
-            <NCUNumberBadge num="01" color="#D97706" bg="#FEF3C7" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-800 mb-0.5">走过的路变成死路</h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                蛇身移动会在身后留下灰色障碍死路，不可折返碰撞，考验大局规划。
-              </p>
+        {/* 核心规则列表区 (自适应平滑滚动) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+          <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 flex flex-col divide-y divide-slate-200/60">
+            {/* 01 死路机制 */}
+            <div className="flex items-start gap-3 pb-2.5">
+              <NCUNumberBadge num="01" color="#D97706" bg="#FEF3C7" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-slate-800 mb-0.5">走过的路变成死路</h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  蛇身移动会在身后留下灰色障碍死路，不可折返碰撞，考验大局规划。
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* 02 普通红苹果 */}
-          <div className="flex items-start gap-3 py-2.5">
-            <NCUNumberBadge num="02" color="#EF4444" bg="#FEE2E2" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                普通红苹果 <span className="text-[10px] font-normal text-slate-400">(+10分 · 清空身后死路)</span>
-              </h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                吃掉后蛇身增长 1 节，并瞬间清除身后所有死路，战场重回开阔。
-              </p>
+            {/* 02 普通红苹果 */}
+            <div className="flex items-start gap-3 py-2.5">
+              <NCUNumberBadge num="02" color="#EF4444" bg="#FEE2E2" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-slate-800 mb-0.5">
+                  普通红苹果 <span className="text-[10px] font-normal text-slate-400">(+10分 · 波次清空死路)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  吃掉后蛇身增长 1 节，并瞬间清除全场所有死路，战场重回开阔。
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* 03 三大特殊奇珍果实 */}
-          <div className="flex items-start gap-3 py-2.5">
-            <NCUNumberBadge num="03" color="#F59E0B" bg="#FEF3C7" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                特殊奇珍果实 <span className="text-[10px] font-normal text-slate-400">(金果 · 冰果 · 虚化果)</span>
-              </h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                随机现身并附带限时流光导轨：
-                <br />• <strong className="text-amber-600 font-semibold">金果 (20%)</strong>：8秒限时，+30分，保留身后死路；
-                <br />• <strong className="text-sky-600 font-semibold">冰果 (10%)</strong>：3秒限时，+10分，激活3秒寒霜减速走位；
-                <br />• <strong className="text-purple-600 font-semibold">虚化果 (5%)</strong>：2秒限时，+10分，激活2秒完全穿墙与免碰死路。
-              </p>
+            {/* 03 三大特殊奇珍果实 */}
+            <div className="flex items-start gap-3 py-2.5">
+              <NCUNumberBadge num="03" color="#F59E0B" bg="#FEF3C7" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-slate-800 mb-0.5">
+                  特殊奇珍果实 <span className="text-[10px] font-normal text-slate-400">(金果 · 冰果 · 虚化果)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  随机现身并附带限时流光导轨，吃食均触发波次重置清空全场死路：
+                  <br />• <strong className="text-amber-600 font-semibold">金果 (20%)</strong>：8秒限时，+30分，加速冲刺；
+                  <br />• <strong className="text-sky-600 font-semibold">冰果 (10%)</strong>：3秒限时，+10分，激活3秒寒霜减速从容走位；
+                  <br />• <strong className="text-purple-600 font-semibold">虚化果 (5%)</strong>：2秒限时，+10分，激活2秒穿墙与穿透死路。
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* 04 3秒连击与阶梯奖励 */}
-          <div className="flex items-start gap-3 py-2.5">
-            <NCUNumberBadge num="04" color="#8B5CF6" bg="#F3E8FF" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                3秒极速连击 <span className="text-[10px] font-normal text-slate-400">(阶梯加成 · 濒危预警)</span>
-              </h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                3 秒内连续吃果激活连击（红果与金果均计入）：3 连击起激活蛇身黄金能量波；第 3 次起每次额外加 5 分（+5/+10...累加）；剩余 1 秒蛇身急促橙红频闪，蛇头显示倒计时微弧。
-              </p>
+            {/* 04 3秒连击与阶梯奖励 */}
+            <div className="flex items-start gap-3 py-2.5">
+              <NCUNumberBadge num="04" color="#8B5CF6" bg="#F3E8FF" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-slate-800 mb-0.5">
+                  3秒极速连击 <span className="text-[10px] font-normal text-slate-400">(阶梯加成 · 濒危预警)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  3 秒内连续吃果激活连击（红果与特殊果均计入）：3 连击起激活蛇身黄金能量波；第 3 次起每次额外加 5 分（+5/+10...累加）；剩余 1 秒蛇身急促橙红频闪。
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* 05 操控模式 */}
-          <div className="flex items-start gap-3 pt-2.5">
-            <NCUNumberBadge num="05" color="#0099FF" bg="#EBF8FF" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-slate-800 mb-0.5">全端操控与多层触感</h3>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                电脑支持方向键与 WASD；移动端支持全屏手势滑屏与虚拟十字键；空格或 P 键一键暂停。
-              </p>
+            {/* 05 操控模式 */}
+            <div className="flex items-start gap-3 pt-2.5">
+              <NCUNumberBadge num="05" color="#0099FF" bg="#EBF8FF" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold text-slate-800 mb-0.5">全端操控与多层触感</h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  电脑支持方向键与 WASD；移动端支持全屏手势滑屏与虚拟十字键；空格或 P 键一键暂停。
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 底部确认按钮 */}
-        <button
-          onClick={onClose}
-          className="w-full bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.98] text-white font-bold py-2.5 rounded-2xl transition-all cursor-pointer text-xs shadow-xs"
-        >
-          我已了解
-        </button>
+        {/* 底部确认按钮栏 (固定吸底) */}
+        <div className="px-5 sm:px-6 py-3.5 border-t border-slate-100 bg-[#F8FAFC]/60 shrink-0">
+          <button
+            onClick={onClose}
+            className="w-full bg-[#0099FF] hover:bg-[#0088EE] active:scale-[0.98] text-white font-bold py-2.5 rounded-2xl transition-all cursor-pointer text-xs shadow-xs"
+          >
+            我已了解
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -51,6 +51,39 @@ function SettleTierCrest({ score }: { score: number }) {
   );
 }
 
+// 极简高性能微动效：基于 rAF 与 Ease-Out Cubic 的丝滑滚数插值组件 (零外置依赖，严格等宽防抖)
+function AnimatedNumber({ value }: { value: number }) {
+  const [displayVal, setDisplayVal] = useState(value);
+  const prevValRef = useRef(value);
+
+  useEffect(() => {
+    if (value === prevValRef.current) return;
+    const startVal = prevValRef.current;
+    const endVal = value;
+    prevValRef.current = value;
+
+    let animFrame: number;
+    const startTime = performance.now();
+    const duration = 220;
+
+    const step = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startVal + (endVal - startVal) * ease);
+      setDisplayVal(current);
+
+      if (progress < 1) {
+        animFrame = requestAnimationFrame(step);
+      }
+    };
+
+    animFrame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animFrame);
+  }, [value]);
+
+  return <>{displayVal}</>;
+}
+
 interface Props {
   snakeRef: React.MutableRefObject<Point[]>;
   fenceRef: React.MutableRefObject<Set<string>>;
@@ -571,9 +604,10 @@ export default function Board({
       const currentCombo = comboCount || 1;
 
       if (isBonusFruit) {
-        // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，高初速多巴胺微星曜爆发
+        // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，高初速多巴胺微星曜爆发，清空栅栏
         triggerShake(3, 1.2);
         spawnBonusParticles(head.x, head.y);
+        fenceSpawnTimeRef.current.clear();
 
         if (currentCombo === 1) {
           spawnFloatingText(head.x, head.y, '+30 幸运金果!', '#D97706');
@@ -1421,21 +1455,25 @@ export default function Board({
   const statCapsules = [
     {
       label: '得分',
-      val: score,
+      val: <AnimatedNumber value={score} />,
       bg: 'bg-rose-50/90',
       text: 'text-rose-500',
       valColor: 'text-rose-600',
     },
     {
       label: '长度',
-      val: length,
+      val: <AnimatedNumber value={length} />,
       bg: 'bg-emerald-50/90',
       text: 'text-emerald-600',
       valColor: 'text-emerald-700',
     },
     {
       label: '用时',
-      val: `${duration}s`,
+      val: (
+        <>
+          <AnimatedNumber value={duration} />s
+        </>
+      ),
       bg: 'bg-purple-50/90',
       text: 'text-purple-600',
       valColor: 'text-purple-700',

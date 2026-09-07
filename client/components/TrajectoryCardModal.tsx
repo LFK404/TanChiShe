@@ -385,14 +385,19 @@ export default function TrajectoryCardModal({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-md select-none animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm select-none animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 shadow-lg shadow-slate-900/15 relative max-h-[92vh] overflow-y-auto select-none"
+        className="w-full max-w-md max-h-[88vh] bg-white rounded-3xl p-5 sm:p-6 flex flex-col border border-slate-200/80 shadow-sm relative overflow-hidden animate-in zoom-in-95 duration-200 select-none"
       >
-        {/* 顶部标题与关闭 (极简现代主义，杜绝花哨矢量图标) */}
-        <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100">
+        {/* 弹窗登场微晶光芒粒子 */}
+        <span className="absolute -top-1 left-1/4 w-2 h-2 rounded-full bg-[#0099FF] pointer-events-none animate-ping opacity-80 duration-1000" />
+        <span className="absolute -bottom-1 right-1/4 w-2 h-2 rounded-full bg-[#EF4444] pointer-events-none animate-ping opacity-80 duration-1000" />
+        <span className="absolute top-1/2 -left-1 w-1.5 h-1.5 rounded-full bg-[#66CCFF] pointer-events-none animate-ping opacity-70 duration-1000" />
+        <span className="absolute top-1/2 -right-1 w-1.5 h-1.5 rounded-full bg-[#F59E0B] pointer-events-none animate-ping opacity-70 duration-1000" />
+        {/* 顶部标题与关闭 (极简现代主义，杜绝花哨矢量图标，固定吸顶) */}
+        <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
           <div>
             <h3 className="text-sm font-bold text-slate-800">对局走位艺术卡片</h3>
             <p className="text-[10px] text-slate-400">基于您本局真实微操轨迹演算生成</p>
@@ -405,10 +410,10 @@ export default function TrajectoryCardModal({
           </button>
         </div>
 
-        {/* 核心海报展示区 */}
-        <div className="my-4 w-full flex justify-center bg-[#F8FAFC] rounded-2xl p-2.5 border border-slate-200/70 shadow-inner">
+        {/* 核心海报展示区 (可滚动内容区) */}
+        <div className="flex-1 overflow-y-auto my-3 w-full flex justify-center items-center bg-[#F8FAFC] rounded-2xl p-2.5 border border-slate-200/70">
           {isGenerating ? (
-            <div className="h-72 flex items-center justify-center text-xs text-slate-400 gap-2">
+            <div className="h-64 flex items-center justify-center text-xs text-slate-400 gap-2">
               <span className="inline-block w-4 h-4 border-2 border-[#0099FF] border-t-transparent rounded-full animate-spin" />
               正在将本局走位拓扑渲染为抽象艺术...
             </div>
@@ -418,14 +423,14 @@ export default function TrajectoryCardModal({
               <img
                 src={imageSrc}
                 alt="对局走位艺术卡片"
-                className="w-full max-h-[58vh] object-contain rounded-xl shadow-xs"
+                className="w-full max-h-[54vh] object-contain rounded-xl shadow-xs"
               />
             )
           )}
         </div>
 
-        {/* 底部操作按钮栏 (纯文字极简质感，不使用矢量图标) */}
-        <div className="w-full grid grid-cols-2 gap-2.5 pt-1">
+        {/* 底部操作按钮栏 (纯文字极简质感，固定吸底) */}
+        <div className="w-full grid grid-cols-2 gap-2.5 pt-1 shrink-0">
           <button
             onClick={handleCopy}
             className="py-2.5 px-3 rounded-2xl bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-[0.98] text-slate-700 font-bold text-xs transition-all cursor-pointer border border-slate-200/60 text-center"
