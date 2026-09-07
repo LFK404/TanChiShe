@@ -86,13 +86,13 @@ export default function Tutorial({ isOpen, onClose }: Props) {
               <NCUNumberBadge num="03" color="#F59E0B" bg="#FEF3C7" />
               <div className="flex-1 min-w-0">
                 <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                  特殊果实池 <span className="text-[10px] font-normal text-slate-400">(同一池子 · 至多1颗 · 统一限时8秒)</span>
+                  特殊果实池 <span className="text-[10px] font-normal text-slate-400">(同一池子 · 至多1颗 · 金8冰6虚5)</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  同一池子随机抽选，场上至多存在 1 颗，外置导轨统一 8 秒倒计时，吃掉均清空死路：
-                  <br />• <strong className="text-amber-600 font-semibold">幸运金果</strong>：高额大奖，吃掉 <strong className="text-amber-700">+30分</strong>；
-                  <br />• <strong className="text-sky-600 font-semibold">冰霜寒果</strong>：控场神器，吃掉 +10分，激活 <strong className="text-sky-700">3秒减速</strong>（从容规避死角）；
-                  <br />• <strong className="text-purple-600 font-semibold">极光虚化果</strong>：穿透神技，吃掉 +10分，激活 <strong className="text-purple-700">2秒虚化</strong>（穿透边界死路，豁免碰撞）。
+                  同一池子随机抽选，场上至多存在 1 颗，外置流光导轨专属样式倒计时，吃掉均清空死路：
+                  <br />• <strong className="text-amber-600 font-semibold">幸运金果 (限时 8s)</strong>：高额大奖，吃掉 <strong className="text-amber-700">+30分</strong>；
+                  <br />• <strong className="text-sky-600 font-semibold">冰霜寒果 (限时 6s)</strong>：控场神器，吃掉 +10分，激活 <strong className="text-sky-700">3秒减速</strong>（从容规避死角）；
+                  <br />• <strong className="text-purple-600 font-semibold">极光虚化果 (限时 5s)</strong>：穿透神技，吃掉 +10分，激活 <strong className="text-purple-700">2秒虚化</strong>（穿透边界死路，豁免碰撞）。
                 </p>
               </div>
             </div>

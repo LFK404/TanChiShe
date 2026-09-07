@@ -1670,18 +1670,74 @@ export default function Board({
         ))}
       </div>
 
-      {/* 极简特殊果实流光微导轨 (高度恒定 3px，绝对零物理位移，绝不推挤棋盘) */}
-      <div className="w-full h-1 my-1 rounded-full overflow-hidden bg-slate-100/80 transition-all">
+      {/* 极简特殊果实流光微导轨与专属形态指示 (绝对零物理位移：高度恒定，绝不推挤棋盘) */}
+      <div className="w-full my-1 flex flex-col gap-0.5 transition-all">
+        {/* 微型专属形态与倒计时标签栏 (固定高度 15px，hasBonus 时淡入) */}
         <div
-          className={`h-full rounded-full transition-all duration-100 ease-linear ${
-            bonusType === 'FROST'
-              ? 'bg-gradient-to-r from-[#38BDF8] via-[#60A5FA] to-[#38BDF8] shadow-[0_0_8px_#38BDF8]'
+          className={`w-full h-[15px] px-1 flex items-center justify-between text-[11px] font-semibold transition-opacity duration-200 ${
+            hasBonus ? 'opacity-100' : 'opacity-0 pointer-events-none select-none'
+          }`}
+        >
+          <div className="flex items-center gap-1.5">
+            {bonusType === 'FROST' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] shadow-[0_0_6px_#38BDF8] animate-pulse" />
+                <span className="text-[#0284C7] font-bold text-[11px]">冰霜寒果</span>
+                <span className="text-[10px] text-sky-500/80 font-normal">减速 3s</span>
+              </>
+            ) : bonusType === 'PHASE' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A855F7] shadow-[0_0_6px_#A855F7] animate-pulse" />
+                <span className="text-[#7E22CE] font-bold text-[11px]">极光虚化果</span>
+                <span className="text-[10px] text-purple-500/80 font-normal">穿墙 2s</span>
+              </>
+            ) : (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shadow-[0_0_6px_#F59E0B] animate-pulse" />
+                <span className="text-[#D97706] font-bold text-[11px]">幸运金果</span>
+                <span className="text-[10px] text-amber-600/80 font-normal">+30分</span>
+              </>
+            )}
+          </div>
+          <div
+            className={`font-mono font-bold text-[10px] tabular-nums ${
+              bonusType === 'FROST'
+                ? 'text-[#0284C7]'
+                : bonusType === 'PHASE'
+                ? 'text-[#7E22CE]'
+                : 'text-[#D97706]'
+            }`}
+          >
+            {Math.max(0, bonusRemainSec).toFixed(1)}s / {bonusType === 'FROST' ? '6.0s' : bonusType === 'PHASE' ? '5.0s' : '8.0s'}
+          </div>
+        </div>
+
+        {/* 专属形态微导轨槽体与流光进度条 (高度 4.5px，三色独享材质、光晕与微晶高光核) */}
+        <div
+          className={`w-full h-[4.5px] rounded-full overflow-hidden transition-all duration-200 ${
+            !hasBonus
+              ? 'bg-slate-100/70 border border-transparent'
+              : bonusType === 'FROST'
+              ? 'bg-sky-100/80 border border-sky-200/60'
               : bonusType === 'PHASE'
-              ? 'bg-gradient-to-r from-[#A855F7] via-[#EC4899] to-[#A855F7] shadow-[0_0_8px_#A855F7]'
-              : 'bg-gradient-to-r from-[#F59E0B] via-[#EF4444] to-[#F59E0B] shadow-[0_0_8px_#F59E0B]'
-          } ${hasBonus ? 'opacity-100' : 'opacity-0'}`}
-          style={{ width: `${Math.max(0, Math.min(100, bonusProgressPercent))}%` }}
-        />
+              ? 'bg-purple-100/80 border border-purple-200/60'
+              : 'bg-amber-100/80 border border-amber-200/60'
+          }`}
+        >
+          <div
+            className={`h-full rounded-full relative transition-all duration-100 ease-linear ${
+              bonusType === 'FROST'
+                ? 'bg-gradient-to-r from-[#0284C7] via-[#38BDF8] to-[#93C5FD] shadow-[0_0_10px_#38BDF8]'
+                : bonusType === 'PHASE'
+                ? 'bg-gradient-to-r from-[#7E22CE] via-[#A855F7] to-[#F472B6] shadow-[0_0_10px_#A855F7]'
+                : 'bg-gradient-to-r from-[#D97706] via-[#F59E0B] to-[#FEF3C7] shadow-[0_0_10px_#F59E0B]'
+            } ${hasBonus ? 'opacity-100' : 'opacity-0'}`}
+            style={{ width: `${Math.max(0, Math.min(100, bonusProgressPercent))}%` }}
+          >
+            {/* 导轨顶端自发光微晶高光核 */}
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+          </div>
+        </div>
       </div>
 
       {/* Canvas 画布与全屏滑屏手势感应层 (100% 纯净视界，无内贴进度条干扰) */}

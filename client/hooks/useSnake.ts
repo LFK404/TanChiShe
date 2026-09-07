@@ -30,6 +30,13 @@ export function calcSpeedMs(score: number): number {
   return BASE_SPEED_MS;         // 1.0x (0~99分 170ms)
 }
 
+// 特殊果实棋盘存留持续时间 (金8 冰6 虚5)
+export const BONUS_DURATIONS: Record<BonusType, number> = {
+  GOLD: 8.0,
+  FROST: 6.0,
+  PHASE: 5.0,
+};
+
 const toKey = (x: number, y: number) => `${x},${y}`;
 
 // 判断两方向是否相反 (防 180 度掉头自杀)
@@ -208,11 +215,10 @@ export function useSnake(
     const newFood = empty[Math.floor(r1 * empty.length)];
     foodRef.current = newFood;
 
-    // 2. 特殊果实池互斥判定 (金果 15%、冰果 10%、虚化果 10%，棋盘统一留存 8.0 秒，一次仅出一种)
+    // 2. 特殊果实池互斥判定 (金果 15%、冰果 10%、虚化果 10%，金8冰6虚5，一次仅出一种)
     const r2 = rng ? rng.next() : Math.random();
     if (!bonusRef.current && empty.length > 3) {
       let selectedType: BonusType | null = null;
-      const durSec = 8.0;
 
       if (r2 < 0.15) {
         selectedType = 'GOLD';
@@ -223,6 +229,7 @@ export function useSnake(
       }
 
       if (selectedType) {
+        const durSec = BONUS_DURATIONS[selectedType];
         const remainingEmpty = empty.filter((p) => p.x !== newFood.x || p.y !== newFood.y);
         if (remainingEmpty.length > 0) {
           // 消费第 3 个随机数选择坐标
@@ -754,12 +761,13 @@ export function useSnake(
       clearBonus();
     }
 
-    // 8. 特殊果实倒计时与外置导轨进度 (统一 8.0 秒棋盘倒计时)
+    // 8. 特殊果实倒计时与外置导轨进度 (金8 冰6 虚5)
     if (bonusRef.current && bonusExpireTickRef.current > 0) {
       if (tickCountRef.current >= bonusExpireTickRef.current) {
         clearBonus();
       } else {
-        const durSec = 8.0;
+        const curType = bonusTypeRef.current;
+        const durSec = BONUS_DURATIONS[curType] || 8.0;
         const totalTicks = Math.round((durSec * 1000) / speedMs);
         const remainingTicks = bonusExpireTickRef.current - tickCountRef.current;
         const percent = totalTicks > 0 ? (remainingTicks / totalTicks) * 100 : 0;
@@ -778,7 +786,8 @@ export function useSnake(
       }
     } else if (bonusRef.current && isWaitingStartRef.current) {
       setBonusProgressPercent(100);
-      setBonusRemainSec(8.0);
+      const curType = bonusTypeRef.current;
+      setBonusRemainSec(BONUS_DURATIONS[curType] || 8.0);
     }
 
     // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (吃特殊果实当步不留栅栏)

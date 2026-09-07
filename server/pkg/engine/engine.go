@@ -191,7 +191,13 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 	}
 	bonusItem = bi
 	if bonusItem != nil {
-		bonusExpireTick = int(8000.0 / float64(speedMs))
+		durMs := 8000
+		if bonusItem.Type == BonusFrost {
+			durMs = 6000
+		} else if bonusItem.Type == BonusPhase {
+			durMs = 5000
+		}
+		bonusExpireTick = int(float64(durMs) / float64(speedMs))
 	}
 
 	inputsMap := make(map[int][]string)
@@ -285,7 +291,13 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			speedMs = CalcSpeedMs(score)
 			food, bonusItem = spawnFoodInReplay(rng, snake, fence, bonusItem)
 			if bonusItem != nil && bonusExpireTick == 0 {
-				bonusExpireTick = tick + int(8000.0/float64(speedMs))
+				durMs := 8000
+				if bonusItem.Type == BonusFrost {
+					durMs = 6000
+				} else if bonusItem.Type == BonusPhase {
+					durMs = 5000
+				}
+				bonusExpireTick = tick + int(float64(durMs)/float64(speedMs))
 			}
 			continue
 		}
