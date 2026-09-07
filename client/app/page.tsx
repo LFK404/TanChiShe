@@ -600,8 +600,8 @@ export default function Home() {
               </p>
             </div>
 
-            {/* 南大家园官方品牌全套徽标水印 (全端自适应可见) */}
-            <div className="flex items-center select-none pointer-events-none opacity-90 hover:opacity-100 transition-opacity shrink-0 pl-1">
+            {/* 南大家园官方品牌徽标水印 (内部孔洞纯净透底，全端自适应可见) */}
+            <div className="flex items-center select-none pointer-events-none shrink-0 pl-1">
               <Image
                 src="/ncuhome_logo.png"
                 alt="NCUHOME"
