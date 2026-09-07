@@ -319,7 +319,7 @@ export default function TrajectoryCardModal({
       ctx.restore();
       finalizeCanvas();
     };
-    sealImg.src = '/game_art/stamp_seal.png';
+    sealImg.src = '/image/stamp_seal.png';
   }, [trajectory, events, score, duration, maxCombo, steps, username, seed]);
 
   useEffect(() => {

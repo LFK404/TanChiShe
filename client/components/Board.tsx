@@ -1876,7 +1876,7 @@ export default function Board({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={isCompetitiveMode ? '/game_art/mode_versus_duel.webp' : '/game_art/mode_classic_start.webp'}
+                src={isCompetitiveMode ? '/image/mode_versus_duel.webp' : '/image/mode_classic_start.webp'}
                 alt={isCompetitiveMode ? '竞技对决' : '经典冒险'}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
@@ -2055,7 +2055,7 @@ export default function Board({
                 <div className="relative w-full max-w-[240px] sm:max-w-[280px] aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs mb-2 bg-slate-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={score >= 500 ? '/game_art/triumph_crown.webp' : '/game_art/defeat_crash.webp'}
+                    src={score >= 500 ? '/image/triumph_crown.webp' : '/image/defeat_crash.webp'}
                     alt={score >= 500 ? '加冕登顶' : '挂彩阵亡'}
                     className="w-full h-full object-cover"
                   />

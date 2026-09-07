@@ -145,7 +145,7 @@ export default function Leaderboard({
         <div className="relative w-full aspect-[22/9] rounded-2xl overflow-hidden border border-slate-200/70 shadow-2xs my-1 group bg-slate-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/game_art/podium_champions.webp"
+            src="/image/podium_champions.webp"
             alt="荣誉神坛"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
