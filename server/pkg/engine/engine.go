@@ -131,7 +131,7 @@ func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, cu
 	foodIdx := int(r1 * float64(len(empty)))
 	newFood := empty[foodIdx]
 
-	// 2. 特殊幸运果判定 (消费第 2 个随机数判定类型：金果 20%、冰果 10%、虚化果 5%)
+	// 2. 特殊果实池互斥判定 (消费第 2 个随机数判定类型：金果 15%、冰果 10%、虚化果 10%，一次仅出一种)
 	r2 := rng.Next()
 	newBonus := currentBonus
 	if currentBonus == nil && len(empty) > 3 {

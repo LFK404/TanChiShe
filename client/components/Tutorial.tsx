@@ -57,13 +57,13 @@ export default function Tutorial({ isOpen, onClose }: Props) {
         {/* 核心规则列表区 (自适应平滑滚动) */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 flex flex-col divide-y divide-slate-200/60">
-            {/* 01 死路机制 */}
+            {/* 01 死路固化机制 */}
             <div className="flex items-start gap-3 pb-2.5">
               <NCUNumberBadge num="01" color="#D97706" bg="#FEF3C7" />
               <div className="flex-1 min-w-0">
                 <h3 className="text-xs font-bold text-slate-800 mb-0.5">走过的路变成死路</h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  蛇身移动会在身后留下灰色障碍死路，不可折返碰撞，考验大局规划。
+                  蛇身前进会在身后留下固化灰色死墙，碰撞即死，不可折返掉头，考验大局走位规划。
                 </p>
               </div>
             </div>
@@ -73,50 +73,50 @@ export default function Tutorial({ isOpen, onClose }: Props) {
               <NCUNumberBadge num="02" color="#EF4444" bg="#FEE2E2" />
               <div className="flex-1 min-w-0">
                 <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                  普通红苹果 <span className="text-[10px] font-normal text-slate-400">(+10分 · 波次清空死路)</span>
+                  普通红苹果 <span className="text-[10px] font-normal text-slate-400">(常驻 · +10分 · 波次清屏)</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  吃掉后蛇身增长 1 节，并瞬间清除全场所有死路，战场重回开阔。
+                  场上常驻 1 颗，吃掉身长 +1 并<strong className="text-emerald-600 font-semibold">瞬间清除全场死路</strong>，重置战场开阔空间。
                 </p>
               </div>
             </div>
 
-            {/* 03 三大特殊奇珍果实 */}
+            {/* 03 单池三大特殊果实 */}
             <div className="flex items-start gap-3 py-2.5">
               <NCUNumberBadge num="03" color="#F59E0B" bg="#FEF3C7" />
               <div className="flex-1 min-w-0">
                 <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                  特殊奇珍果实 <span className="text-[10px] font-normal text-slate-400">(金果 · 冰果 · 虚化果)</span>
+                  特殊果实池 <span className="text-[10px] font-normal text-slate-400">(同一池子 · 至多1颗 · 统一限时8秒)</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  随机现身并附带限时流光导轨，吃食均触发波次重置清空全场死路：
-                  <br />• <strong className="text-amber-600 font-semibold">金果 (20%)</strong>：8秒限时，+30分，加速冲刺；
-                  <br />• <strong className="text-sky-600 font-semibold">冰果 (10%)</strong>：3秒限时，+10分，激活3秒寒霜减速从容走位；
-                  <br />• <strong className="text-purple-600 font-semibold">虚化果 (5%)</strong>：2秒限时，+10分，激活2秒穿墙与穿透死路。
+                  同一池子随机抽选，场上至多存在 1 颗，外置导轨统一 8 秒倒计时，吃掉均清空死路：
+                  <br />• <strong className="text-amber-600 font-semibold">幸运金果</strong>：高额大奖，吃掉 <strong className="text-amber-700">+30分</strong>；
+                  <br />• <strong className="text-sky-600 font-semibold">冰霜寒果</strong>：控场神器，吃掉 +10分，激活 <strong className="text-sky-700">3秒减速</strong>（从容规避死角）；
+                  <br />• <strong className="text-purple-600 font-semibold">极光虚化果</strong>：穿透神技，吃掉 +10分，激活 <strong className="text-purple-700">2秒虚化</strong>（穿透边界死路，豁免碰撞）。
                 </p>
               </div>
             </div>
 
-            {/* 04 3秒连击与阶梯奖励 */}
+            {/* 04 3秒极速连击时钟 */}
             <div className="flex items-start gap-3 py-2.5">
               <NCUNumberBadge num="04" color="#8B5CF6" bg="#F3E8FF" />
               <div className="flex-1 min-w-0">
                 <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                  3秒极速连击 <span className="text-[10px] font-normal text-slate-400">(阶梯加成 · 濒危预警)</span>
+                  3秒极速连击 <span className="text-[10px] font-normal text-slate-400">(阶梯加成 · 流金奔腾 · 濒危预警)</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  3 秒内连续吃果激活连击（红果与特殊果均计入）：3 连击起激活蛇身黄金能量波；第 3 次起每次额外加 5 分（+5/+10...累加）；剩余 1 秒蛇身急促橙红频闪。
+                  吃任意果实均刷新 3 秒连击时钟：3 连击起激活<strong className="text-amber-600 font-semibold">全蛇身流金奔腾光梭与光晕</strong>；从第 3 次起阶梯奖励每次递增（+5、+10...）；剩余 1 秒急促橙红频闪预警。
                 </p>
               </div>
             </div>
 
-            {/* 05 操控模式 */}
+            {/* 05 电竞回放与全端操控 */}
             <div className="flex items-start gap-3 pt-2.5">
               <NCUNumberBadge num="05" color="#0099FF" bg="#EBF8FF" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-xs font-bold text-slate-800 mb-0.5">全端操控与多层触感</h3>
+                <h3 className="text-xs font-bold text-slate-800 mb-0.5">电竞回放与全端操控</h3>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
-                  电脑支持方向键与 WASD；移动端支持全屏手势滑屏与虚拟十字键；空格或 P 键一键暂停。
+                  风云榜支持一键观摩与 1.0x~2.0x 录像回放，赛后可生成走位几何艺术海报；电脑支持 WASD / 方向键，手机支持全屏手势滑屏与虚拟十字键，空格 / P 键暂停。
                 </p>
               </div>
             </div>
