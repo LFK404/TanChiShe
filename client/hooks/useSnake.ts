@@ -69,6 +69,7 @@ export interface TrajectoryEvent {
   y: number;
   type: 'APPLE' | 'BONUS';
   combo: number;
+  bonusType?: BonusType;
 }
 
 export type GameOverCallback = (
@@ -207,21 +208,18 @@ export function useSnake(
     const newFood = empty[Math.floor(r1 * empty.length)];
     foodRef.current = newFood;
 
-    // 2. 特殊幸运果判定 (消费第 2 个随机数判定类型：金果 20%、冰果 10%、虚化果 5%)
+    // 2. 特殊果实池互斥判定 (金果 15%、冰果 10%、虚化果 10%，棋盘统一留存 8.0 秒，一次仅出一种)
     const r2 = rng ? rng.next() : Math.random();
     if (!bonusRef.current && empty.length > 3) {
       let selectedType: BonusType | null = null;
-      let durSec = 8.0;
+      const durSec = 8.0;
 
-      if (r2 < 0.20) {
+      if (r2 < 0.15) {
         selectedType = 'GOLD';
-        durSec = 8.0;
-      } else if (r2 < 0.30) {
+      } else if (r2 < 0.25) {
         selectedType = 'FROST';
-        durSec = 3.0;
       } else if (r2 < 0.35) {
         selectedType = 'PHASE';
-        durSec = 2.0;
       }
 
       if (selectedType) {
@@ -720,6 +718,7 @@ export function useSnake(
         y: head.y,
         type: 'BONUS',
         combo: currentCombo,
+        bonusType: currentType,
       });
       bonusCountRef.current += 1;
       setBonusCount(bonusCountRef.current);
@@ -738,15 +737,15 @@ export function useSnake(
         setSpeedMs(slowedSpeed);
         sound.updateGameSpeed(slowedSpeed);
         if (!isSeekingRef.current) {
-          sound.playEat();
+          sound.playFrost();
           sound.playCombo(currentCombo);
-          vibrate('eat', currentCombo);
+          vibrate('bonus', currentCombo);
         }
       } else if (currentType === 'PHASE') {
         phaseRemainMsRef.current = 2000;
         setPhaseActive(true);
         if (!isSeekingRef.current) {
-          sound.playBonus();
+          sound.playPhase();
           sound.playCombo(currentCombo);
           vibrate('bonus', currentCombo);
         }
@@ -755,13 +754,12 @@ export function useSnake(
       clearBonus();
     }
 
-    // 8. 特殊幸运果倒计时与外置导轨进度
+    // 8. 特殊果实倒计时与外置导轨进度 (统一 8.0 秒棋盘倒计时)
     if (bonusRef.current && bonusExpireTickRef.current > 0) {
       if (tickCountRef.current >= bonusExpireTickRef.current) {
         clearBonus();
       } else {
-        const curType = bonusTypeRef.current;
-        const durSec = curType === 'GOLD' ? 8.0 : curType === 'FROST' ? 3.0 : 2.0;
+        const durSec = 8.0;
         const totalTicks = Math.round((durSec * 1000) / speedMs);
         const remainingTicks = bonusExpireTickRef.current - tickCountRef.current;
         const percent = totalTicks > 0 ? (remainingTicks / totalTicks) * 100 : 0;
@@ -780,7 +778,7 @@ export function useSnake(
       }
     } else if (bonusRef.current && isWaitingStartRef.current) {
       setBonusProgressPercent(100);
-      setBonusRemainSec(bonusTypeRef.current === 'GOLD' ? 8.0 : bonusTypeRef.current === 'FROST' ? 3.0 : 2.0);
+      setBonusRemainSec(8.0);
     }
 
     // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (吃特殊果实当步不留栅栏)

@@ -496,8 +496,14 @@ export default function Home() {
           backgroundImage: "url('/image/DM_20260906015849_001.webp')",
         }}
       />
-      {/* 极简多巴胺微拟态毛玻璃柔光白膜：保护棋盘高对比度，透出绘本温润笔触 */}
-      <div className="fixed inset-0 pointer-events-none z-0 bg-white/85 backdrop-blur-[5px]" />
+      {/* 柔光通透白膜：登录页轻薄透亮展现绘本色彩，游戏页兼顾绘本呼吸感与棋盘高对比度 */}
+      <div
+        className={`fixed inset-0 pointer-events-none z-0 transition-all duration-500 ${
+          !user
+            ? 'bg-white/30 backdrop-blur-[0.5px]'
+            : 'bg-white/50 backdrop-blur-[1.5px]'
+        }`}
+      />
 
       {!user ? (
         /* 未登录态：居中登录/注册卡片 */

@@ -539,6 +539,16 @@ class SoundManager {
     this.playNotes('triangle', [523.25, 659.25, 783.99, 1046.5], 0.1, 0.05, 0.3);
   }
 
+  // 吃冰霜寒果音效 (E6 -> G6 -> B6 清冽高频冰晶琶音)
+  playFrost() {
+    this.playNotes('sine', [1318.51, 1567.98, 1975.53], 0.1, 0.04, 0.28);
+  }
+
+  // 吃极光虚化果音效 (A4 -> E5 -> A5 相位穿透空灵三音阶)
+  playPhase() {
+    this.playNotes('triangle', [440.0, 659.25, 880.0], 0.12, 0.06, 0.3);
+  }
+
   // 转向与按键反馈音 (8-bit 方波点击音，A5 -> D6)
   playMove() {
     this.playNotes('square', [880, 1174.66], 0.045, 0.02, 0.22);

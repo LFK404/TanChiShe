@@ -11,7 +11,7 @@ interface Props {
 // 玩家登录与免密自动激活组件 (NCU HOME 极简现代主义，纯净留白设计)
 export default function Login({ form, error, setForm, onLogin }: Props) {
   return (
-    <div className="w-full max-w-[360px] md:max-w-2xl bg-white/95 backdrop-blur-xl rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 select-none text-[#0F172A] transition-all overflow-hidden flex flex-col md:flex-row">
+    <div className="w-full max-w-[360px] md:max-w-2xl bg-white/90 backdrop-blur-md rounded-3xl border border-white/80 shadow-2xl shadow-slate-900/10 select-none text-[#0F172A] transition-all overflow-hidden flex flex-col md:flex-row">
       {/* 左侧故事展画 (桌面端手绘绘本封面，移动端顶部高光画幅) */}
       <div className="relative md:w-5/12 h-36 md:h-auto min-h-[160px] bg-slate-100 overflow-hidden flex flex-col justify-end p-5 text-white">
         <div

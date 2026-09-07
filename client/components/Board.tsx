@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Direction, Point } from '@/types';
+import { Direction, Point, BonusType } from '@/types';
 import { CELL, GRID, BASE_SPEED_MS, TrajectoryEvent } from '@/hooks/useSnake';
 import { sound } from '@/utils/audio';
 import { haptics } from '@/utils/haptics';
@@ -207,6 +207,7 @@ interface Confetti {
 interface DigestionWave {
   startTime: number;
   isBonus: boolean;
+  bonusType?: BonusType;
   totalSegments: number;
 }
 
@@ -433,6 +434,62 @@ export default function Board({
     }
   }, []);
 
+  // 吃到冰霜寒果：天青晶蓝微晶雪花爆发 + 强空气阻尼悬停
+  const spawnFrostParticles = useCallback((gridX: number, gridY: number) => {
+    const cx = gridX * CELL + CELL / 2;
+    const cy = gridY * CELL + CELL / 2;
+    const colors = ['#38BDF8', '#7DD3FC', '#BAE6FD', '#FFFFFF'];
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const speed = 3.6 + Math.random() * 2.8;
+      const isStar = i % 3 === 0;
+      spawnFromPool({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: colors[i % colors.length],
+        coreColor: '#FFFFFF',
+        size: isStar ? 4.5 + Math.random() * 2.0 : 2.5 + Math.random() * 1.6,
+        drag: 0.88,
+        gravity: 0.03,
+        shape: isStar ? 'star' : 'spark',
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.25,
+        maxLife: 24 + Math.floor(Math.random() * 8),
+      });
+    }
+  }, []);
+
+  // 吃到极光虚化果：极光紫粉星芒爆裂 + 穿透虚化粒子
+  const spawnPhaseParticles = useCallback((gridX: number, gridY: number) => {
+    const cx = gridX * CELL + CELL / 2;
+    const cy = gridY * CELL + CELL / 2;
+    const colors = ['#A855F7', '#C084FC', '#F472B6', '#FFFFFF'];
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const speed = 3.8 + Math.random() * 3.0;
+      const isStar = i % 3 === 0;
+      spawnFromPool({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: colors[i % colors.length],
+        coreColor: '#FFFFFF',
+        size: isStar ? 4.8 + Math.random() * 2.2 : 2.8 + Math.random() * 1.8,
+        drag: 0.88,
+        gravity: 0.02,
+        shape: isStar ? 'star' : 'spark',
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.3,
+        maxLife: 26 + Math.floor(Math.random() * 10),
+      });
+    }
+  }, []);
+
   // 吃到普通红苹果：珊瑚红多汁果肉微粒 + 翡翠绿嫩叶碎屑微切片
   const spawnFruitParticles = useCallback((gridX: number, gridY: number) => {
     const cx = gridX * CELL + CELL / 2;
@@ -591,19 +648,42 @@ export default function Board({
       const head = snakeRef.current[0] || { x: 10, y: 12 };
       const now = Date.now();
 
-      // 判定是金果还是普通红苹果 (金果基础分 30，红果基础分 10)
-      const isBonusFruit = diff >= 30;
+      // 精确判定吃到的果实类型 (优先基于轨迹事件流，100% 区分金果、冰果、虚化果与红苹果)
+      const lastEvent = trajectoryEventsRef?.current?.[trajectoryEventsRef.current.length - 1];
+      const isBonusEat = Boolean(lastEvent && lastEvent.type === 'BONUS' && lastEvent.x === head.x && lastEvent.y === head.y);
+      const eatenBonusType = isBonusEat ? (lastEvent?.bonusType || 'GOLD') : null;
 
-      // 触发蛇身物理吞咽传导波 (包含金果属性与当前蛇节长度，用于流光传导)
+      // 触发蛇身物理吞咽传导波 (包含具体果实属性与当前蛇节长度，用于流光传导)
       digestionWavesRef.current.push({
         startTime: now,
-        isBonus: isBonusFruit,
+        isBonus: isBonusEat,
+        bonusType: eatenBonusType || undefined,
         totalSegments: snakeRef.current.length,
       });
 
       const currentCombo = comboCount || 1;
 
-      if (isBonusFruit) {
+      if (eatenBonusType === 'FROST') {
+        // 吃到冰霜寒果：天青晶蓝粒子爆发、专属飘字、减速微震
+        triggerShake(2, 0.9);
+        spawnFrostParticles(head.x, head.y);
+        fenceSpawnTimeRef.current.clear();
+        if (currentCombo === 1) {
+          spawnFloatingText(head.x, head.y, '+10 寒霜减速 (3s)!', '#0284C7');
+        } else {
+          spawnFloatingText(head.x, head.y, `+${diff} 冰果 ${currentCombo}连击!`, '#0284C7');
+        }
+      } else if (eatenBonusType === 'PHASE') {
+        // 吃到极光虚化果：极光紫粉星芒爆裂、专属飘字、穿透微震
+        triggerShake(3, 1.2);
+        spawnPhaseParticles(head.x, head.y);
+        fenceSpawnTimeRef.current.clear();
+        if (currentCombo === 1) {
+          spawnFloatingText(head.x, head.y, '+10 极光穿墙 (2s)!', '#A855F7');
+        } else {
+          spawnFloatingText(head.x, head.y, `+${diff} 虚化 ${currentCombo}连击!`, '#A855F7');
+        }
+      } else if (eatenBonusType === 'GOLD' || diff >= 30) {
         // 金色幸运果：微阻尼收敛震动 (3帧/1.2px)，高初速多巴胺微星曜爆发，清空栅栏
         triggerShake(3, 1.2);
         spawnBonusParticles(head.x, head.y);
@@ -638,7 +718,7 @@ export default function Board({
       }
     }
     prevScoreRef.current = score;
-  }, [score, snakeRef, fenceRef, comboCount, spawnBonusParticles, spawnFruitParticles, spawnCrumbleParticles]);
+  }, [score, snakeRef, fenceRef, comboCount, spawnBonusParticles, spawnFrostParticles, spawnPhaseParticles, spawnFruitParticles, spawnCrumbleParticles, trajectoryEventsRef]);
 
   // 监听游戏结束，触发死亡轻微震屏 (6帧/2.5px)、冲击波粒子消散与高光礼花
   useEffect(() => {
@@ -885,8 +965,8 @@ export default function Board({
 
         // 计算物理吞咽波传导到当前节时的微隆起弹性形变与流光发光核
         let bulge = 0;
-        let activeWaveBonus = false;
-        digestionWavesRef.current.forEach((w) => {
+        let activeBonusType: BonusType | null = null;
+        for (const w of digestionWavesRef.current) {
           const waveElapsed = nowTime - w.startTime;
           // 每节传导约 40ms，波形自然顺畅流动
           const targetIdx = waveElapsed / 40;
@@ -895,10 +975,10 @@ export default function Board({
             const intensity = 1 - dist / 1.3;
             if (intensity * 0.28 > bulge) {
               bulge = intensity * 0.28;
-              activeWaveBonus = w.isBonus;
+              activeBonusType = w.bonusType || (w.isBonus ? 'GOLD' : null);
             }
           }
-        });
+        }
 
         // 检测当前节是否处于转弯拐角 (前后节构成 90° 折角，赋予流线型柔性管道圆角)
         const prevSeg = snake[i - 1];
@@ -971,12 +1051,18 @@ export default function Board({
           ctx.fill();
         }
 
-        // 吞咽流光波经过当前节时：在关节内部叠加绘制晶莹发光核 (普通果晶白，金果流金)
+        // 吞咽流光波经过当前节时：在关节内部叠加绘制晶莹发光核 (普通果晶白，金果流金，冰果冰蓝，虚化果极光紫)
         if (bulge > 0.05) {
           const coreAlpha = Math.min(0.85, bulge * 3.4);
-          ctx.fillStyle = activeWaveBonus
-            ? `rgba(254, 243, 199, ${coreAlpha})`
-            : `rgba(255, 255, 255, ${coreAlpha})`;
+          let coreFill = `rgba(255, 255, 255, ${coreAlpha})`;
+          if (activeBonusType === 'FROST') {
+            coreFill = `rgba(186, 230, 253, ${coreAlpha})`;
+          } else if (activeBonusType === 'PHASE') {
+            coreFill = `rgba(243, 232, 255, ${coreAlpha})`;
+          } else if (activeBonusType === 'GOLD') {
+            coreFill = `rgba(254, 243, 199, ${coreAlpha})`;
+          }
+          ctx.fillStyle = coreFill;
           ctx.beginPath();
           ctx.arc(
             seg.x * CELL + 1 + (CELL - 2) / 2,

@@ -136,9 +136,9 @@ func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, cu
 	newBonus := currentBonus
 	if currentBonus == nil && len(empty) > 3 {
 		var selectedType BonusType
-		if r2 < 0.20 {
+		if r2 < 0.15 {
 			selectedType = BonusGold
-		} else if r2 < 0.30 {
+		} else if r2 < 0.25 {
 			selectedType = BonusFrost
 		} else if r2 < 0.35 {
 			selectedType = BonusPhase
@@ -191,13 +191,7 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 	}
 	bonusItem = bi
 	if bonusItem != nil {
-		durMs := 8000
-		if bonusItem.Type == BonusFrost {
-			durMs = 3000
-		} else if bonusItem.Type == BonusPhase {
-			durMs = 2000
-		}
-		bonusExpireTick = int(float64(durMs) / float64(speedMs))
+		bonusExpireTick = int(8000.0 / float64(speedMs))
 	}
 
 	inputsMap := make(map[int][]string)
@@ -291,13 +285,7 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			speedMs = CalcSpeedMs(score)
 			food, bonusItem = spawnFoodInReplay(rng, snake, fence, bonusItem)
 			if bonusItem != nil && bonusExpireTick == 0 {
-				durMs := 8000
-				if bonusItem.Type == BonusFrost {
-					durMs = 3000
-				} else if bonusItem.Type == BonusPhase {
-					durMs = 2000
-				}
-				bonusExpireTick = tick + int(float64(durMs)/float64(speedMs))
+				bonusExpireTick = tick + int(8000.0/float64(speedMs))
 			}
 			continue
 		}
