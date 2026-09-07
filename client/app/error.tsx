@@ -12,7 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // 捕获客户端运行时未捕获异常
-    console.error('【贪吃蛇客户端异常捕获】', error);
+    console.error('贪吃蛇客户端异常捕获:', error);
   }, [error]);
 
   const handleClearAndReload = () => {

@@ -88,7 +88,7 @@ export default function Tutorial({ isOpen, onClose }: Props) {
                 金色幸运果 <span className="text-[10px] font-normal text-slate-400">(+30分 · 保留死路)</span>
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                概率现身并开启 8 秒倒计时！吃掉狂揽 +30 分，保留死路考验极限走位。
+                概率现身并开启 8 秒倒计时，进食获得 +30 分，死路保留考验走位规划。
               </p>
             </div>
           </div>
@@ -101,7 +101,7 @@ export default function Tutorial({ isOpen, onClose }: Props) {
                 3秒极速连击 <span className="text-[10px] font-normal text-slate-400">(阶梯加成 · 濒危预警)</span>
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                3 秒内连续吃果激活连击（红果与金果均计入）：3 连击起激活蛇身黄金能量波；第 3 次起每次额外加 5 分（+5/+10...累加）；剩余 1 秒蛇身急促橙红频闪，蛇头显示倒计时微弧！
+                3 秒内连续吃果激活连击（红果与金果均计入）：3 连击起激活蛇身黄金能量波；第 3 次起每次额外加 5 分（+5/+10...累加）；剩余 1 秒蛇身急促橙红频闪，蛇头显示倒计时微弧。
               </p>
             </div>
           </div>

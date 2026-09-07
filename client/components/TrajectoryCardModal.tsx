@@ -5,6 +5,7 @@ import { Point } from '@/types';
 import { TrajectoryEvent } from '@/hooks/useSnake';
 import { sound } from '@/utils/audio';
 import { haptics } from '@/utils/haptics';
+import { analytics } from '@/services/analytics';
 
 interface Props {
   isOpen: boolean;
@@ -351,6 +352,7 @@ export default function TrajectoryCardModal({
           setCopied(true);
           sound.playToggle();
           haptics.trigger('ui');
+          analytics.track('art_card_export', { score, steps, duration, seed, type: 'copy' });
           setTimeout(() => setCopied(false), 2000);
         } catch {
           handleDownload();
@@ -369,6 +371,7 @@ export default function TrajectoryCardModal({
   // 一键下载高清长图海报
   const handleDownload = () => {
     if (!imageSrc) return;
+    analytics.track('art_card_export', { score, steps, duration, seed, type: 'download' });
     const a = document.createElement('a');
     a.href = imageSrc;
     a.download = `ncu_snake_art_${Date.now()}.png`;

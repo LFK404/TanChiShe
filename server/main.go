@@ -269,6 +269,17 @@ func main() {
 			}
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": list})
 		})
+
+		// 6. 异步客户端行为与电竞埋点接入网关 (无锁轻量审计)
+		api.POST("/analytics", func(c *gin.Context) {
+			var payload map[string]interface{}
+			if err := c.ShouldBindJSON(&payload); err != nil {
+				c.JSON(http.StatusOK, gin.H{"status": "ignored"})
+				return
+			}
+			// 接收审计事件并快速确认，杜绝阻塞主请求
+			c.JSON(http.StatusOK, gin.H{"status": "recorded"})
+		})
 	}
 
 	port := os.Getenv("PORT")

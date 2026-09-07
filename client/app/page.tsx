@@ -111,14 +111,18 @@ export default function Home() {
     }
   });
 
-  // 刷新全服 Top 10 排行榜 (带骨架屏过渡)
-  const refreshBoard = useCallback(async () => {
-    setIsBoardLoading(true);
+  // 刷新全服 Top 10 排行榜 (仅手动点击时展示骨架屏，游戏结束与自动同步静默直接刷新)
+  const refreshBoard = useCallback(async (manual: boolean = false) => {
+    if (manual) {
+      setIsBoardLoading(true);
+    }
     try {
       const data = await apiLeaderboard();
       setBoard(data);
     } catch {} finally {
-      setIsBoardLoading(false);
+      if (manual) {
+        setIsBoardLoading(false);
+      }
     }
   }, []);
 
@@ -308,7 +312,8 @@ export default function Home() {
         username: targetUser.username,
       };
       startReplay(targetUser.replaySeed, targetUser.replayInputs, targetUser.username);
-      addToast(`正在观摩 [${targetUser.username}] 的通关走位`, 'DIAMOND');
+      analytics.track('replay_watch', { targetUser: targetUser.username });
+      addToast(`正在观摩 ${targetUser.username} 的通关走位`, 'DIAMOND');
     },
     [startReplay, addToast]
   );
@@ -318,7 +323,8 @@ export default function Home() {
     if (lastReplayRef.current) {
       const { seed, inputs, username } = lastReplayRef.current;
       startReplay(seed, inputs, username);
-      addToast(`重新观摩 [${username}] 的通关走位`, 'DIAMOND');
+      analytics.track('replay_watch', { targetUser: username });
+      addToast(`重新观摩 ${username} 的通关走位`, 'DIAMOND');
     }
   }, [startReplay, addToast]);
 
@@ -584,7 +590,7 @@ export default function Home() {
               isLoading={isBoardLoading}
               recentScores={recentScores}
               localHistory={localHistory}
-              onRefresh={refreshBoard}
+              onRefresh={() => refreshBoard(true)}
               onWatchReplay={handleWatchReplay}
               onViewHistoryArt={setHistoryArtRecord}
             />

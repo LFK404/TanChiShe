@@ -1,5 +1,6 @@
 // 轻量、无感、高可靠客户端事件埋点服务 (Analytics Beacon)
-const ANALYTICS_ENDPOINT = process.env.NEXT_PUBLIC_ANALYTICS_URL || '';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+const ANALYTICS_ENDPOINT = process.env.NEXT_PUBLIC_ANALYTICS_URL || `${API_BASE}/api/analytics`;
 
 export type AnalyticsEvent =
   | 'game_start'

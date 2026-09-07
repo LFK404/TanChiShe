@@ -599,8 +599,8 @@ export function useSnake(
 
     // 3. 边界碰撞
     if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
-      deathReasonRef.current = '撞上边界边缘墙体';
-      setDeathReason('撞上边界边缘墙体');
+      deathReasonRef.current = '触碰外围边界墙';
+      setDeathReason('触碰外围边界墙');
       gameOver();
       return;
     }
@@ -644,8 +644,8 @@ export function useSnake(
 
     // 6. 残留栅栏碰撞检测
     if (fenceRef.current.has(toKey(head.x, head.y))) {
-      deathReasonRef.current = '误入身后死路障壁';
-      setDeathReason('误入身后死路障壁');
+      deathReasonRef.current = '撞击死路障壁';
+      setDeathReason('撞击死路障壁');
       gameOver();
       return;
     }

@@ -1665,11 +1665,11 @@ export default function Board({
                   )}
                   <span className="text-xs text-slate-400 font-medium">
                     {(() => {
-                      if (score >= 1000) return '登峰造极 · 破千荣耀时刻';
-                      if (score >= 600) return '极速破风 · 走位游刃有余';
-                      if (maxCombo >= 5) return '连击大师 · 节拍掌控入微';
-                      if (score < 100) return '初试身手 · 循序渐进';
-                      return '战局定格 · 距新纪录一步之遥';
+                      if (score >= 1000) return '破千高分 · 巅峰之局';
+                      if (score >= 600) return '高速突围 · 掌控节奏';
+                      if (maxCombo >= 5) return '极限连击 · 节奏连贯';
+                      if (score < 100) return '步调平稳 · 循序渐进';
+                      return '对局完赛 · 战绩封存';
                     })()}
                   </span>
                 </div>
