@@ -391,11 +391,6 @@ export default function TrajectoryCardModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md max-h-[88vh] bg-white rounded-3xl p-5 sm:p-6 flex flex-col border border-slate-200/80 shadow-sm relative overflow-hidden animate-in zoom-in-95 duration-200 select-none"
       >
-        {/* 弹窗登场微晶光芒粒子 */}
-        <span className="absolute -top-1 left-1/4 w-2 h-2 rounded-full bg-[#0099FF] pointer-events-none animate-ping opacity-80 duration-1000" />
-        <span className="absolute -bottom-1 right-1/4 w-2 h-2 rounded-full bg-[#EF4444] pointer-events-none animate-ping opacity-80 duration-1000" />
-        <span className="absolute top-1/2 -left-1 w-1.5 h-1.5 rounded-full bg-[#66CCFF] pointer-events-none animate-ping opacity-70 duration-1000" />
-        <span className="absolute top-1/2 -right-1 w-1.5 h-1.5 rounded-full bg-[#F59E0B] pointer-events-none animate-ping opacity-70 duration-1000" />
         {/* 顶部标题与关闭 (极简现代主义，杜绝花哨矢量图标，固定吸顶) */}
         <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
           <div>

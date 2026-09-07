@@ -35,11 +35,6 @@ export default function Tutorial({ isOpen, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md max-h-[85vh] bg-white rounded-3xl flex flex-col text-[#0F172A] relative border border-slate-200/80 shadow-sm overflow-hidden animate-in zoom-in-95 duration-200"
       >
-        {/* 弹窗登场微晶光芒微粒子 */}
-        <span className="absolute -top-1 left-1/4 w-2 h-2 rounded-full bg-[#66CCFF] pointer-events-none animate-ping opacity-80 duration-1000" />
-        <span className="absolute -bottom-1 right-1/4 w-2 h-2 rounded-full bg-[#F59E0B] pointer-events-none animate-ping opacity-80 duration-1000" />
-        <span className="absolute top-1/2 -left-1 w-1.5 h-1.5 rounded-full bg-[#10B981] pointer-events-none animate-ping opacity-70 duration-1000" />
-        <span className="absolute top-1/2 -right-1 w-1.5 h-1.5 rounded-full bg-[#8B5CF6] pointer-events-none animate-ping opacity-70 duration-1000" />
         {/* 顶部标题栏 (固定吸顶) */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">

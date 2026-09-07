@@ -2,11 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { User } from '@/types';
 import { sound } from '@/utils/audio';
 import { haptics, HapticMode } from '@/utils/haptics';
-import { Trophy, HelpCircle, Volume2, VolumeX, LogOut, BarChart2 } from 'lucide-react';
+import { Trophy, HelpCircle, Volume2, VolumeX, LogOut } from 'lucide-react';
 
 interface Props {
   user: User;
@@ -129,14 +128,6 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
         >
           <HelpCircle size={16} strokeWidth={2} />
         </button>
-
-        <Link
-          href="/admin/analytics"
-          title="埋点数据运营看板"
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
-        >
-          <BarChart2 size={16} strokeWidth={2} />
-        </Link>
 
         {/* 音频设置微浮层触发器 */}
         <div className="relative" ref={popoverRef}>

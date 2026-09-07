@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
 import { useSnake } from '@/hooks/useSnake';
 import { apiStartGame, apiSettleGame, apiLeaderboard } from '@/services/api';
@@ -614,6 +615,14 @@ export default function Home() {
             />
             <span>•</span>
             <span>贪吃蛇</span>
+            <span>•</span>
+            <Link
+              href="/admin/analytics"
+              className="text-[10.5px] text-slate-300 hover:text-[#0099FF] transition-colors"
+              title="运营监控数据看板"
+            >
+              看板
+            </Link>
           </footer>
 
           {/* 局中即时高光微弹窗与弹窗交互层 */}

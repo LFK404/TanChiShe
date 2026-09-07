@@ -1683,10 +1683,10 @@ export default function Board({
 
         {/* 游戏结束/观摩播放结束结算面板 */}
         {isGameOver && (
-          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-[6px] flex flex-col items-center justify-center text-center p-5 sm:p-6 animate-in fade-in zoom-in-95 duration-200 text-[#0F172A]">
+          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-[6px] flex flex-col items-center justify-center text-center p-4 sm:p-6 overflow-y-auto max-h-full animate-in fade-in zoom-in-95 duration-200 text-[#0F172A]">
             {isReplay ? (
               /* 电竞录像专属复盘结算卡片 (消除主客观混淆与玩家授勋割裂感) */
-              <div className="w-full flex flex-col items-center">
+              <div className="w-full flex flex-col items-center my-auto">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] text-[#0099FF] font-bold text-xs mb-3 shadow-2xs">
                   <span>对局录像播放完毕</span>
                 </div>
@@ -1740,7 +1740,7 @@ export default function Board({
               </div>
             ) : (
               /* 玩家本人生死结算面板 */
-              <div className="w-full flex flex-col items-center">
+              <div className="w-full flex flex-col items-center my-auto">
                 <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] text-[#0099FF] font-bold text-xs mb-2.5 shadow-2xs">
                   <span>游戏结束</span>
                 </div>
@@ -1750,28 +1750,17 @@ export default function Board({
                   <SettleTierCrest score={score} />
                 </div>
 
-                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-1 tabular-nums">
+                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-2 tabular-nums">
                   {score} <span className="text-xs font-normal text-slate-400">分</span>
                 </div>
 
-                {/* 真实死因复盘与玩家战况点评 */}
-                <div className="flex flex-col items-center gap-1 mb-3.5">
-                  {deathReason && (
-                    <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-100/90 text-slate-600 text-xs font-medium border border-slate-200/60">
-                      <span className="text-slate-400 text-[11px]">死因</span>
-                      <span className="font-bold">{deathReason}</span>
-                    </div>
-                  )}
-                  <span className="text-xs text-slate-400 font-medium">
-                    {(() => {
-                      if (score >= 1000) return '破千高分 · 巅峰之局';
-                      if (score >= 600) return '高速突围 · 掌控节奏';
-                      if (maxCombo >= 5) return '极限连击 · 节奏连贯';
-                      if (score < 100) return '步调平稳 · 循序渐进';
-                      return '对局完赛 · 战绩封存';
-                    })()}
-                  </span>
-                </div>
+                {/* 真实死因精准复盘 */}
+                {deathReason && (
+                  <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-100/90 text-slate-600 text-xs font-medium border border-slate-200/60 mb-3.5">
+                    <span className="text-slate-400 text-[11px]">死因</span>
+                    <span className="font-bold">{deathReason}</span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
                   <div className="flex flex-col items-center">
