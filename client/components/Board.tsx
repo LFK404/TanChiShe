@@ -13,43 +13,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { NCUCrestBadge } from './NCUIcon';
-
-// 战局终了段位微拟态勋章加冕组件 (显式点亮高饱和多彩徽标与柔光)
-function SettleTierCrest({ score }: { score: number }) {
-  const tier =
-    score >= 800
-      ? 'DIAMOND'
-      : score >= 500
-      ? 'GOLD'
-      : score >= 300
-      ? 'SILVER'
-      : score >= 100
-      ? 'BRONZE'
-      : null;
-
-  const badgeConfig =
-    tier === 'DIAMOND'
-      ? { label: '钻石', color: '#0099FF' }
-      : tier === 'GOLD'
-      ? { label: '黄金', color: '#F59E0B' }
-      : tier === 'SILVER'
-      ? { label: '白银', color: '#64748B' }
-      : tier === 'BRONZE'
-      ? { label: '青铜', color: '#10B981' }
-      : null;
-
-  if (!tier || !badgeConfig) return null;
-
-  return (
-    <div className="flex flex-col items-center gap-1.5 animate-in zoom-in-90 duration-300">
-      <NCUCrestBadge tier={tier} unlocked={true} size={50} className="drop-shadow-md" />
-      <span className="text-[11px] font-bold" style={{ color: badgeConfig.color }}>
-        {badgeConfig.label}段位
-      </span>
-    </div>
-  );
-}
 
 // 极简高性能微动效：基于 rAF 与 Ease-Out Cubic 的丝滑滚数插值组件 (零外置依赖，严格等宽防抖)
 function AnimatedNumber({ value }: { value: number }) {
@@ -2067,13 +2030,20 @@ export default function Board({
                   </div>
                 </div>
 
-                {/* 荣耀加冕：NCU HOME 微拟态段位勋章 (点亮高饱和多彩微光) */}
-                <div className="mb-1">
-                  <SettleTierCrest score={score} />
-                </div>
-
-                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-1 tabular-nums">
-                  {score} <span className="text-xs font-normal text-slate-400">分</span>
+                {/* 战绩核心分值与个人纪录指示 */}
+                <div className="flex flex-col items-center my-1.5">
+                  <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight tabular-nums">
+                    {score} <span className="text-xs font-normal text-slate-400">分</span>
+                  </div>
+                  {highScore > 0 && (
+                    <div className="text-[11px] font-medium text-slate-400 mt-0.5">
+                      {score > highScore ? (
+                        <span className="text-[#0099FF] font-bold">🎉 创下个人最佳新纪录！</span>
+                      ) : (
+                        <span>个人历史最佳: <strong className="text-slate-600 font-mono">{highScore}</strong> 分</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* 真实死因精准复盘 */}
