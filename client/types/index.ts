@@ -79,3 +79,14 @@ export interface AnalyticsOverviewResponse {
   eventBreakdown: { event: string; count: number }[];
   recentEvents: AnalyticsEventRecord[];
 }
+
+// 竞技模式对决幽灵数据配置
+export interface GhostReplayData {
+  seed: number;
+  inputs: InputRecord[];
+  targetUser: string;
+  targetScore: number;
+}
+
+// 竞技模式 Delta 相对领先/落后/持平状态
+export type DeltaState = 'LEAD' | 'BEHIND' | 'TIED';

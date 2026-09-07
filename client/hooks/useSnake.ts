@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Direction, Point, InputRecord, BonusType } from '@/types';
+import { Direction, Point, InputRecord, BonusType, GhostReplayData, DeltaState } from '@/types';
 import { sound } from '@/utils/audio';
 import { haptics, HapticType } from '@/utils/haptics';
 import { Mulberry32 } from '@/utils/prng';
@@ -162,6 +162,29 @@ export function useSnake(
   const trajectoryRef = useRef<Point[]>([]);
   const trajectoryEventsRef = useRef<TrajectoryEvent[]>([]);
 
+  // 竞技模式：同种子幽灵影子对决与 Delta 领先指示器
+  const [isCompetitiveMode, setIsCompetitiveMode] = useState(false);
+  const isCompetitiveModeRef = useRef(false);
+  const ghostDataRef = useRef<GhostReplayData | null>(null);
+  const [ghostUser, setGhostUser] = useState<string>('');
+  const [ghostTargetScore, setGhostTargetScore] = useState<number>(0);
+  const ghostSnakeRef = useRef<Point[]>([
+    { x: 10, y: 12 },
+    { x: 9, y: 12 },
+    { x: 8, y: 12 },
+  ]);
+  const ghostDirRef = useRef<Direction>('RIGHT');
+  const ghostQueueRef = useRef<Direction[]>([]);
+  const ghostInputsMapRef = useRef<Map<number, Direction[]>>(new Map());
+  const ghostTickRef = useRef<number>(0);
+  const [ghostScore, setGhostScore] = useState<number>(0);
+  const ghostScoreRef = useRef<number>(0);
+  const [isGhostAlive, setIsGhostAlive] = useState(false);
+  const isGhostAliveRef = useRef(false);
+  const [deltaScore, setDeltaScore] = useState<number>(0);
+  const [deltaState, setDeltaState] = useState<DeltaState>('TIED');
+  const [ghostDispersing, setGhostDispersing] = useState<boolean>(false);
+
   // 电竞对局录像回放状态机
   const [isReplay, setIsReplay] = useState(false);
   const [replayUser, setReplayUser] = useState<string>('');
@@ -302,9 +325,8 @@ export function useSnake(
     }
   }, [onGameOver, clearBonus, vibrate]);
 
-  // 开始新对局 (支持传入服务端下发的确定性 seed)
   const startGame = useCallback(
-    (seed?: number) => {
+    (seed?: number, ghost?: GhostReplayData | null) => {
       sound.unlockAudio();
       if (menuBgmTimerRef.current) {
         clearTimeout(menuBgmTimerRef.current);
@@ -321,6 +343,47 @@ export function useSnake(
       setIsReplay(false);
       setReplayUser('');
       setReplaySpeedRate(1);
+
+      // 若传入竞技幽灵配置，初始化同构种子与幽灵物理步进机
+      if (ghost && ghost.inputs && ghost.inputs.length > 0) {
+        isCompetitiveModeRef.current = true;
+        setIsCompetitiveMode(true);
+        ghostDataRef.current = ghost;
+        setGhostUser(ghost.targetUser);
+        setGhostTargetScore(ghost.targetScore);
+        ghostSnakeRef.current = [
+          { x: 10, y: 12 },
+          { x: 9, y: 12 },
+          { x: 8, y: 12 },
+        ];
+        ghostDirRef.current = 'RIGHT';
+        ghostQueueRef.current = [];
+        const gMap = new Map<number, Direction[]>();
+        ghost.inputs.forEach((item) => {
+          if (!gMap.has(item.tick)) gMap.set(item.tick, []);
+          gMap.get(item.tick)!.push(item.dir);
+        });
+        ghostInputsMapRef.current = gMap;
+        ghostTickRef.current = 0;
+        ghostScoreRef.current = 0;
+        setGhostScore(0);
+        isGhostAliveRef.current = true;
+        setIsGhostAlive(true);
+        setGhostDispersing(false);
+        setDeltaScore(0);
+        setDeltaState('TIED');
+      } else {
+        isCompetitiveModeRef.current = false;
+        setIsCompetitiveMode(false);
+        ghostDataRef.current = null;
+        setGhostUser('');
+        setGhostTargetScore(0);
+        isGhostAliveRef.current = false;
+        setIsGhostAlive(false);
+        setGhostDispersing(false);
+        setDeltaScore(0);
+        setDeltaState('TIED');
+      }
 
       rngRef.current = new Mulberry32(seed !== undefined ? seed : Date.now());
       tickCountRef.current = 0;
@@ -620,8 +683,72 @@ export function useSnake(
       }
       stateRef.current.score += baseScore + extraScore;
       setScore(stateRef.current.score);
+
+      // 实时更新 Delta 差值
+      if (isCompetitiveModeRef.current) {
+        const curDelta = stateRef.current.score - ghostScoreRef.current;
+        setDeltaScore(curDelta);
+        setDeltaState(curDelta > 0 ? 'LEAD' : curDelta < 0 ? 'BEHIND' : 'TIED');
+      }
+
       return { currentCombo, extraScore };
     };
+
+    // 竞技模式：推移幽灵影子一步 (Ghost Stepper)
+    if (isCompetitiveModeRef.current && isGhostAliveRef.current && ghostDataRef.current) {
+      const gTick = ghostTickRef.current;
+      const gDirs = ghostInputsMapRef.current.get(gTick);
+      if (gDirs) {
+        gDirs.forEach((d) => {
+          const gq = ghostQueueRef.current;
+          const last = gq.length > 0 ? gq[gq.length - 1] : ghostDirRef.current;
+          if (d !== last && !isOpp(last, d) && gq.length < 2) {
+            gq.push(d);
+          }
+        });
+      }
+
+      if (ghostQueueRef.current.length > 0) {
+        const nextGDir = ghostQueueRef.current.shift()!;
+        if (!isOpp(ghostDirRef.current, nextGDir)) {
+          ghostDirRef.current = nextGDir;
+        }
+      }
+
+      const gDelta = DIR_DELTAS[ghostDirRef.current];
+      const prevGHead = ghostSnakeRef.current[0] || { x: 10, y: 12 };
+      const gHead = { x: prevGHead.x + gDelta.x, y: prevGHead.y + gDelta.y };
+
+      // 幽灵越界或生命周期终结判断
+      const maxGTick = ghostDataRef.current.inputs.length > 0
+        ? ghostDataRef.current.inputs[ghostDataRef.current.inputs.length - 1].tick + 8
+        : 50;
+
+      if (gHead.x < 0 || gHead.x >= GRID || gHead.y < 0 || gHead.y >= GRID || gTick >= maxGTick) {
+        isGhostAliveRef.current = false;
+        setIsGhostAlive(false);
+        setGhostDispersing(true);
+      } else {
+        // 幽灵吃果与前进
+        const isEatApple = (foodRef.current && gHead.x === foodRef.current.x && gHead.y === foodRef.current.y);
+        const isEatBonus = (bonusRef.current && gHead.x === bonusRef.current.x && gHead.y === bonusRef.current.y);
+        if (isEatApple || isEatBonus) {
+          ghostScoreRef.current += isEatBonus ? 30 : 10;
+          setGhostScore(ghostScoreRef.current);
+          ghostSnakeRef.current = [gHead, ...ghostSnakeRef.current];
+        } else {
+          const nextGSnake = [gHead, ...ghostSnakeRef.current];
+          nextGSnake.pop();
+          ghostSnakeRef.current = nextGSnake;
+        }
+      }
+      ghostTickRef.current += 1;
+
+      // 实时计算 Delta
+      const curDelta = stateRef.current.score - ghostScoreRef.current;
+      setDeltaScore(curDelta);
+      setDeltaState(curDelta > 0 ? 'LEAD' : curDelta < 0 ? 'BEHIND' : 'TIED');
+    }
 
     // 技能时效倒计时衰减
     const stepInterval = speedMsRef.current;
@@ -1050,6 +1177,15 @@ export function useSnake(
     seekReplay,
     trajectoryRef,
     trajectoryEventsRef,
+    isCompetitiveMode,
+    ghostSnakeRef,
+    isGhostAlive,
+    ghostUser,
+    ghostTargetScore,
+    ghostScore,
+    deltaScore,
+    deltaState,
+    ghostDispersing,
     startGame,
     startReplay,
     exitReplay,

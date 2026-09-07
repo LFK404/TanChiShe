@@ -128,6 +128,16 @@ interface Props {
   onTick: () => void;
   onDirection: (d: Direction) => void;
   onTogglePause?: () => void;
+  isCompetitiveMode?: boolean;
+  ghostSnakeRef?: React.MutableRefObject<Point[]>;
+  isGhostAlive?: boolean;
+  ghostUser?: string;
+  ghostTargetScore?: number;
+  ghostScore?: number;
+  deltaScore?: number;
+  deltaState?: import('@/types').DeltaState;
+  ghostDispersing?: boolean;
+  onToggleCompetitiveMode?: () => void;
 }
 
 // 兼容老旧 WebView / QQ / 微信内置浏览器 Canvas 2D roundRect
@@ -228,6 +238,14 @@ export default function Board({
   replayCurrentTick = 0, replayTotalTicks = 0, onSeekReplay,
   onSetReplaySpeed, onExitReplay, onRestartReplay,
   onStart, onTick, onDirection, onTogglePause,
+  isCompetitiveMode = false,
+  ghostSnakeRef,
+  isGhostAlive = false,
+  ghostUser = '',
+  ghostTargetScore = 0,
+  ghostScore = 0,
+  deltaScore = 0,
+  onToggleCompetitiveMode,
 }: Props) {
   const [showArtModal, setShowArtModal] = useState(false);
   const [artData, setArtData] = useState<{
@@ -786,6 +804,43 @@ export default function Board({
     } else {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, cvs.width, cvs.height);
+    }
+
+    // 1.5 绘制竞技模式幽灵残影 (26% Alpha 天青蓝柔光半透明投影，绝对零物理碰撞)
+    if (isCompetitiveMode && ghostSnakeRef && ghostSnakeRef.current && ghostSnakeRef.current.length > 0 && isGhostAlive) {
+      const gSnake = ghostSnakeRef.current;
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+
+      gSnake.forEach((p, idx) => {
+        const gx = p.x * CELL;
+        const gy = p.y * CELL;
+        const isGHead = idx === 0;
+
+        ctx.fillStyle = isGHead ? '#66CCFF' : '#38BDF8';
+        ctx.beginPath();
+        drawRoundRect(ctx, gx + 1.5, gy + 1.5, CELL - 3, CELL - 3, isGHead ? 6 : 4);
+        ctx.fill();
+
+        if (isGHead) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(gx + CELL / 2, gy + CELL / 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // 虚线电竞轮廓
+      ctx.strokeStyle = 'rgba(102, 204, 255, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2.5, 2.5]);
+      gSnake.forEach((p) => {
+        const gx = p.x * CELL;
+        const gy = p.y * CELL;
+        ctx.strokeRect(gx + 1.5, gy + 1.5, CELL - 3, CELL - 3);
+      });
+      ctx.setLineDash([]);
+      ctx.restore();
     }
 
     // 2. 绘制残留栅栏 (余温石化渐变微动效 + 现代微定位暗标)
@@ -1467,7 +1522,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart, spawnSpeedTrailParticle, bonusType, frostActive, phaseActive]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart, spawnSpeedTrailParticle, bonusType, frostActive, phaseActive, ghostSnakeRef, isCompetitiveMode, isGhostAlive]);
 
   // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -1672,6 +1727,51 @@ export default function Board({
         ))}
       </div>
 
+      {/* 电竞级 Delta 领先指示器与双轨竞速槽 (仅在竞技对决模式下激活) */}
+      {isCompetitiveMode && (
+        <div className="w-full mb-1.5 px-3 py-1.5 rounded-2xl bg-white/70 backdrop-blur-sm border border-white/60 shadow-2xs flex flex-col gap-1 text-xs select-none">
+          <div className="flex items-center justify-between">
+            {/* 左侧：当前挑战玩家实况 */}
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#0099FF] animate-pulse" />
+              <span className="font-bold text-slate-800 text-[11px]">当前挑战</span>
+              <span className="font-mono font-black text-[#0099FF] text-[11px] tabular-nums">{score}分</span>
+            </div>
+
+            {/* 中间：Delta 动态差值指示胶囊 */}
+            <div className="flex items-center">
+              {deltaScore > 0 ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/60 font-mono font-black text-[10.5px] tabular-nums flex items-center gap-1 shadow-2xs">
+                  <span>▲ 领先</span>
+                  <span>+{deltaScore}</span>
+                </span>
+              ) : deltaScore < 0 ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-500 border border-rose-200/60 font-mono font-black text-[10.5px] tabular-nums flex items-center gap-1 shadow-2xs">
+                  <span>▼ 落后</span>
+                  <span>{deltaScore}</span>
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono font-bold text-[10px] tabular-nums">
+                  ● 并驾齐驱
+                </span>
+              )}
+            </div>
+
+            {/* 右侧：幽灵目标对手 */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">对手:</span>
+              <strong className="text-slate-700 text-[11px] truncate max-w-[70px]">{ghostUser || '幽灵'}</strong>
+              <span className="font-mono text-purple-600 font-bold text-[11px] tabular-nums">{ghostScore}/{ghostTargetScore}</span>
+              {!isGhostAlive && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-600 font-bold border border-amber-200/60">
+                  已超越
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 极简特殊果实流光微导轨与专属形态指示 (绝对零物理位移：高度恒定，绝不推挤棋盘) */}
       <div className="w-full my-1 flex flex-col gap-0.5 transition-all">
         {/* 微型专属形态与倒计时标签栏 (固定高度 15px，hasBonus 时淡入) */}
@@ -1766,20 +1866,57 @@ export default function Board({
           </div>
         )}
 
-        {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}
+        {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡与模式选择) */}
         {!isPlaying && !isGameOver && !isReplay && (
-          <div className="absolute inset-0 z-30 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 select-none text-[#0F172A]">
+          <div className="absolute inset-0 z-30 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2.5 select-none text-[#0F172A]">
+            {/* 极简模式切换：经典模式 VS ⚡ 竞技对决 */}
+            <div className="flex items-center p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono border border-slate-200/50 mb-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isCompetitiveMode) onToggleCompetitiveMode?.();
+                }}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  !isCompetitiveMode
+                    ? 'bg-white text-slate-800 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                经典模式
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isCompetitiveMode) onToggleCompetitiveMode?.();
+                }}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                  isCompetitiveMode
+                    ? 'bg-[#0099FF] text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-[#0099FF]'
+                }`}
+              >
+                <span>⚡ 竞技对决</span>
+                {ghostTargetScore > 0 && (
+                  <span className="text-[10px] opacity-90 font-normal">({ghostTargetScore}分)</span>
+                )}
+              </button>
+            </div>
+
             <button
               onClick={onStart}
               className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Play size={16} />
-              <span>开始游戏</span>
+              <span>开始{isCompetitiveMode ? '对决' : '游戏'}</span>
               <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
             </button>
             <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
-              <span>按空格/方向键 或 屏幕任意处划动启程</span>
+              <span>
+                {isCompetitiveMode
+                  ? `同种子挑战目标：${ghostUser || '幽灵'} (${ghostTargetScore}分)`
+                  : '按空格/方向键 或 屏幕任意处划动启程'}
+              </span>
             </div>
           </div>
         )}

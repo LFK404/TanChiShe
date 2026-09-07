@@ -59,10 +59,15 @@ func signHMAC(data []byte) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// CreateSignedSessionToken 创建无状态 HMAC 签名对局 Token
-func CreateSignedSessionToken(username string) (string, uint32) {
-	seedBig, _ := rand.Int(rand.Reader, big.NewInt(0xFFFFFFFF))
-	seed := uint32(seedBig.Uint64())
+// CreateSignedSessionToken 创建无状态 HMAC 签名对局 Token (支持竞技模式指定同构种子)
+func CreateSignedSessionToken(username string, targetSeed ...uint32) (string, uint32) {
+	var seed uint32
+	if len(targetSeed) > 0 && targetSeed[0] > 0 {
+		seed = targetSeed[0]
+	} else {
+		seedBig, _ := rand.Int(rand.Reader, big.NewInt(0xFFFFFFFF))
+		seed = uint32(seedBig.Uint64())
+	}
 
 	nonceBytes := make([]byte, 8)
 	_, _ = rand.Read(nonceBytes)

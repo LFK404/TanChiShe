@@ -35,9 +35,13 @@ async function post<T>(
 export const apiAuth = (username: string, password: string) =>
   post<User>('/api/auth', { username, password });
 
-// 开局申请会话与确定性随机种子 (基于 Token 鉴权)
-export const apiStartGame = (token?: string) =>
-  post<GameStartResponse>('/api/game/start', {}, token);
+// 开局申请会话与确定性随机种子 (基于 Token 鉴权，支持竞技模式指定同构种子)
+export const apiStartGame = (token?: string, targetSeed?: number) =>
+  post<GameStartResponse>(
+    '/api/game/start',
+    targetSeed && targetSeed > 0 ? { targetSeed } : {},
+    token
+  );
 
 // 结算上报对局轨迹与验算 (基于 Token 鉴权)
 export const apiSettleGame = (req: GameSettleRequest, token?: string) =>

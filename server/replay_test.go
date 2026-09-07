@@ -189,3 +189,24 @@ func TestSpecialFruitEatingSimulation(t *testing.T) {
 	}
 }
 
+// TestCompetitiveMode_FixedSeedToken 验证竞技模式支持指定种子并成功验签
+func TestCompetitiveMode_FixedSeedToken(t *testing.T) {
+	username := "ghost_challenger"
+	targetSeed := uint32(999666)
+
+	token, seed := security.CreateSignedSessionToken(username, targetSeed)
+	if seed != targetSeed {
+		t.Fatalf("竞技模式种子不匹配: 期望 %d, 实际 %d", targetSeed, seed)
+	}
+
+	payload, err := security.VerifyAndConsumeSessionToken(token)
+	if err != nil {
+		t.Fatalf("竞技模式令牌验签失败: %v", err)
+	}
+	if payload.Seed != targetSeed || payload.Username != username {
+		t.Fatalf("竞技模式负载不匹配: %+v", payload)
+	}
+	t.Logf("竞技模式固定同构种子验签通过: seed=%d, user=%s", payload.Seed, payload.Username)
+}
+
+

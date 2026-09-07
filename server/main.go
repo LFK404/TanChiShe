@@ -26,6 +26,10 @@ type AuthReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type GameStartReq struct {
+	TargetSeed uint32 `json:"targetSeed"`
+}
+
 type GameSettleReq struct {
 	SessionToken string               `json:"sessionToken" binding:"required"`
 	Inputs       []engine.InputRecord `json:"inputs"`
@@ -110,7 +114,7 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": user})
 		})
 
-		// 2. 对局握手开局：下发 HMAC 签名无状态会话 Token 与确定性随机种子
+		// 2. 对局握手开局：下发 HMAC 签名无状态会话 Token 与确定性随机种子 (支持竞技模式传入指定同构种子)
 		api.POST("/game/start", func(c *gin.Context) {
 			user, err := extractUser(c)
 			username := ""
@@ -118,7 +122,17 @@ func main() {
 				username = user.Username
 			}
 
-			sessionToken, seed := security.CreateSignedSessionToken(username)
+			var req GameStartReq
+			_ = c.ShouldBindJSON(&req)
+
+			var sessionToken string
+			var seed uint32
+			if req.TargetSeed > 0 {
+				sessionToken, seed = security.CreateSignedSessionToken(username, req.TargetSeed)
+			} else {
+				sessionToken, seed = security.CreateSignedSessionToken(username)
+			}
+
 			c.JSON(http.StatusOK, gin.H{
 				"code": 200,
 				"data": gin.H{

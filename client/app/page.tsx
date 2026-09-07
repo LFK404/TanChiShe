@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth, useIsClient } from '@/hooks/useAuth';
 import { useSnake } from '@/hooks/useSnake';
 import { apiStartGame, apiSettleGame, apiLeaderboard } from '@/services/api';
-import { User, InputRecord, LocalMatchRecord, Point } from '@/types';
+import { User, InputRecord, LocalMatchRecord, Point, GhostReplayData } from '@/types';
 import Header from '@/components/Header';
 import Board from '@/components/Board';
 import Leaderboard from '@/components/Leaderboard';
@@ -292,6 +292,14 @@ export default function Home() {
     seekReplay,
     trajectoryRef,
     trajectoryEventsRef,
+    ghostSnakeRef,
+    isGhostAlive,
+    ghostUser,
+    ghostTargetScore,
+    ghostScore,
+    deltaScore,
+    deltaState,
+    ghostDispersing,
     startGame,
     startReplay,
     exitReplay,
@@ -299,6 +307,62 @@ export default function Home() {
     changeDirection,
     tick,
   } = useSnake(handleGameOver, handleStartGameTrigger);
+
+  // 竞技模式对决开关
+  const [isCompetitiveMode, setIsCompetitiveMode] = useState(false);
+
+  // 获取当前最佳竞技挑战幽灵 (优先挑战自己的最高分 PB，若无则挑战全服榜首 Top 1)
+  const getGhostTarget = useCallback((): GhostReplayData | null => {
+    // 1. 优先尝试当前登录玩家的最高分云端录像
+    if (user && user.highScore > 0 && user.replaySeed && user.replayInputs) {
+      try {
+        const inputs = typeof user.replayInputs === 'string' ? JSON.parse(user.replayInputs) : user.replayInputs;
+        if (Array.isArray(inputs) && inputs.length > 0) {
+          return {
+            seed: user.replaySeed,
+            inputs,
+            targetUser: user.username,
+            targetScore: user.highScore,
+          };
+        }
+      } catch {}
+    }
+
+    // 2. 尝试全服风云榜榜首 (Rank 1)
+    if (board.length > 0) {
+      const top1 = board[0];
+      if (top1.replaySeed && top1.replayInputs) {
+        try {
+          const inputs = typeof top1.replayInputs === 'string' ? JSON.parse(top1.replayInputs) : top1.replayInputs;
+          if (Array.isArray(inputs) && inputs.length > 0) {
+            return {
+              seed: top1.replaySeed,
+              inputs,
+              targetUser: top1.username,
+              targetScore: top1.highScore,
+            };
+          }
+        } catch {}
+      }
+    }
+
+    return null;
+  }, [user, board]);
+
+  const handleToggleCompetitiveMode = useCallback(() => {
+    const nextMode = !isCompetitiveMode;
+    setIsCompetitiveMode(nextMode);
+    if (nextMode) {
+      const target = getGhostTarget();
+      if (target) {
+        addToast(`已切换至 ⚡ 竞技模式：同种子挑战 ${target.targetUser} (${target.targetScore}分)`, 'GOLD');
+      } else {
+        addToast('已切换至 ⚡ 竞技模式 (挑战同种子全服纪录)', 'GOLD');
+      }
+    } else {
+      addToast('已切换至经典模式', 'BRONZE');
+    }
+  }, [isCompetitiveMode, getGhostTarget, addToast]);
 
   // 记录最近观摩的高手录像元数据，支持回放结算时一键「重新观摩」
   const lastReplayRef = useRef<{ seed: number; inputs: InputRecord[] | string; username: string } | null>(null);
@@ -374,47 +438,49 @@ export default function Home() {
     }
   }, [isPlaying, isGameOver, isReplay, score, length, duration, maxCombo, bonusCount, speedMs, steps, user?.username, addToast]);
 
-  // 开始新对局 (独占锁定当前局 Session，杜绝混用与二次消费，0ms 零延迟启动)
+  // 开始新对局 (独占锁定当前局 Session，支持竞技模式同种子透传)
   const handleStartGame = useCallback(async () => {
     firedMilestonesRef.current.clear();
     isSettlingRef.current = false;
-    analytics.track('game_start', { username: user?.username });
+    analytics.track('game_start', { username: user?.username, mode: isCompetitiveMode ? 'competitive' : 'classic' });
+
+    const ghostTarget = isCompetitiveMode ? getGhostTarget() : null;
+    const targetSeed = ghostTarget ? ghostTarget.seed : undefined;
 
     if (!user) {
       activeSessionRef.current = null;
-      startGame(Date.now());
+      startGame(targetSeed || Date.now(), ghostTarget);
       return;
     }
 
-    if (sessionRef.current) {
-      // 命中预取：立即独占转移到当前局并清空公共槽，杜绝混用
+    // 经典模式且命中预取时，极速启动
+    if (!isCompetitiveMode && sessionRef.current) {
       activeSessionRef.current = sessionRef.current;
       sessionRef.current = null;
-      // 异步提前为下一局预取新会话
       prefetchSession();
-      startGame(activeSessionRef.current.seed);
+      startGame(activeSessionRef.current.seed, null);
       return;
     }
 
-    // 若未命中预取，快速即时拉取并独占锁定
+    // 竞技模式或未命中预取，快速拉取指定/最新种子并独占锁定
     try {
-      const res = await apiStartGame(user.token);
+      const res = await apiStartGame(user.token, targetSeed);
       if (res.ok && res.data) {
         activeSessionRef.current = {
           sessionToken: res.data.sessionToken,
           seed: res.data.seed,
         };
-        prefetchSession();
-        startGame(res.data.seed);
+        if (!isCompetitiveMode) prefetchSession();
+        startGame(res.data.seed, ghostTarget);
       } else {
         activeSessionRef.current = null;
-        startGame(Date.now());
+        startGame(targetSeed || Date.now(), ghostTarget);
       }
     } catch {
       activeSessionRef.current = null;
-      startGame(Date.now());
+      startGame(targetSeed || Date.now(), ghostTarget);
     }
-  }, [user, startGame, prefetchSession]);
+  }, [user, isCompetitiveMode, getGhostTarget, startGame, prefetchSession]);
 
   // 将 handleStartGame 挂载到转发 Ref，供 useSnake 内部键盘监听同步调用
   useEffect(() => {
@@ -595,6 +661,16 @@ export default function Home() {
                 onTick={tick}
                 onDirection={changeDirection}
                 onTogglePause={togglePause}
+                isCompetitiveMode={isCompetitiveMode}
+                ghostSnakeRef={ghostSnakeRef}
+                isGhostAlive={isGhostAlive}
+                ghostUser={ghostUser || (getGhostTarget()?.targetUser || '幽灵对手')}
+                ghostTargetScore={ghostTargetScore || (getGhostTarget()?.targetScore || 0)}
+                ghostScore={ghostScore}
+                deltaScore={deltaScore}
+                deltaState={deltaState}
+                ghostDispersing={ghostDispersing}
+                onToggleCompetitiveMode={handleToggleCompetitiveMode}
               />
             </div>
             <Leaderboard
