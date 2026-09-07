@@ -1866,17 +1866,45 @@ export default function Board({
           </div>
         )}
 
-        {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡与模式选择) */}
+        {/* 开始游戏遮罩 (非回放模式：专属手绘故事大图封面 + 模式切换 + 一键启程) */}
         {!isPlaying && !isGameOver && !isReplay && (
-          <div className="absolute inset-0 z-30 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2.5 select-none text-[#0F172A]">
+          <div className="absolute inset-0 z-30 bg-white/90 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 select-none text-[#0F172A] animate-in fade-in duration-200">
+            {/* 模式手绘水彩大图封面展示 */}
+            <div
+              onClick={onStart}
+              className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-[16/10] rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm cursor-pointer group mb-3 bg-slate-100 transition-all hover:shadow-md active:scale-[0.98]"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={isCompetitiveMode ? '/game_art/mode_versus_duel.webp' : '/game_art/mode_classic_start.webp'}
+                alt={isCompetitiveMode ? '竞技对决' : '经典冒险'}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-2.5">
+                <div className="flex items-center justify-between w-full text-white">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`w-2 h-2 rounded-full ${isCompetitiveMode ? 'bg-[#0099FF]' : 'bg-emerald-400'} animate-pulse`}
+                    />
+                    <span className="text-xs font-bold tracking-wide drop-shadow-sm">
+                      {isCompetitiveMode ? '⚡ 竞技影子对决' : '经典冒险启程'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono opacity-85 drop-shadow-sm">
+                    {isCompetitiveMode ? `VS ${ghostUser || '影子'}` : '无尽吃果清屏'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* 极简模式切换：经典模式 VS ⚡ 竞技对决 */}
-            <div className="flex items-center p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono border border-slate-200/50 mb-0.5">
+            <div className="flex items-center p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono border border-slate-200/50 mb-2.5">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isCompetitiveMode) onToggleCompetitiveMode?.();
                 }}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                className={`px-3.5 py-1 rounded-lg transition-all cursor-pointer ${
                   !isCompetitiveMode
                     ? 'bg-white text-slate-800 shadow-2xs'
                     : 'text-slate-500 hover:text-slate-800'
@@ -1889,7 +1917,7 @@ export default function Board({
                   e.stopPropagation();
                   if (!isCompetitiveMode) onToggleCompetitiveMode?.();
                 }}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-3.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                   isCompetitiveMode
                     ? 'bg-[#0099FF] text-white shadow-2xs'
                     : 'text-slate-500 hover:text-[#0099FF]'
@@ -1904,18 +1932,19 @@ export default function Board({
 
             <button
               onClick={onStart}
-              className="px-7 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-8 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Play size={16} />
               <span>开始{isCompetitiveMode ? '对决' : '游戏'}</span>
               <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
             </button>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#66CCFF]" />
+
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mt-1">
+              <span className="w-1 h-1 rounded-full bg-[#66CCFF]" />
               <span>
                 {isCompetitiveMode
-                  ? `同种子挑战目标：${ghostUser || '幽灵'} (${ghostTargetScore}分)`
-                  : '按空格/方向键 或 屏幕任意处划动启程'}
+                  ? `同种子对局挑战：${ghostUser || '高手'} (${ghostTargetScore}分)`
+                  : '按空格/方向键 或 滑屏启程'}
               </span>
             </div>
           </div>
@@ -2020,25 +2049,37 @@ export default function Board({
                 </div>
               </div>
             ) : (
-              /* 玩家本人生死结算面板 */
+              /* 玩家本人生死结算面板 (专属手绘叙事卡片：加冕凯旋 VS 挂彩阵亡) */
               <div className="w-full flex flex-col items-center my-auto">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] text-[#0099FF] font-bold text-xs mb-2.5 shadow-2xs">
-                  <span>游戏结束</span>
+                {/* 专属定制手绘水彩大图卡片 */}
+                <div className="relative w-full max-w-[240px] sm:max-w-[280px] aspect-[16/9] rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs mb-2 bg-slate-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={score >= 500 ? '/game_art/triumph_crown.webp' : '/game_art/defeat_crash.webp'}
+                    alt={score >= 500 ? '加冕登顶' : '挂彩阵亡'}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-bold text-slate-700 shadow-2xs border border-white/70">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${score >= 500 ? 'bg-amber-400' : 'bg-rose-500'}`}
+                    />
+                    <span>{score >= 500 ? '高分登顶 · 荣耀凯旋' : '战局终了 · 虽败犹荣'}</span>
+                  </div>
                 </div>
 
                 {/* 荣耀加冕：NCU HOME 微拟态段位勋章 (点亮高饱和多彩微光) */}
-                <div className="mb-2">
+                <div className="mb-1">
                   <SettleTierCrest score={score} />
                 </div>
 
-                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-2 tabular-nums">
+                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-1 tabular-nums">
                   {score} <span className="text-xs font-normal text-slate-400">分</span>
                 </div>
 
                 {/* 真实死因精准复盘 */}
                 {deathReason && (
-                  <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-100/90 text-slate-600 text-xs font-medium border border-slate-200/60 mb-3.5">
-                    <span className="text-slate-400 text-[11px]">死因</span>
+                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100/90 text-slate-600 text-[11px] font-medium border border-slate-200/60 mb-2.5">
+                    <span className="text-slate-400 text-[10px]">死因</span>
                     <span className="font-bold">{deathReason}</span>
                   </div>
                 )}

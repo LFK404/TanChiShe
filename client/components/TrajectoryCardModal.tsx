@@ -275,7 +275,7 @@ export default function TrajectoryCardModal({
     drawStat(430, 'COMBO // 极速连击', `×${maxCombo}`, maxCombo >= 3 ? '#D97706' : '#0F172A');
     drawStat(610, 'STEPS // 运筹步数', `${steps} TICKS`, '#8B5CF6');
 
-    // 9. 底部签名与 28% 超椭圆 NCU HOME 拟物朱文印章
+    // 9. 底部签名与真实手绘水彩朱红衔尾蛇拟物印章
     const footerY = 1070;
     ctx.fillStyle = '#64748B';
     ctx.font = '13px -apple-system, sans-serif';
@@ -284,33 +284,42 @@ export default function TrajectoryCardModal({
     ctx.font = '11px monospace';
     ctx.fillText(`DATE: ${formatDate()} // DETERMINISTIC RUNTIME`, 65, footerY + 22);
 
-    // 绘制 NCU HOME 朱红印章 (28% 超椭圆微拟态篆印)
-    const sealX = 730;
-    const sealY = 1035;
-    const sealW = 105;
-    const sealH = 48;
-    ctx.save();
-    ctx.strokeStyle = '#E11D48';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(sealX, sealY, sealW, sealH, 12);
-    } else {
-      ctx.strokeRect(sealX, sealY, sealW, sealH);
-    }
-    ctx.stroke();
+    // 绘制手绘水彩朱红印章 (印泥水彩质感，超椭圆衔尾灵蛇，微倾斜盖章效果)
+    const finalizeCanvas = () => {
+      canvasRef.current = canvas;
+      setImageSrc(canvas.toDataURL('image/png'));
+      setIsGenerating(false);
+    };
 
-    ctx.fillStyle = '#E11D48';
-    ctx.font = 'bold 12px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('NCU HOME', sealX + sealW / 2, sealY + 20);
-    ctx.font = '9px monospace';
-    ctx.fillText('走位珍藏 · VERIFIED', sealX + sealW / 2, sealY + 36);
-    ctx.restore();
-
-    canvasRef.current = canvas;
-    setImageSrc(canvas.toDataURL('image/png'));
-    setIsGenerating(false);
+    const sealImg = new Image();
+    sealImg.crossOrigin = 'anonymous';
+    sealImg.onload = () => {
+      ctx.save();
+      const sealW = 76;
+      const sealH = 76;
+      const sealX = 750;
+      const sealY = 1025;
+      // 微倾斜 -2.5 度，呈现真实手工盖印艺术感
+      ctx.translate(sealX + sealW / 2, sealY + sealH / 2);
+      ctx.rotate((-2.5 * Math.PI) / 180);
+      ctx.drawImage(sealImg, -sealW / 2, -sealH / 2, sealW, sealH);
+      ctx.restore();
+      finalizeCanvas();
+    };
+    sealImg.onerror = () => {
+      // 降级绘制
+      ctx.save();
+      ctx.strokeStyle = '#E11D48';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(740, 1035, 95, 48);
+      ctx.fillStyle = '#E11D48';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NCU HOME', 740 + 95 / 2, 1035 + 20);
+      ctx.restore();
+      finalizeCanvas();
+    };
+    sealImg.src = '/game_art/stamp_seal.png';
   }, [trajectory, events, score, duration, maxCombo, steps, username, seed]);
 
   useEffect(() => {

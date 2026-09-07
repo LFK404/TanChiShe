@@ -140,6 +140,31 @@ export default function Leaderboard({
         )}
       </div>
 
+      {/* 全服风云榜荣誉神坛专属手绘插画横幅 */}
+      {tab === 'GLOBAL' && (
+        <div className="relative w-full aspect-[22/9] rounded-2xl overflow-hidden border border-slate-200/70 shadow-2xs my-1 group bg-slate-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/game_art/podium_champions.webp"
+            alt="荣誉神坛"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent flex items-end p-2.5">
+            <div className="flex items-center justify-between w-full text-white">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs font-bold tracking-wide drop-shadow-sm">
+                  群星神坛 · 巅峰风云榜
+                </span>
+              </div>
+              <span className="text-[10px] font-mono opacity-85 drop-shadow-sm">
+                全服实时电竞录像
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 主数据区：全服风云榜 VS 本地个人记录 */}
       <div className="space-y-1 my-1">
         {tab === 'GLOBAL' ? (
