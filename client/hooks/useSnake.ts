@@ -7,27 +7,27 @@ import { Mulberry32 } from '@/utils/prng';
 // 游戏物理网格常量 (25x25 格子，单格 20px)
 export const GRID = 25;
 export const CELL = 20;
-export const BASE_SPEED_MS = 150; // 基础速度 (约 6.7 格/秒，温和从容)
-export const MIN_SPEED_MS = 60;   // 极速上限 (2.5x 速度，约 16.7 格/秒)
+export const BASE_SPEED_MS = 170; // 基础速度 (约 5.9 格/秒，温和从容)
+export const MIN_SPEED_MS = 68;   // 极速上限 (2.5x 速度，约 14.7 格/秒)
 
-// 0.1x 平滑非线性阶梯算速函数 (基础150ms=1.0x，上限60ms=2.5x，每档+0.1x，得分跨度每档逐次+10)
+// 0.1x 平滑非线性阶梯算速函数 (基础170ms=1.0x，上限68ms=2.5x，每档+0.1x，得分跨度每档逐次+20)
 export function calcSpeedMs(score: number): number {
-  if (score >= 2550) return 60; // 2.5x (极限封顶)
-  if (score >= 2310) return 63; // 2.4x
-  if (score >= 2080) return 65; // 2.3x
-  if (score >= 1860) return 68; // 2.2x
-  if (score >= 1650) return 71; // 2.1x
-  if (score >= 1450) return 75; // 2.0x
-  if (score >= 1260) return 79; // 1.9x
-  if (score >= 1080) return 83; // 1.8x
-  if (score >= 910)  return 88; // 1.7x (残影/心跳开启)
-  if (score >= 750)  return 94; // 1.6x
-  if (score >= 600)  return 100; // 1.5x
-  if (score >= 460)  return 107; // 1.4x
-  if (score >= 330)  return 115; // 1.3x
-  if (score >= 210)  return 125; // 1.2x
-  if (score >= 100)  return 136; // 1.1x
-  return BASE_SPEED_MS;         // 1.0x (0~99分 150ms)
+  if (score >= 3600) return 68; // 2.5x (极限封顶)
+  if (score >= 3220) return 71; // 2.4x
+  if (score >= 2860) return 74; // 2.3x
+  if (score >= 2520) return 77; // 2.2x
+  if (score >= 2200) return 81; // 2.1x
+  if (score >= 1900) return 85; // 2.0x
+  if (score >= 1620) return 89; // 1.9x
+  if (score >= 1360) return 94; // 1.8x
+  if (score >= 1120) return 100; // 1.7x (残影/心跳开启)
+  if (score >= 900)  return 106; // 1.6x
+  if (score >= 700)  return 113; // 1.5x
+  if (score >= 520)  return 121; // 1.4x
+  if (score >= 360)  return 131; // 1.3x
+  if (score >= 220)  return 142; // 1.2x
+  if (score >= 100)  return 155; // 1.1x
+  return BASE_SPEED_MS;         // 1.0x (0~99分 170ms)
 }
 
 const toKey = (x: number, y: number) => `${x},${y}`;
@@ -82,7 +82,15 @@ export type GameOverCallback = (
 ) => void;
 
 // 贪吃蛇全套确定性物理时序与状态驱动引擎
-export function useSnake(onGameOver?: GameOverCallback) {
+export function useSnake(
+  onGameOver?: GameOverCallback,
+  onStartGame?: () => void
+) {
+  const onStartGameRef = useRef(onStartGame);
+  useEffect(() => {
+    onStartGameRef.current = onStartGame;
+  }, [onStartGame]);
+
   const snakeRef = useRef<Point[]>([
     { x: 10, y: 12 },
     { x: 9, y: 12 },
@@ -597,10 +605,9 @@ export function useSnake(onGameOver?: GameOverCallback) {
       return;
     }
 
-    // 4. 自身身体碰撞
+    // 4. 自身身体碰撞 (严格完整检测整条蛇身，严禁排除蛇尾导致穿透本该石化的死路)
     const isEatingApple = head.x === foodRef.current.x && head.y === foodRef.current.y;
-    const bodyToCheck = isEatingApple ? snakeRef.current : snakeRef.current.slice(0, -1);
-    const collideBodyIndex = bodyToCheck.findIndex((p) => p.x === head.x && p.y === head.y);
+    const collideBodyIndex = snakeRef.current.findIndex((p) => p.x === head.x && p.y === head.y);
     if (collideBodyIndex !== -1) {
       const reason = `追尾自身躯干 (第 ${collideBodyIndex + 1} 节)`;
       deathReasonRef.current = reason;
@@ -726,7 +733,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
 
       if (e.key === 'p' || e.key === 'P') return togglePause();
       if (e.key === ' ') {
-        // 等待起跑状态下按空格立即唤醒出发
+        // 1. 等待起跑状态下按空格立即唤醒出发
         if (isWaitingStartRef.current) {
           isWaitingStartRef.current = false;
           setIsWaitingStart(false);
@@ -739,7 +746,16 @@ export function useSnake(onGameOver?: GameOverCallback) {
           sound.playMove();
           return;
         }
-        if (!stateRef.current.playing || stateRef.current.over) return;
+        // 2. 未开局或已死亡状态下按空格：立即开始或重新开始对局
+        if (!stateRef.current.playing || stateRef.current.over) {
+          if (onStartGameRef.current) {
+            onStartGameRef.current();
+          } else {
+            startGame(Date.now());
+          }
+          return;
+        }
+        // 3. 局中运行态按空格：暂停/继续
         return togglePause();
       }
       const dir = KEY_DIR[e.key];
@@ -770,7 +786,7 @@ export function useSnake(onGameOver?: GameOverCallback) {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('beforeunload', onBeforeUnload);
     };
-  }, [changeDirection, togglePause]);
+  }, [changeDirection, togglePause, startGame]);
 
   // 接入 Web 原生 Gamepad API 游戏手柄 (支持 Xbox / PS / Switch Pro / 街机摇杆即插即玩)
   useEffect(() => {

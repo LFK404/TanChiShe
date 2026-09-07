@@ -79,18 +79,21 @@ export default function Leaderboard({
 }: Props) {
   const [tab, setTab] = useState<'GLOBAL' | 'LOCAL'>('GLOBAL');
 
+  const safeItems = Array.isArray(items) ? items : [];
+  const safeLocalHistory = Array.isArray(localHistory) ? localHistory : [];
+
   // 计算当前登录玩家排名与战胜全服玩家百分比
   let beatPercent = 0;
   let myRank = 0;
-  if (currentUser && currentUser.highScore > 0 && items.length > 0) {
-    const idx = items.findIndex((it) => it.username === currentUser.username);
+  if (currentUser && currentUser.highScore > 0 && safeItems.length > 0) {
+    const idx = safeItems.findIndex((it) => it.username === currentUser.username);
     myRank = idx >= 0 ? idx + 1 : 0;
     if (myRank === 1) {
       beatPercent = 99;
     } else if (myRank > 1) {
-      beatPercent = Math.max(50, Math.round(98 - (myRank - 1) * (45 / Math.max(items.length - 1, 1))));
+      beatPercent = Math.max(50, Math.round(98 - (myRank - 1) * (45 / Math.max(safeItems.length - 1, 1))));
     } else {
-      const lastScore = items[items.length - 1].highScore;
+      const lastScore = safeItems[safeItems.length - 1].highScore;
       const ratio = lastScore > 0 ? currentUser.highScore / lastScore : 0.5;
       beatPercent = Math.min(49, Math.max(10, Math.round(ratio * 45)));
     }
@@ -122,7 +125,7 @@ export default function Leaderboard({
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            个人档案
+            个人记录
           </button>
         </div>
         {tab === 'GLOBAL' ? (
@@ -137,30 +140,43 @@ export default function Leaderboard({
         )}
       </div>
 
-      {/* 主数据区：全服风云榜 VS 本地个人档案 */}
+      {/* 主数据区：全服风云榜 VS 本地个人记录 */}
       <div className="space-y-1 my-1">
         {tab === 'GLOBAL' ? (
           isLoading ? (
-            <div className="space-y-1.5 py-1">
+            <div className="space-y-2 py-1">
               {[1, 2, 3, 4, 5].map((idx) => (
                 <div
                   key={idx}
-                  className="h-8.5 rounded-xl bg-slate-100/75 animate-pulse flex items-center px-3 justify-between"
+                  className="h-9.5 rounded-xl bg-slate-50/80 border border-slate-100 animate-pulse flex items-center px-3 justify-between relative overflow-hidden"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-lg bg-slate-200/80" />
-                    <div className="w-16 h-3 rounded bg-slate-200/80" />
+                    <div
+                      className={`w-5 h-5 rounded-lg shrink-0 ${
+                        idx === 1
+                          ? 'bg-amber-200/80'
+                          : idx === 2
+                          ? 'bg-slate-300/80'
+                          : idx === 3
+                          ? 'bg-amber-600/30'
+                          : 'bg-slate-200/60'
+                      }`}
+                    />
+                    <div className="w-20 h-3.5 rounded-full bg-slate-200/70" />
                   </div>
-                  <div className="w-12 h-3 rounded bg-slate-200/80" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-12 h-3.5 rounded-full bg-slate-200/70" />
+                    <div className="w-8 h-3 rounded-full bg-slate-100" />
+                  </div>
                 </div>
               ))}
             </div>
-          ) : items.length === 0 ? (
+          ) : safeItems.length === 0 ? (
             <div className="text-center py-6 text-xs text-slate-400 font-normal">
               暂无上榜记录
             </div>
           ) : (
-            items.slice(0, 10).map((u, i) => {
+            safeItems.slice(0, 10).map((u, i) => {
               const rank = i + 1;
               const isMe = currentUser?.username === u.username;
               const hasReplay = !!(u.replayInputs && u.replaySeed);
@@ -218,14 +234,14 @@ export default function Leaderboard({
             })
           )
         ) : (
-          /* 本地个人档案流水列表 (最近 10 局对局档案，支持调起海报复盘) */
+          /* 本地个人记录流水列表 (最近 10 局对局记录，支持调起海报复盘) */
           localHistory.length === 0 ? (
             <div className="text-center py-7 text-xs text-slate-400 font-medium">
               尚无本地对局记录，完成一局后自动归档
             </div>
           ) : (
             <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-0.5">
-              {localHistory.map((rec, i) => (
+              {safeLocalHistory.map((rec, i) => (
                 <div
                   key={rec.id}
                   className="flex items-center justify-between p-2 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-slate-100 text-xs transition-colors"

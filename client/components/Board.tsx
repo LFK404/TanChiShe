@@ -235,20 +235,10 @@ export default function Board({
     }
   }, [score, highScore, isPlaying, isReplay]);
 
-  // 监听开局与吃果得分，触发红果果冻微弹跳与得分胶囊微弹性脉冲
-  const [scorePulse, setScorePulse] = useState(false);
-  const [speedPulse, setSpeedPulse] = useState(false);
+  // 监听开局与吃果得分，记录食物生成时间用于果冻微弹跳渲染
   const prevSpeedMsRef = useRef(speedMs);
   useEffect(() => {
     foodSpawnTimeRef.current = Date.now();
-    if (score > 0) {
-      const anim = requestAnimationFrame(() => setScorePulse(true));
-      const timer = setTimeout(() => setScorePulse(false), 180);
-      return () => {
-        cancelAnimationFrame(anim);
-        clearTimeout(timer);
-      };
-    }
   }, [score, isPlaying]);
 
   // 监听金果生成时间用于临期急速频闪判定
@@ -258,9 +248,9 @@ export default function Board({
     }
   }, [hasBonus, bonusKey]);
 
-  // 混合输入设备 (平板/iPad/Surface/触屏电脑) 智能触控能力探测与偏好持久化
+  // 混合输入设备 (平板/iPad/电脑/手机) 智能触控能力探测：大屏设备默认不展示十字键，手机小屏才默认展示
   const [showDpad, setShowDpad] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     try {
       const saved = localStorage.getItem('snake_show_dpad');
       if (saved !== null) return saved === 'true';
@@ -268,9 +258,10 @@ export default function Board({
         navigator.maxTouchPoints > 0 ||
         'ontouchstart' in window ||
         window.matchMedia('(any-pointer: coarse)').matches;
-      return hasTouch || window.innerWidth < 1024;
+      // 仅在宽度小于 768px 的触屏手机上才默认开启虚拟按键；PC/平板大屏默认关闭，给予纯净大屏视野
+      return hasTouch && window.innerWidth < 768;
     } catch {
-      return true;
+      return false;
     }
   });
 
@@ -517,14 +508,11 @@ export default function Board({
     });
   };
 
-  // 监听移速提升：仅通过顶部速度胶囊高光微弹跳与指尖触感轻巧反馈，杜绝遮挡视野
+  // 监听移速提升：指尖触感轻巧反馈，杜绝遮挡视野
   useEffect(() => {
     if (speedMs < prevSpeedMsRef.current && isPlaying && !isPaused && !isGameOver) {
-      setSpeedPulse(true);
-      const timer = setTimeout(() => setSpeedPulse(false), 240);
       haptics.trigger('snap');
       prevSpeedMsRef.current = speedMs;
-      return () => clearTimeout(timer);
     }
     prevSpeedMsRef.current = speedMs;
   }, [speedMs, isPlaying, isPaused, isGameOver]);
@@ -823,8 +811,8 @@ export default function Board({
             // 快终止急促频闪预警
             color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
           } else {
-            // 连击进行中：角频率 0.38 展宽至 5~6 节，周期 150ms 精准实现波速提升三分之一
-            const rawWave = Math.sin(nowTime / 150 - i * 0.38);
+            // 连击进行中：角频率 0.78 紧凑流光，周期 150ms 实现紧凑奔腾流梭
+            const rawWave = Math.sin(nowTime / 150 - i * 0.78);
             goldIntensity = rawWave > 0 ? Math.pow(rawWave, 1.15) : 0;
             // 数学级连续 RGB 线性插值：过渡至浓郁纯正流金橙黄 [245, 158, 11] (#F59E0B)
             const r = Math.round(baseR + (245 - baseR) * goldIntensity);
@@ -1370,10 +1358,10 @@ export default function Board({
         const effectiveSpeed = isReplay ? speedMs / (replaySpeedRate || 1) : speedMs;
         accumulator += delta;
 
-        // 物理走步时序积分：达到一个步进周期时触发物理判定
-        while (accumulator >= effectiveSpeed) {
+        // 物理走步时序安全积分：单帧内最多消费 1 个物理周期，杜绝掉帧时瞬发多步导致死墙刷新时差或穿墙
+        if (accumulator >= effectiveSpeed) {
           onTick();
-          accumulator -= effectiveSpeed;
+          accumulator = Math.min(accumulator - effectiveSpeed, effectiveSpeed * 0.5);
         }
       }
 
@@ -1424,7 +1412,7 @@ export default function Board({
   };
 
   return (
-    <div className="bg-white p-2 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col items-center select-none border border-slate-200/80 shadow-xs">
+    <div className="bg-white p-1 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col items-center select-none border border-slate-200/80 shadow-xs w-full">
       {/* 观摩回放模式专属横幅 */}
       {isReplay && (
         <div className="w-full mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#EBF8FF] to-[#E0F2FE] border border-[#66CCFF]/40 text-[#0099FF] flex flex-col gap-2 text-xs font-bold animate-in fade-in shadow-2xs">
@@ -1433,13 +1421,25 @@ export default function Board({
               <span className="w-2 h-2 rounded-full bg-[#0099FF] shrink-0 animate-pulse" />
               <span className="truncate">观摩走位中：<strong className="text-slate-900">{replayUser}</strong></span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white font-mono text-[#0099FF] shadow-2xs">
-                {replaySpeedRate}x 倍速
-              </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center bg-white rounded-lg p-0.5 border border-[#66CCFF]/30 shadow-2xs">
+                {([1, 1.5, 2] as const).map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => onSetReplaySpeed?.(rate)}
+                    className={`px-2 py-0.5 text-[10.5px] font-mono font-bold rounded cursor-pointer transition-all ${
+                      replaySpeedRate === rate
+                        ? 'bg-[#0099FF] text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-[#0099FF]'
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={onExitReplay}
-                className="text-[11px] text-slate-500 hover:text-rose-500 transition-colors cursor-pointer"
+                className="text-[11px] px-2 py-1 text-slate-500 hover:text-rose-500 transition-colors cursor-pointer rounded-lg hover:bg-white/60"
               >
                 退出
               </button>
@@ -1477,11 +1477,7 @@ export default function Board({
         {statCapsules.map((st) => (
           <div
             key={st.label}
-            className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden transition-all duration-150 ${
-              st.label === '得分' && scorePulse ? 'scale-105' : 'scale-100'
-            } ${
-              st.label === '速度' && speedPulse ? 'scale-105 ring-2 ring-[#0099FF]/40 shadow-xs' : ''
-            }`}
+            className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden transition-all duration-150`}
           >
             <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
             <strong className={`${st.valColor} text-sm font-mono font-black tabular-nums tracking-tight`}>{st.val}</strong>
@@ -1523,9 +1519,9 @@ export default function Board({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
-        className="relative rounded-2xl overflow-hidden bg-[#F8FAFC] border border-slate-200/70 touch-none w-full max-w-full shadow-inner select-none"
+        className="relative rounded-2xl overflow-hidden bg-white border border-slate-200/70 touch-none w-full max-w-full select-none"
       >
-        <canvas ref={canvasRef} className="block w-full max-w-full h-auto aspect-square bg-[#F8FAFC]" />
+        <canvas ref={canvasRef} className="block w-full max-w-full h-auto aspect-square bg-white" />
 
         {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}
         {!isPlaying && !isGameOver && !isReplay && (
@@ -1586,99 +1582,133 @@ export default function Board({
           </div>
         )}
 
-        {/* 游戏结束结算面板 (极简 NCU HOME 现代主义几何卡片) */}
+        {/* 游戏结束/观摩播放结束结算面板 */}
         {isGameOver && (
-          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-[6px] flex flex-col items-center justify-center text-center p-6 animate-in fade-in zoom-in-95 duration-200 text-[#0F172A]">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] text-[#0099FF] font-bold text-xs mb-2.5 shadow-2xs">
-              <span>{isReplay ? '观摩播放结束' : '游戏结束'}</span>
-            </div>
-
-            {/* 荣耀加冕：NCU HOME 微拟态段位勋章 (点亮高饱和多彩微光) */}
-            <div className="mb-2">
-              <SettleTierCrest score={score} />
-            </div>
-
-            <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-1 tabular-nums">
-              {score} <span className="text-xs font-normal text-slate-400">分</span>
-            </div>
-
-            {/* 真实死因复盘与玩家战况点评 (人文极简现代主义，杜绝粗糙方括号) */}
-            <div className="flex flex-col items-center gap-1 mb-3.5">
-              {deathReason && (
-                <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-100/90 text-slate-600 text-xs font-medium border border-slate-200/60">
-                  <span className="text-slate-400 text-[11px]">死因</span>
-                  <span className="font-bold">{deathReason}</span>
-                </div>
-              )}
-              <span className="text-xs text-slate-400 font-medium">
-                {(() => {
-                  if (score >= 1000) return '登峰造极 · 破千荣耀时刻';
-                  if (score >= 600) return '极速破风 · 走位游刃有余';
-                  if (maxCombo >= 5) return '连击大师 · 节拍掌控入微';
-                  if (score < 100) return '初试身手 · 循序渐进';
-                  return '战局定格 · 距新纪录一步之遥';
-                })()}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] text-slate-400">蛇身长度</span>
-                <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length}</strong>
-              </div>
-              <span className="w-px h-6 bg-slate-200" />
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] text-slate-400">存活用时</span>
-                <strong className="text-[#8B5CF6] font-mono font-bold text-sm tabular-nums">{duration}s</strong>
-              </div>
-              <span className="w-px h-6 bg-slate-200" />
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] text-slate-400">最终移速</span>
-                <strong className="text-[#10B981] font-mono font-bold text-sm tabular-nums">
-                  {Math.round((BASE_SPEED_MS / speedMs) * 10) / 10}x
-                </strong>
-              </div>
-            </div>
-
+          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-[6px] flex flex-col items-center justify-center text-center p-5 sm:p-6 animate-in fade-in zoom-in-95 duration-200 text-[#0F172A]">
             {isReplay ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleOpenArtModal}
-                  className="px-4 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs transition-all border border-slate-200/60"
-                  title="生成走位艺术卡片"
-                >
-                  走位卡片
-                </button>
-                <button
-                  onClick={onRestartReplay || onStart}
-                  className="px-4 py-2 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <RotateCcw size={13} />
-                  <span>重播</span>
-                </button>
-                <button
-                  onClick={onExitReplay}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs"
-                >
-                  <span>退出</span>
-                </button>
+              /* 电竞录像专属复盘结算卡片 (消除主客观混淆与玩家授勋割裂感) */
+              <div className="w-full flex flex-col items-center">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] text-[#0099FF] font-bold text-xs mb-3 shadow-2xs">
+                  <span>对局录像播放完毕</span>
+                </div>
+
+                <div className="text-xs text-slate-400 font-medium mb-1">
+                  被观摩高手：<strong className="text-slate-800">{replayUser || '榜单高手'}</strong>
+                </div>
+
+                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-3 tabular-nums">
+                  {score} <span className="text-xs font-normal text-slate-400">分</span>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-400">蛇身长度</span>
+                    <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length} 节</strong>
+                  </div>
+                  <span className="w-px h-6 bg-slate-200" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-400">通关步数</span>
+                    <strong className="text-[#8B5CF6] font-mono font-bold text-sm tabular-nums">{replayTotalTicks || replayCurrentTick} 步</strong>
+                  </div>
+                  <span className="w-px h-6 bg-slate-200" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-400">极限连击</span>
+                    <strong className="text-[#10B981] font-mono font-bold text-sm tabular-nums">{maxCombo} 连击</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleOpenArtModal}
+                    className="px-4 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs transition-all border border-slate-200/60"
+                  >
+                    走位卡片
+                  </button>
+                  <button
+                    onClick={onRestartReplay || onStart}
+                    className="px-4 py-2 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw size={13} />
+                    <span>重新观摩</span>
+                  </button>
+                  <button
+                    onClick={onExitReplay}
+                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs"
+                  >
+                    <span>退出</span>
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2.5 flex-wrap justify-center">
-                <button
-                  onClick={handleOpenArtModal}
-                  className="px-4 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs sm:text-sm font-bold cursor-pointer shadow-xs transition-all"
-                >
-                  走位卡片
-                </button>
-                <button
-                  onClick={onStart}
-                  className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <RotateCcw size={14} />
-                  <span>再来一局</span>
-                  <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
-                </button>
+              /* 玩家本人生死结算面板 */
+              <div className="w-full flex flex-col items-center">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EBF8FF] text-[#0099FF] font-bold text-xs mb-2.5 shadow-2xs">
+                  <span>游戏结束</span>
+                </div>
+
+                {/* 荣耀加冕：NCU HOME 微拟态段位勋章 (点亮高饱和多彩微光) */}
+                <div className="mb-2">
+                  <SettleTierCrest score={score} />
+                </div>
+
+                <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight mb-1 tabular-nums">
+                  {score} <span className="text-xs font-normal text-slate-400">分</span>
+                </div>
+
+                {/* 真实死因复盘与玩家战况点评 */}
+                <div className="flex flex-col items-center gap-1 mb-3.5">
+                  {deathReason && (
+                    <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-slate-100/90 text-slate-600 text-xs font-medium border border-slate-200/60">
+                      <span className="text-slate-400 text-[11px]">死因</span>
+                      <span className="font-bold">{deathReason}</span>
+                    </div>
+                  )}
+                  <span className="text-xs text-slate-400 font-medium">
+                    {(() => {
+                      if (score >= 1000) return '登峰造极 · 破千荣耀时刻';
+                      if (score >= 600) return '极速破风 · 走位游刃有余';
+                      if (maxCombo >= 5) return '连击大师 · 节拍掌控入微';
+                      if (score < 100) return '初试身手 · 循序渐进';
+                      return '战局定格 · 距新纪录一步之遥';
+                    })()}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-400">蛇身长度</span>
+                    <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length}</strong>
+                  </div>
+                  <span className="w-px h-6 bg-slate-200" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-400">存活用时</span>
+                    <strong className="text-[#8B5CF6] font-mono font-bold text-sm tabular-nums">{duration}s</strong>
+                  </div>
+                  <span className="w-px h-6 bg-slate-200" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] text-slate-400">最终移速</span>
+                    <strong className="text-[#10B981] font-mono font-bold text-sm tabular-nums">
+                      {Math.round((BASE_SPEED_MS / speedMs) * 10) / 10}x
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 flex-wrap justify-center">
+                  <button
+                    onClick={handleOpenArtModal}
+                    className="px-4 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs sm:text-sm font-bold cursor-pointer shadow-xs transition-all"
+                  >
+                    走位卡片
+                  </button>
+                  <button
+                    onClick={onStart}
+                    className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <RotateCcw size={14} />
+                    <span>再来一局</span>
+                    <span className="hidden sm:inline text-xs font-normal opacity-90">(空格)</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1737,28 +1767,28 @@ export default function Board({
         ) : showDpad ? (
           /* 移动端智能触控按键控制台 (零误触·紧凑一体化) */
           <div className="flex flex-col items-center gap-1.5 touch-manipulation select-none">
-            {/* 顶部辅助操作栏：暂停键独立置顶，绝不干扰方向盲操 */}
-            <div className="w-full max-w-[260px] flex items-center justify-between px-1 mb-0.5">
+            {/* 顶部辅助操作栏：暂停键独立置顶，放大至 44px+ 黄金触控区 */}
+            <div className="w-full max-w-[280px] flex items-center justify-between px-1 mb-1">
               <button
                 onClick={() => {
                   sound.unlockAudio();
                   onTogglePause?.();
                 }}
                 disabled={!isPlaying || isGameOver}
-                className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs ${
+                className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-xs touch-manipulation ${
                   isPaused
-                    ? 'bg-[#0099FF] text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-[#EBF8FF] text-slate-600 hover:text-[#0099FF]'
+                    ? 'bg-[#0099FF] text-white shadow-sm ring-2 ring-[#66CCFF]/40'
+                    : 'bg-slate-100 hover:bg-[#EBF8FF] text-slate-700 hover:text-[#0099FF] border border-slate-200/80'
                 } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
               >
-                {isPaused ? <Play size={12} /> : <Pause size={12} />}
-                <span>{isPaused ? '继续' : '暂停'}</span>
+                {isPaused ? <Play size={15} /> : <Pause size={15} />}
+                <span>{isPaused ? '继续游戏' : '暂停'}</span>
               </button>
 
               <button
                 onClick={toggleDpadLayout}
                 title="切换经典十字盘或电脑倒T型布局"
-                className="px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-[#F1F5F9] hover:bg-[#E2E8F0] text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1 font-mono"
+                className="h-10 px-3 rounded-full text-[11px] font-bold bg-[#F1F5F9] hover:bg-[#E2E8F0] text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1 font-mono border border-slate-200/60"
               >
                 <span>{dpadLayout === 'cross' ? '十字键' : '倒T键'}</span>
               </button>

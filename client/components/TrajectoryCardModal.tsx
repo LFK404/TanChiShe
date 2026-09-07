@@ -386,7 +386,7 @@ export default function TrajectoryCardModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 shadow-2xl relative max-h-[92vh] overflow-y-auto select-none"
+        className="w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 flex flex-col items-center border border-slate-200/80 shadow-lg shadow-slate-900/15 relative max-h-[92vh] overflow-y-auto select-none"
       >
         {/* 顶部标题与关闭 (极简现代主义，杜绝花哨矢量图标) */}
         <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100">

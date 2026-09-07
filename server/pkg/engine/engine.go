@@ -8,46 +8,46 @@ import (
 // 网格与物理参数常量
 const (
 	GRID          = 25
-	BASE_SPEED_MS = 150
-	MIN_SPEED_MS  = 60
+	BASE_SPEED_MS = 170
+	MIN_SPEED_MS  = 68
 )
 
 // CalcSpeedMs 计算当前得分对应的单步时间周期 (毫秒)
-// 0.1x 平滑非线性阶梯算速函数 (基础150ms=1.0x，上限60ms=2.5x，每档+0.1x，得分跨度每档逐次+10)
+// 0.1x 平滑非线性阶梯算速函数 (基础170ms=1.0x，上限68ms=2.5x，每档+0.1x，得分跨度每档逐次+20)
 func CalcSpeedMs(score int) int {
 	switch {
-	case score >= 2550:
-		return 60 // 2.5x (极限封顶)
-	case score >= 2310:
-		return 63 // 2.4x
-	case score >= 2080:
-		return 65 // 2.3x
-	case score >= 1860:
-		return 68 // 2.2x
-	case score >= 1650:
-		return 71 // 2.1x
-	case score >= 1450:
-		return 75 // 2.0x
-	case score >= 1260:
-		return 79 // 1.9x
-	case score >= 1080:
-		return 83 // 1.8x
-	case score >= 910:
-		return 88 // 1.7x (残影/心跳开启)
-	case score >= 750:
-		return 94 // 1.6x
-	case score >= 600:
-		return 100 // 1.5x
-	case score >= 460:
-		return 107 // 1.4x
-	case score >= 330:
-		return 115 // 1.3x
-	case score >= 210:
-		return 125 // 1.2x
+	case score >= 3600:
+		return 68 // 2.5x (极限封顶)
+	case score >= 3220:
+		return 71 // 2.4x
+	case score >= 2860:
+		return 74 // 2.3x
+	case score >= 2520:
+		return 77 // 2.2x
+	case score >= 2200:
+		return 81 // 2.1x
+	case score >= 1900:
+		return 85 // 2.0x
+	case score >= 1620:
+		return 89 // 1.9x
+	case score >= 1360:
+		return 94 // 1.8x
+	case score >= 1120:
+		return 100 // 1.7x (残影/心跳开启)
+	case score >= 900:
+		return 106 // 1.6x
+	case score >= 700:
+		return 113 // 1.5x
+	case score >= 520:
+		return 121 // 1.4x
+	case score >= 360:
+		return 131 // 1.3x
+	case score >= 220:
+		return 142 // 1.2x
 	case score >= 100:
-		return 136 // 1.1x
+		return 155 // 1.1x
 	default:
-		return BASE_SPEED_MS // 1.0x (0~99分 150ms)
+		return BASE_SPEED_MS // 1.0x (0~99分 170ms)
 	}
 }
 

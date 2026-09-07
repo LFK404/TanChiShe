@@ -16,6 +16,7 @@ import InGameToast, { ToastItem } from '@/components/InGameToast';
 import TrajectoryCardModal from '@/components/TrajectoryCardModal';
 import { checkAndUnlockAchievements, Achievement, AchievementTier } from '@/utils/achievements';
 import { sound } from '@/utils/audio';
+import { analytics } from '@/services/analytics';
 
 export default function Home() {
   const isClient = useIsClient();
@@ -223,6 +224,11 @@ export default function Home() {
         addToast('当前处于离线模式 · 单机战绩已在本地存盘', 'BRONZE');
       } finally {
         isSettlingRef.current = false;
+        analytics.track('game_over', {
+          score: _finalScore,
+          dur: _finalDur,
+          steps: trajectory.length,
+        });
         // 沉淀最近 5 局战绩得分走势
         try {
           const history = JSON.parse(localStorage.getItem('snake_recent_scores') || '[]');
@@ -234,6 +240,12 @@ export default function Home() {
     },
     [user, updateUser, prefetchSession, addToast, refreshBoard]
   );
+
+  // 外部开局触发中继 Ref (供 useSnake 内部全局空格键唤醒开局)
+  const onStartTriggerRef = useRef<() => void>(() => {});
+  const handleStartGameTrigger = useCallback(() => {
+    onStartTriggerRef.current();
+  }, []);
 
   // 贪吃蛇游戏核心状态机
   const {
@@ -278,7 +290,7 @@ export default function Home() {
     togglePause,
     changeDirection,
     tick,
-  } = useSnake(handleGameOver);
+  } = useSnake(handleGameOver, handleStartGameTrigger);
 
   // 记录最近观摩的高手录像元数据，支持回放结算时一键「重新观摩」
   const lastReplayRef = useRef<{ seed: number; inputs: InputRecord[] | string; username: string } | null>(null);
@@ -356,6 +368,7 @@ export default function Home() {
   const handleStartGame = useCallback(async () => {
     firedMilestonesRef.current.clear();
     isSettlingRef.current = false;
+    analytics.track('game_start', { username: user?.username });
 
     if (!user) {
       activeSessionRef.current = null;
@@ -392,6 +405,11 @@ export default function Home() {
       startGame(Date.now());
     }
   }, [user, startGame, prefetchSession]);
+
+  // 将 handleStartGame 挂载到转发 Ref，供 useSnake 内部键盘监听同步调用
+  useEffect(() => {
+    onStartTriggerRef.current = handleStartGame;
+  }, [handleStartGame]);
 
   const handleCloseTutorial = useCallback(() => {
     setShowTutorial(false);
@@ -460,7 +478,17 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-start px-1.5 py-2 sm:p-5 relative overflow-x-hidden">
+    <main className="min-h-screen text-slate-800 antialiased selection:bg-[#66CCFF]/30 selection:text-slate-900 overflow-x-hidden font-sans relative flex flex-col items-center justify-start px-1 py-1.5 sm:px-4 sm:py-5">
+      {/* 沉浸式手绘绘本底图 (居中覆盖铺满) */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
+        style={{
+          backgroundImage: "url('/image/DM_20260906015849_001.webp')",
+        }}
+      />
+      {/* 极简多巴胺微拟态毛玻璃柔光白膜：保护棋盘高对比度，透出绘本温润笔触 */}
+      <div className="fixed inset-0 pointer-events-none z-0 bg-white/85 backdrop-blur-[5px]" />
+
       {!user ? (
         /* 未登录态：居中登录/注册卡片 */
         <div className="w-full min-h-[85vh] flex items-center justify-center relative z-10">
@@ -490,14 +518,14 @@ export default function Home() {
               </p>
             </div>
 
-            {/* 南大家园官方品牌全套徽标水印 (100% 官方原图免抠透明底素材) */}
-            <div className="hidden sm:flex items-center select-none pointer-events-none opacity-90 hover:opacity-100 transition-opacity shrink-0 pl-2">
+            {/* 南大家园官方品牌全套徽标水印 (全端自适应可见) */}
+            <div className="flex items-center select-none pointer-events-none opacity-90 hover:opacity-100 transition-opacity shrink-0 pl-1">
               <Image
                 src="/ncuhome_logo.png"
                 alt="NCUHOME"
                 width={212}
                 height={55}
-                className="h-8 sm:h-9 w-auto object-contain"
+                className="h-6 sm:h-9 w-auto object-contain"
                 draggable={false}
                 priority
               />

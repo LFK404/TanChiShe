@@ -80,9 +80,8 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
     haptics.setMode(mode);
     haptics.trigger('ui');
   };
-
   return (
-    <header className="w-full bg-white/95 backdrop-blur-md border-b border-slate-100 px-3.5 sm:px-6 py-2.5 flex items-center justify-between shadow-2xs sticky top-0 z-40 select-none">
+    <header className="w-full bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl sm:rounded-3xl px-3.5 sm:px-5 py-2.5 flex items-center justify-between shadow-xs sticky top-2 z-40 select-none transition-all">
       {/* 左侧：品牌 Logo 与玩家战绩 */}
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="flex items-center gap-1.5 shrink-0">
