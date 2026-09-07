@@ -952,9 +952,9 @@ export default function Board({
             // 快终止急促频闪预警
             color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
           } else {
-            // 连击进行中：角频率 0.78 紧凑流光，周期 150ms 实现紧凑奔腾流梭
-            const rawWave = Math.sin(nowTime / 150 - i * 0.78);
-            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 1.15) : 0;
+            // 连击进行中：精确 5 节流金波峰 (角频率 0.628 即 π/5，半波正峰完整跨越 5 节)，周期 150ms 奔腾顺传
+            const rawWave = Math.sin(nowTime / 150 - i * 0.628);
+            goldIntensity = rawWave > 0 ? Math.pow(rawWave, 1.05) : 0;
             // 数学级连续 RGB 线性插值：过渡至浓郁纯正流金橙黄 [245, 158, 11] (#F59E0B)
             const r = Math.round(baseR + (245 - baseR) * goldIntensity);
             const g = Math.round(baseG + (158 - baseG) * goldIntensity);
@@ -971,8 +971,10 @@ export default function Board({
           // 每节传导约 40ms，波形自然顺畅流动
           const targetIdx = waveElapsed / 40;
           const dist = Math.abs(i - targetIdx);
-          if (dist < 1.3) {
-            const intensity = 1 - dist / 1.3;
+          const isGoldWave = w.isBonus || w.bonusType === 'GOLD';
+          const waveRadius = isGoldWave ? 2.5 : 1.3; // 金果吞咽波峰跨度扩展为整整 5 节 (半径 2.5 节)
+          if (dist < waveRadius) {
+            const intensity = 1 - dist / waveRadius;
             if (intensity * 0.28 > bulge) {
               bulge = intensity * 0.28;
               activeBonusType = w.bonusType || (w.isBonus ? 'GOLD' : null);
