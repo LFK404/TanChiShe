@@ -41,6 +41,16 @@ type GameRecord struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
+// AnalyticsEventRecord 客户端行为与电竞埋点流水表
+type AnalyticsEventRecord struct {
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	Event      string    `gorm:"index:idx_event_time;size:50;not null" json:"event"`
+	Username   string    `gorm:"index;size:50" json:"username"`
+	Properties string    `gorm:"type:text" json:"properties"`
+	UserAgent  string    `gorm:"type:text" json:"userAgent"`
+	CreatedAt  time.Time `gorm:"index:idx_event_time;autoCreateTime" json:"createdAt"`
+}
+
 var DB *gorm.DB
 
 // InitDB 初始化 Supabase PostgreSQL 连接池
@@ -57,7 +67,7 @@ func InitDB() error {
 		return fmt.Errorf("Supabase 连接失败: %w", err)
 	}
 
-	_ = DB.AutoMigrate(&User{}, &GameRecord{})
+	_ = DB.AutoMigrate(&User{}, &GameRecord{}, &AnalyticsEventRecord{})
 
 	if sqlDB, err := DB.DB(); err == nil {
 		sqlDB.SetMaxIdleConns(5)

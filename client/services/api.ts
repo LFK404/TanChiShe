@@ -59,3 +59,20 @@ export async function apiLeaderboard(): Promise<User[]> {
     return [];
   }
 }
+
+// 获取后台埋点数据看板聚合数据
+export async function apiAnalyticsOverview(): Promise<import('@/types').AnalyticsOverviewResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/analytics/overview?_t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+      },
+    });
+    const json = await res.json();
+    return json.code === 200 ? json.data : null;
+  } catch {
+    return null;
+  }
+}

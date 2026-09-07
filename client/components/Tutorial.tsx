@@ -80,15 +80,18 @@ export default function Tutorial({ isOpen, onClose }: Props) {
             </div>
           </div>
 
-          {/* 03 金色幸运果 */}
+          {/* 03 三大特殊奇珍果实 */}
           <div className="flex items-start gap-3 py-2.5">
             <NCUNumberBadge num="03" color="#F59E0B" bg="#FEF3C7" />
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-bold text-slate-800 mb-0.5">
-                金色幸运果 <span className="text-[10px] font-normal text-slate-400">(+30分 · 保留死路)</span>
+                特殊奇珍果实 <span className="text-[10px] font-normal text-slate-400">(金果 · 冰果 · 虚化果)</span>
               </h3>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                概率现身并开启 8 秒倒计时，进食获得 +30 分，死路保留考验走位规划。
+                随机现身并附带限时流光导轨：
+                <br />• <strong className="text-amber-600 font-semibold">金果 (20%)</strong>：8秒限时，+30分，保留身后死路；
+                <br />• <strong className="text-sky-600 font-semibold">冰果 (10%)</strong>：3秒限时，+10分，激活3秒寒霜减速走位；
+                <br />• <strong className="text-purple-600 font-semibold">虚化果 (5%)</strong>：2秒限时，+10分，激活2秒完全穿墙与免碰死路。
               </p>
             </div>
           </div>

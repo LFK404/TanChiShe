@@ -58,6 +58,9 @@ interface Props {
   bonusRef: React.MutableRefObject<Point | null>;
   hasBonus: boolean;
   bonusKey?: number;
+  bonusType?: import('@/types').BonusType;
+  frostActive?: boolean;
+  phaseActive?: boolean;
   queueRef?: React.MutableRefObject<Direction[]>;
   score: number;
   duration: number;
@@ -176,6 +179,7 @@ interface DigestionWave {
 
 export default function Board({
   snakeRef, fenceRef, foodRef, bonusRef, hasBonus, bonusKey = 0,
+  bonusType = 'GOLD', frostActive = false, phaseActive = false,
   bonusProgressPercent = 100, bonusRemainSec = 8.0,
   queueRef,
   score, duration, length, speedMs, comboCount = 0, maxCombo = 0,
@@ -735,21 +739,33 @@ export default function Board({
       ctx.fill();
     }
 
-    // 4. 绘制金色幸运果 (双态光晕：常态呼吸 / 临期<=3s 急速红金频闪，严格由物理步数驱动)
+    // 4. 绘制特殊幸运果 (金果/冰果/虚化果，常态呼吸与临期频闪)
     const bonus = bonusRef.current;
     if (bonus) {
       const bx = bonus.x * CELL + CELL / 2;
       const by = bonus.y * CELL + CELL / 2;
-      const isExpiring = bonusRemainSec <= 3.0 && !isWaitingStart;
+      const isExpiring = bonusRemainSec <= (bonusType === 'GOLD' ? 3.0 : 1.2) && !isWaitingStart;
       const bScale = 1;
       const pulse = (1 + Math.sin(Date.now() / 150) * 0.08) * bScale;
 
-      let glowColor = 'rgba(245, 158, 11, 0.22)';
+      let glowColor = 'rgba(245, 158, 11, 0.25)';
       let fruitColor = '#F59E0B';
+      let highlightColor = '#FEF3C7';
+
+      if (bonusType === 'FROST') {
+        glowColor = 'rgba(56, 189, 248, 0.35)';
+        fruitColor = '#38BDF8';
+        highlightColor = '#FFFFFF';
+      } else if (bonusType === 'PHASE') {
+        glowColor = 'rgba(168, 85, 247, 0.35)';
+        fruitColor = '#A855F7';
+        highlightColor = '#F472B6';
+      }
+
       if (isExpiring) {
         const strobe = Math.sin(Date.now() / 60) > 0;
-        glowColor = strobe ? 'rgba(239, 68, 68, 0.45)' : 'rgba(245, 158, 11, 0.35)';
-        fruitColor = strobe ? '#EF4444' : '#F59E0B';
+        glowColor = strobe ? 'rgba(239, 68, 68, 0.45)' : glowColor;
+        fruitColor = strobe ? '#EF4444' : fruitColor;
       }
 
       ctx.fillStyle = glowColor;
@@ -762,8 +778,8 @@ export default function Board({
       ctx.arc(bx, by, (CELL / 2 - 1.5) * pulse, 0, Math.PI * 2);
       ctx.fill();
 
-      // 金果星芒高光
-      ctx.fillStyle = '#FEF3C7';
+      // 专属晶体星标高光
+      ctx.fillStyle = highlightColor;
       ctx.beginPath();
       ctx.arc(bx - 2, by - 2, 2, 0, Math.PI * 2);
       ctx.fill();
@@ -799,14 +815,25 @@ export default function Board({
         const seg = snake[i];
         const ratio = 1 - i / len;
 
-        // 基底天青晶体平滑色彩 (蛇头天青 #38BDF8 [56,189,248] -> 蛇尾冰蓝 #7DD3FC [125,211,252])
+        // 基底天青晶体平滑色彩 (蛇头天青 #38BDF8 -> 蛇尾冰蓝 #7DD3FC)
         const baseR = Math.round(56 + (1 - ratio) * 69);
         const baseG = Math.round(189 + (1 - ratio) * 22);
         const baseB = Math.round(248 + (1 - ratio) * 4);
         let color = `rgb(${baseR},${baseG},${baseB})`;
         let goldIntensity = 0;
 
-        if (inCombo) {
+        if (frostActive) {
+          // 冰果减速中：纯澈冰晶天蓝渐变
+          const fR = Math.round(56 + (1 - ratio) * 60);
+          const fG = Math.round(189 + (1 - ratio) * 40);
+          color = `rgb(${fR},${fG},255)`;
+        } else if (phaseActive) {
+          // 虚化果穿墙中：极光霓虹紫渐变
+          const pR = Math.round(168 + (1 - ratio) * 50);
+          const pG = Math.round(85 + (1 - ratio) * 50);
+          const pB = Math.round(247 + (1 - ratio) * 8);
+          color = `rgb(${pR},${pG},${pB})`;
+        } else if (inCombo) {
           if (endingBlink) {
             // 快终止急促频闪预警
             color = (i + Math.floor(nowTime / 120)) % 2 === 0 ? '#F59E0B' : '#EF4444';
@@ -850,8 +877,15 @@ export default function Board({
         const cornerRadius = isCorner ? 6 : 4;
 
         ctx.save();
-        // 全蛇身金光环绕外发光 (Golden Glow Halo)
-        if (inCombo) {
+        // 蛇身专属技能与状态外发光光晕
+        if (phaseActive) {
+          ctx.globalAlpha = 0.55;
+          ctx.shadowColor = 'rgba(168, 85, 247, 0.85)';
+          ctx.shadowBlur = 8;
+        } else if (frostActive) {
+          ctx.shadowColor = 'rgba(56, 189, 248, 0.85)';
+          ctx.shadowBlur = 7;
+        } else if (inCombo) {
           if (endingBlink) {
             ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
             ctx.shadowBlur = 6;
@@ -953,7 +987,16 @@ export default function Board({
     if (head) {
       ctx.save();
       let headColor = '#66CCFF';
-      if (inCombo) {
+      if (phaseActive) {
+        headColor = '#A855F7';
+        ctx.globalAlpha = 0.55;
+        ctx.shadowColor = 'rgba(168, 85, 247, 0.95)';
+        ctx.shadowBlur = 10;
+      } else if (frostActive) {
+        headColor = '#38BDF8';
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.95)';
+        ctx.shadowBlur = 8;
+      } else if (inCombo) {
         if (endingBlink) {
           headColor = '#F59E0B';
           ctx.shadowColor = 'rgba(239, 68, 68, 0.85)';
@@ -1302,7 +1345,7 @@ export default function Board({
     floatingTextsRef.current = activeTexts;
 
     ctx.restore();
-  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart, spawnSpeedTrailParticle]);
+  }, [fenceRef, foodRef, bonusRef, snakeRef, speedMs, isPlaying, isPaused, isGameOver, queueRef, comboCount, lastEatTimestamp, totalElapsedMs, lastEatElapsedMs, bonusRemainSec, isWaitingStart, spawnSpeedTrailParticle, bonusType, frostActive, phaseActive]);
 
   // 全屏连续滑屏手势引擎 (Swipe Engine：16px 动态死区 + 0ms 瞬间触发 + 连贯过弯不断触)
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -1503,12 +1546,16 @@ export default function Board({
         ))}
       </div>
 
-      {/* 极简金果流光微导轨 (高度恒定 3px，绝对零物理位移，绝不推挤棋盘) */}
+      {/* 极简特殊果实流光微导轨 (高度恒定 3px，绝对零物理位移，绝不推挤棋盘) */}
       <div className="w-full h-1 my-1 rounded-full overflow-hidden bg-slate-100/80 transition-all">
         <div
-          className={`h-full bg-gradient-to-r from-[#F59E0B] via-[#EF4444] to-[#F59E0B] rounded-full transition-all duration-100 ease-linear shadow-[0_0_8px_#F59E0B] ${
-            hasBonus ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`h-full rounded-full transition-all duration-100 ease-linear ${
+            bonusType === 'FROST'
+              ? 'bg-gradient-to-r from-[#38BDF8] via-[#60A5FA] to-[#38BDF8] shadow-[0_0_8px_#38BDF8]'
+              : bonusType === 'PHASE'
+              ? 'bg-gradient-to-r from-[#A855F7] via-[#EC4899] to-[#A855F7] shadow-[0_0_8px_#A855F7]'
+              : 'bg-gradient-to-r from-[#F59E0B] via-[#EF4444] to-[#F59E0B] shadow-[0_0_8px_#F59E0B]'
+          } ${hasBonus ? 'opacity-100' : 'opacity-0'}`}
           style={{ width: `${Math.max(0, Math.min(100, bonusProgressPercent))}%` }}
         />
       </div>
@@ -1522,6 +1569,20 @@ export default function Board({
         className="relative rounded-2xl overflow-hidden bg-white border border-slate-200/70 touch-none w-full max-w-full select-none"
       >
         <canvas ref={canvasRef} className="block w-full max-w-full h-auto aspect-square bg-white" />
+
+        {/* 专属技能生效浮空指示微徽标 */}
+        {frostActive && (
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-sky-500/90 text-white text-[11px] font-bold rounded-full backdrop-blur-md shadow-md flex items-center gap-1.5 animate-in fade-in zoom-in-95 pointer-events-none">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <span>寒霜减速 (3s)</span>
+          </div>
+        )}
+        {phaseActive && (
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-purple-600/90 text-white text-[11px] font-bold rounded-full backdrop-blur-md shadow-md flex items-center gap-1.5 animate-in fade-in zoom-in-95 pointer-events-none">
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <span>极光穿墙 (2s)</span>
+          </div>
+        )}
 
         {/* 开始游戏遮罩 (非回放模式：带新手直觉操作指引气泡) */}
         {!isPlaying && !isGameOver && !isReplay && (

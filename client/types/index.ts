@@ -59,3 +59,23 @@ export interface LocalMatchRecord {
   events?: { x: number; y: number; type: 'eat' | 'combo' | 'bonus' | 'death'; tick: number }[];
   steps: number;
 }
+
+// 特殊果实类型
+export type BonusType = 'GOLD' | 'FROST' | 'PHASE';
+
+// 埋点管理后台数据结构
+export interface AnalyticsEventRecord {
+  id: number;
+  event: string;
+  username: string;
+  properties: string;
+  userAgent: string;
+  createdAt: string;
+}
+
+export interface AnalyticsOverviewResponse {
+  totalEvents: number;
+  totalUsers: number;
+  eventBreakdown: { event: string; count: number }[];
+  recentEvents: AnalyticsEventRecord[];
+}

@@ -92,8 +92,21 @@ func isOpposite(d1, d2 string) bool {
 		(d1 == "LEFT" && d2 == "RIGHT") || (d1 == "RIGHT" && d2 == "LEFT")
 }
 
-// spawnFoodInReplay 严格对应前端 spawnFood 生成算法
-func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, currentBonus *Point) (*Point, *Point) {
+type BonusType string
+
+const (
+	BonusGold  BonusType = "GOLD"
+	BonusFrost BonusType = "FROST"
+	BonusPhase BonusType = "PHASE"
+)
+
+type BonusItem struct {
+	Point Point
+	Type  BonusType
+}
+
+// spawnFoodInReplay 严格对应前端独立多果生成算法 (金果 20%, 冰果 10%, 虚化果 5%)
+func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, currentBonus *BonusItem) (*Point, *BonusItem) {
 	snakeKeys := make(map[string]bool)
 	for _, p := range snake {
 		snakeKeys[fmt.Sprintf("%d,%d", p.X, p.Y)] = true
@@ -118,22 +131,32 @@ func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, cu
 	foodIdx := int(r1 * float64(len(empty)))
 	newFood := empty[foodIdx]
 
-	// 2. 金色幸运果判定 (消费第 2 个随机数)
+	// 2. 特殊幸运果判定 (消费第 2 个随机数判定类型：金果 20%、冰果 10%、虚化果 5%)
 	r2 := rng.Next()
 	newBonus := currentBonus
-	if r2 < 0.25 && currentBonus == nil && len(empty) > 3 {
-		var remainingEmpty []Point
-		for _, p := range empty {
-			if p.X != newFood.X || p.Y != newFood.Y {
-				remainingEmpty = append(remainingEmpty, p)
-			}
+	if currentBonus == nil && len(empty) > 3 {
+		var selectedType BonusType
+		if r2 < 0.20 {
+			selectedType = BonusGold
+		} else if r2 < 0.30 {
+			selectedType = BonusFrost
+		} else if r2 < 0.35 {
+			selectedType = BonusPhase
 		}
-		if len(remainingEmpty) > 0 {
-			// 消费第 3 个随机数选择金果坐标
-			r3 := rng.Next()
-			bonusIdx := int(r3 * float64(len(remainingEmpty)))
-			bp := remainingEmpty[bonusIdx]
-			newBonus = &bp
+
+		if selectedType != "" {
+			var remainingEmpty []Point
+			for _, p := range empty {
+				if p.X != newFood.X || p.Y != newFood.Y {
+					remainingEmpty = append(remainingEmpty, p)
+				}
+			}
+			if len(remainingEmpty) > 0 {
+				r3 := rng.Next()
+				bonusIdx := int(r3 * float64(len(remainingEmpty)))
+				bp := remainingEmpty[bonusIdx]
+				newBonus = &BonusItem{Point: bp, Type: selectedType}
+			}
 		}
 	}
 
@@ -143,7 +166,7 @@ func spawnFoodInReplay(rng *Mulberry32, snake []Point, fence map[string]bool, cu
 // ReplayGame 在内存中 1ms 无头重跑整个游戏，输出服务端验证的得分、长度、耗时与是否真正死亡
 func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, int64, bool, error) {
 	if totalTicks <= 0 || totalTicks > 20000 {
-		return 0, 0, 0, false, errors.New("步数超出合理物理范围")
+		return 0, 0, 0, false, errors.New("步数超出合法区间")
 	}
 
 	rng := NewMulberry32(seed)
@@ -153,20 +176,28 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 	var queue []string
 	score := 0
 	speedMs := BASE_SPEED_MS
-	var bonusPoint *Point
+	var bonusItem *BonusItem
 	bonusExpireTick := 0
 	totalElapsedMs := 0
 	lastEatElapsedMs := -99999
 	comboCount := 0
+	frostRemainingTicks := 0
+	phaseRemainingTicks := 0
 
-	// 初始开局生成第一颗红果与金果
-	food, bp := spawnFoodInReplay(rng, snake, fence, bonusPoint)
+	// 初始开局生成第一颗红果与特殊果实
+	food, bi := spawnFoodInReplay(rng, snake, fence, bonusItem)
 	if food == nil {
 		return 0, 0, 0, false, errors.New("开局网格异常")
 	}
-	bonusPoint = bp
-	if bonusPoint != nil {
-		bonusExpireTick = int(8000 / speedMs)
+	bonusItem = bi
+	if bonusItem != nil {
+		durMs := 8000
+		if bonusItem.Type == BonusFrost {
+			durMs = 3000
+		} else if bonusItem.Type == BonusPhase {
+			durMs = 2000
+		}
+		bonusExpireTick = int(float64(durMs) / float64(speedMs))
 	}
 
 	inputsMap := make(map[int][]string)
@@ -180,7 +211,15 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 	isDead := false
 
 	for tick := 0; tick < totalTicks; tick++ {
-		totalElapsedMs += speedMs
+		currentSpeed := speedMs
+		if frostRemainingTicks > 0 {
+			currentSpeed = int(float64(speedMs) * 1.45)
+			frostRemainingTicks--
+		}
+		if phaseRemainingTicks > 0 {
+			phaseRemainingTicks--
+		}
+		totalElapsedMs += currentSpeed
 
 		// 1. 消费按键排队 (最大深度 2)
 		if dirs, ok := inputsMap[tick]; ok {
@@ -208,23 +247,28 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 		delta := dirDeltas[dir]
 		head := Point{X: snake[0].X + delta.X, Y: snake[0].Y + delta.Y}
 
-		// 4. 边界碰撞检测 (发生致命碰撞即判定战局终结，消除浏览器帧事件循环调度微小时间差误杀)
-		if head.X < 0 || head.X >= GRID || head.Y < 0 || head.Y >= GRID {
+		// 4. 边界碰撞检测 (虚化果激活时四壁环形传送穿透，否则发生致命碰撞)
+		if phaseRemainingTicks > 0 {
+			head.X = (head.X + GRID) % GRID
+			head.Y = (head.Y + GRID) % GRID
+		} else if head.X < 0 || head.X >= GRID || head.Y < 0 || head.Y >= GRID {
 			isDead = true
 			break
 		}
 
-		// 5. 自身身体碰撞检测
+		// 5. 自身身体碰撞检测 (虚化果激活时豁免身体碰撞)
 		isEatingApple := (food != nil && head.X == food.X && head.Y == food.Y)
 		bodyToCheck := snake
 		if !isEatingApple {
 			bodyToCheck = snake[:len(snake)-1]
 		}
 		hitBody := false
-		for _, p := range bodyToCheck {
-			if p.X == head.X && p.Y == head.Y {
-				hitBody = true
-				break
+		if phaseRemainingTicks == 0 {
+			for _, p := range bodyToCheck {
+				if p.X == head.X && p.Y == head.Y {
+					hitBody = true
+					break
+				}
 			}
 		}
 		if hitBody {
@@ -249,21 +293,27 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 
 			fence = make(map[string]bool)
 			speedMs = CalcSpeedMs(score)
-			food, bonusPoint = spawnFoodInReplay(rng, snake, fence, bonusPoint)
-			if bonusPoint != nil && bonusExpireTick == 0 {
-				bonusExpireTick = tick + int(8000/speedMs)
+			food, bonusItem = spawnFoodInReplay(rng, snake, fence, bonusItem)
+			if bonusItem != nil && bonusExpireTick == 0 {
+				durMs := 8000
+				if bonusItem.Type == BonusFrost {
+					durMs = 3000
+				} else if bonusItem.Type == BonusPhase {
+					durMs = 2000
+				}
+				bonusExpireTick = tick + int(float64(durMs)/float64(speedMs))
 			}
 			continue
 		}
 
-		// 7. 残留栅栏碰撞检测
-		if fence[fmt.Sprintf("%d,%d", head.X, head.Y)] {
+		// 7. 残留栅栏碰撞检测 (虚化果激活时豁免死路障壁碰撞)
+		if phaseRemainingTicks == 0 && fence[fmt.Sprintf("%d,%d", head.X, head.Y)] {
 			isDead = true
 			break
 		}
 
-		// 8. 吃到金色幸运果 (+30 分并纳入连击链，第3次起阶梯加分，保留栅栏)
-		if bonusPoint != nil && head.X == bonusPoint.X && head.Y == bonusPoint.Y {
+		// 8. 吃到特殊幸运果 (金果+30分，冰果+10分减速3s，虚化果+10分穿墙2s)
+		if bonusItem != nil && head.X == bonusItem.Point.X && head.Y == bonusItem.Point.Y {
 			if lastEatElapsedMs >= 0 && totalElapsedMs-lastEatElapsedMs <= 3000 {
 				comboCount++
 			} else {
@@ -274,18 +324,22 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 			if comboCount >= 3 {
 				extraComboScore = (comboCount - 2) * 5
 			}
-			score += 30 + extraComboScore
 
-			bonusPoint = nil
+			baseFruitScore := 10
+			if bonusItem.Type == BonusGold {
+				baseFruitScore = 30
+			} else if bonusItem.Type == BonusFrost {
+				frostRemainingTicks = int(3000.0 / float64(speedMs))
+			} else if bonusItem.Type == BonusPhase {
+				phaseRemainingTicks = int(2000.0 / float64(speedMs))
+			}
+
+			score += baseFruitScore + extraComboScore
+			bonusItem = nil
 			bonusExpireTick = 0
 		}
 
-		// 9. 金色幸运果 8 秒倒计时过期
-		if bonusExpireTick > 0 && tick >= bonusExpireTick {
-			bonusPoint = nil
-			bonusExpireTick = 0
-		}
-
+		// 9. 特殊幸运果倒计时过期
 		// 10. 正常移动：蛇头前进，蛇尾留下栅栏
 		nextSnake := append([]Point{head}, snake...)
 		tail := nextSnake[len(nextSnake)-1]

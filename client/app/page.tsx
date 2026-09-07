@@ -261,6 +261,9 @@ export default function Home() {
     bonusKey,
     bonusProgressPercent,
     bonusRemainSec,
+    bonusType,
+    frostActive,
+    phaseActive,
     queueRef,
     score,
     duration,
@@ -550,6 +553,9 @@ export default function Home() {
                 bonusKey={bonusKey}
                 bonusProgressPercent={bonusProgressPercent}
                 bonusRemainSec={bonusRemainSec}
+                bonusType={bonusType}
+                frostActive={frostActive}
+                phaseActive={phaseActive}
                 queueRef={queueRef}
                 score={score}
                 duration={duration}

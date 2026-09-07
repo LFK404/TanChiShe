@@ -270,15 +270,83 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"code": 200, "data": list})
 		})
 
-		// 6. 异步客户端行为与电竞埋点接入网关 (无锁轻量审计)
+		// 6. 异步客户端行为与电竞埋点接入网关 (持久化存入数据库)
 		api.POST("/analytics", func(c *gin.Context) {
-			var payload map[string]interface{}
-			if err := c.ShouldBindJSON(&payload); err != nil {
+			var payload struct {
+				Event      string                 `json:"event"`
+				Timestamp  int64                  `json:"timestamp"`
+				Properties map[string]interface{} `json:"properties"`
+				UserAgent  string                 `json:"userAgent"`
+			}
+			if err := c.ShouldBindJSON(&payload); err != nil || payload.Event == "" {
 				c.JSON(http.StatusOK, gin.H{"status": "ignored"})
 				return
 			}
-			// 接收审计事件并快速确认，杜绝阻塞主请求
+
+			username := ""
+			if u, ok := payload.Properties["username"].(string); ok {
+				username = u
+			}
+			propBytes, _ := json.Marshal(payload.Properties)
+
+			if database.DB != nil {
+				go func(rec database.AnalyticsEventRecord) {
+					_ = database.DB.Create(&rec).Error
+				}(database.AnalyticsEventRecord{
+					Event:      payload.Event,
+					Username:   username,
+					Properties: string(propBytes),
+					UserAgent:  payload.UserAgent,
+				})
+			}
 			c.JSON(http.StatusOK, gin.H{"status": "recorded"})
+		})
+
+		// 7. 埋点管理数据看板聚合接口 (供管理后台实时监控)
+		api.GET("/analytics/overview", func(c *gin.Context) {
+			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+			if database.DB == nil {
+				c.JSON(http.StatusOK, gin.H{
+					"code": 200,
+					"data": gin.H{
+						"totalEvents":    0,
+						"totalUsers":     0,
+						"eventBreakdown": []gin.H{},
+						"recentEvents":   []database.AnalyticsEventRecord{},
+					},
+				})
+				return
+			}
+
+			var totalEvents int64
+			database.DB.Model(&database.AnalyticsEventRecord{}).Count(&totalEvents)
+
+			var totalUsers int64
+			database.DB.Model(&database.User{}).Count(&totalUsers)
+
+			type Breakdown struct {
+				Event string `json:"event"`
+				Count int64  `json:"count"`
+			}
+			var breakdown []Breakdown
+			database.DB.Model(&database.AnalyticsEventRecord{}).
+				Select("event, count(*) as count").
+				Group("event").
+				Order("count desc").
+				Scan(&breakdown)
+
+			var recent []database.AnalyticsEventRecord
+			database.DB.Order("id desc").Limit(50).Find(&recent)
+
+			c.JSON(http.StatusOK, gin.H{
+				"code": 200,
+				"data": gin.H{
+					"totalEvents":    totalEvents,
+					"totalUsers":     totalUsers,
+					"eventBreakdown": breakdown,
+					"recentEvents":   recent,
+				},
+			})
 		})
 	}
 

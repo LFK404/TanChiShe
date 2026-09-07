@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Direction, Point, InputRecord } from '@/types';
+import { Direction, Point, InputRecord, BonusType } from '@/types';
 import { sound } from '@/utils/audio';
 import { haptics, HapticType } from '@/utils/haptics';
 import { Mulberry32 } from '@/utils/prng';
@@ -128,6 +128,12 @@ export function useSnake(
   const [lastEatElapsedMs, setLastEatElapsedMs] = useState(-99999);
   const [bonusProgressPercent, setBonusProgressPercent] = useState(100);
   const [bonusRemainSec, setBonusRemainSec] = useState(8.0);
+  const [bonusType, setBonusType] = useState<BonusType>('GOLD');
+  const bonusTypeRef = useRef<BonusType>('GOLD');
+  const [frostActive, setFrostActive] = useState<boolean>(false);
+  const [phaseActive, setPhaseActive] = useState<boolean>(false);
+  const frostRemainMsRef = useRef<number>(0);
+  const phaseRemainMsRef = useRef<number>(0);
   const [isWaitingStart, setIsWaitingStart] = useState(false);
   const isWaitingStartRef = useRef(false);
   const [resumeCountdown, setResumeCountdown] = useState<number | null>(null);
@@ -171,16 +177,18 @@ export function useSnake(
     }
   }, []);
 
-  // 清除金色幸运果 (重置物理截止步数，杜绝宏任务漂移)
+  // 清除特殊幸运果 (重置物理截止步数，杜绝宏任务漂移)
   const clearBonus = useCallback(() => {
     bonusRef.current = null;
     bonusExpireTickRef.current = 0;
     setHasBonus(false);
     setBonusProgressPercent(0);
     setBonusRemainSec(0);
+    setBonusType('GOLD');
+    bonusTypeRef.current = 'GOLD';
   }, []);
 
-  // 确定性独立双果生成算法 (保证与 Go 后端 PRNG 消费序列绝对一致)
+  // 确定性独立多果生成算法 (金果 20%, 冰果 10%, 虚化果 5%，与 Go 后端 PRNG 绝对一致)
   const spawnFood = useCallback(() => {
     const snakeKeys = new Set(snakeRef.current.map((p) => toKey(p.x, p.y)));
     const empty: Point[] = [];
@@ -199,24 +207,42 @@ export function useSnake(
     const newFood = empty[Math.floor(r1 * empty.length)];
     foodRef.current = newFood;
 
-    // 2. 金色幸运果判定 (消费第 2 个随机数判定概率)
+    // 2. 特殊幸运果判定 (消费第 2 个随机数判定类型：金果 20%、冰果 10%、虚化果 5%)
     const r2 = rng ? rng.next() : Math.random();
-    if (r2 < 0.25 && !bonusRef.current && empty.length > 3) {
-      const remainingEmpty = empty.filter((p) => p.x !== newFood.x || p.y !== newFood.y);
-      if (remainingEmpty.length > 0) {
-        // 消费第 3 个随机数选择坐标
-        const r3 = rng ? rng.next() : Math.random();
-        bonusRef.current = remainingEmpty[Math.floor(r3 * remainingEmpty.length)];
-        setBonusKey((prev) => prev + 1);
-        setHasBonus(true);
-        setBonusProgressPercent(100);
-        setBonusRemainSec(8.0);
+    if (!bonusRef.current && empty.length > 3) {
+      let selectedType: BonusType | null = null;
+      let durSec = 8.0;
 
-        // 若处于开局等待起步态，步数暂不扣减，待迈出第一步后再正确定位到期步数
-        if (!isWaitingStartRef.current) {
-          bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMsRef.current);
-        } else {
-          bonusExpireTickRef.current = 0;
+      if (r2 < 0.20) {
+        selectedType = 'GOLD';
+        durSec = 8.0;
+      } else if (r2 < 0.30) {
+        selectedType = 'FROST';
+        durSec = 3.0;
+      } else if (r2 < 0.35) {
+        selectedType = 'PHASE';
+        durSec = 2.0;
+      }
+
+      if (selectedType) {
+        const remainingEmpty = empty.filter((p) => p.x !== newFood.x || p.y !== newFood.y);
+        if (remainingEmpty.length > 0) {
+          // 消费第 3 个随机数选择坐标
+          const r3 = rng ? rng.next() : Math.random();
+          bonusRef.current = remainingEmpty[Math.floor(r3 * remainingEmpty.length)];
+          bonusTypeRef.current = selectedType;
+          setBonusType(selectedType);
+          setBonusKey((prev) => prev + 1);
+          setHasBonus(true);
+          setBonusProgressPercent(100);
+          setBonusRemainSec(durSec);
+
+          // 若处于开局等待起步态，步数暂不扣减，待迈出第一步后再正确定位到期步数
+          if (!isWaitingStartRef.current) {
+            bonusExpireTickRef.current = tickCountRef.current + Math.round((durSec * 1000) / speedMsRef.current);
+          } else {
+            bonusExpireTickRef.current = 0;
+          }
         }
       }
     }
@@ -325,6 +351,10 @@ export function useSnake(
       setSteps(0);
       setLength(3);
       setBonusCount(0);
+      frostRemainMsRef.current = 0;
+      phaseRemainMsRef.current = 0;
+      setFrostActive(false);
+      setPhaseActive(false);
       speedMsRef.current = BASE_SPEED_MS;
       setSpeedMs(BASE_SPEED_MS);
       setIsGameOver(false);
@@ -586,6 +616,25 @@ export function useSnake(
       return { currentCombo, extraScore };
     };
 
+    // 技能时效倒计时衰减
+    const stepInterval = speedMsRef.current;
+    if (frostRemainMsRef.current > 0) {
+      frostRemainMsRef.current = Math.max(0, frostRemainMsRef.current - stepInterval);
+      if (frostRemainMsRef.current === 0) {
+        setFrostActive(false);
+        const normSpeed = calcSpeedMs(stateRef.current.score);
+        speedMsRef.current = normSpeed;
+        setSpeedMs(normSpeed);
+        sound.updateGameSpeed(normSpeed);
+      }
+    }
+    if (phaseRemainMsRef.current > 0) {
+      phaseRemainMsRef.current = Math.max(0, phaseRemainMsRef.current - stepInterval);
+      if (phaseRemainMsRef.current === 0) {
+        setPhaseActive(false);
+      }
+    }
+
     // 1. 消费转向队列
     if (queueRef.current.length > 0) {
       const nextDir = queueRef.current.shift()!;
@@ -594,21 +643,27 @@ export function useSnake(
 
     // 2. 计算新蛇头坐标并记录走位轨迹
     const delta = DIR_DELTAS[dirRef.current];
-    const head = { x: snakeRef.current[0].x + delta.x, y: snakeRef.current[0].y + delta.y };
-    trajectoryRef.current.push(head);
+    let head = { x: snakeRef.current[0].x + delta.x, y: snakeRef.current[0].y + delta.y };
+    const isPhaseNow = phaseRemainMsRef.current > 0;
 
-    // 3. 边界碰撞
-    if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
+    // 3. 边界碰撞 (虚化果 2.0s 穿墙期四壁传送穿透)
+    if (isPhaseNow) {
+      head = {
+        x: (head.x + GRID) % GRID,
+        y: (head.y + GRID) % GRID,
+      };
+    } else if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
       deathReasonRef.current = '触碰外围边界墙';
       setDeathReason('触碰外围边界墙');
       gameOver();
       return;
     }
+    trajectoryRef.current.push(head);
 
-    // 4. 自身身体碰撞 (严格完整检测整条蛇身，严禁排除蛇尾导致穿透本该石化的死路)
+    // 4. 自身身体碰撞 (虚化果激活时豁免身体碰撞)
     const isEatingApple = head.x === foodRef.current.x && head.y === foodRef.current.y;
     const collideBodyIndex = snakeRef.current.findIndex((p) => p.x === head.x && p.y === head.y);
-    if (collideBodyIndex !== -1) {
+    if (!isPhaseNow && collideBodyIndex !== -1) {
       const reason = `追尾自身躯干 (第 ${collideBodyIndex + 1} 节)`;
       deathReasonRef.current = reason;
       setDeathReason(reason);
@@ -634,25 +689,28 @@ export function useSnake(
       }
       fenceRef.current.clear();
       const nextSpeed = calcSpeedMs(stateRef.current.score);
-      speedMsRef.current = nextSpeed;
-      setSpeedMs(nextSpeed);
-      sound.updateGameSpeed(nextSpeed);
+      speedMsRef.current = frostRemainMsRef.current > 0 ? Math.round(nextSpeed * 1.45) : nextSpeed;
+      setSpeedMs(speedMsRef.current);
+      sound.updateGameSpeed(speedMsRef.current);
       snakeRef.current = nextSnake;
       spawnFood();
       return;
     }
 
-    // 6. 残留栅栏碰撞检测
-    if (fenceRef.current.has(toKey(head.x, head.y))) {
+    // 6. 残留栅栏碰撞检测 (虚化果激活时豁免死路障壁碰撞)
+    if (!isPhaseNow && fenceRef.current.has(toKey(head.x, head.y))) {
       deathReasonRef.current = '撞击死路障壁';
       setDeathReason('撞击死路障壁');
       gameOver();
       return;
     }
 
-    // 7. 吃到金色幸运果 (+30 分并纳入连击链，第3次起阶梯加分，保留栅栏)
+    // 7. 吃到特殊幸运果 (金果+30分，冰果+10分减速3s，虚化果+10分穿墙2s)
     if (bonusRef.current && head.x === bonusRef.current.x && head.y === bonusRef.current.y) {
-      const { currentCombo } = applyComboEat(30);
+      const currentType = bonusTypeRef.current;
+      const baseFruitScore = currentType === 'GOLD' ? 30 : 10;
+      const { currentCombo } = applyComboEat(baseFruitScore);
+
       trajectoryEventsRef.current.push({
         x: head.x,
         y: head.y,
@@ -661,24 +719,46 @@ export function useSnake(
       });
       bonusCountRef.current += 1;
       setBonusCount(bonusCountRef.current);
-      if (!isSeekingRef.current) {
-        sound.playBonus();
-        sound.playCombo(currentCombo);
-        vibrate('bonus', currentCombo);
+
+      if (currentType === 'GOLD') {
+        if (!isSeekingRef.current) {
+          sound.playBonus();
+          sound.playCombo(currentCombo);
+          vibrate('bonus', currentCombo);
+        }
+      } else if (currentType === 'FROST') {
+        frostRemainMsRef.current = 3000;
+        setFrostActive(true);
+        const slowedSpeed = Math.round(calcSpeedMs(stateRef.current.score) * 1.45);
+        speedMsRef.current = slowedSpeed;
+        setSpeedMs(slowedSpeed);
+        sound.updateGameSpeed(slowedSpeed);
+        if (!isSeekingRef.current) {
+          sound.playEat();
+          sound.playCombo(currentCombo);
+          vibrate('eat', currentCombo);
+        }
+      } else if (currentType === 'PHASE') {
+        phaseRemainMsRef.current = 2000;
+        setPhaseActive(true);
+        if (!isSeekingRef.current) {
+          sound.playBonus();
+          sound.playCombo(currentCombo);
+          vibrate('bonus', currentCombo);
+        }
       }
+
       clearBonus();
     }
 
-    // 8. 金色幸运果 8 秒物理步数倒计时与临期警报 (纯物理步数百分比驱动，绝不失步)
+    // 8. 特殊幸运果倒计时与外置导轨进度
     if (bonusRef.current && bonusExpireTickRef.current > 0) {
       if (tickCountRef.current >= bonusExpireTickRef.current) {
-        bonusRef.current = null;
-        bonusExpireTickRef.current = 0;
-        setHasBonus(false);
-        setBonusProgressPercent(0);
-        setBonusRemainSec(0);
+        clearBonus();
       } else {
-        const totalTicks = Math.round(8000 / speedMs);
+        const curType = bonusTypeRef.current;
+        const durSec = curType === 'GOLD' ? 8.0 : curType === 'FROST' ? 3.0 : 2.0;
+        const totalTicks = Math.round((durSec * 1000) / speedMs);
         const remainingTicks = bonusExpireTickRef.current - tickCountRef.current;
         const percent = totalTicks > 0 ? (remainingTicks / totalTicks) * 100 : 0;
         const remainSec = (remainingTicks * speedMs) / 1000;
@@ -696,7 +776,7 @@ export function useSnake(
       }
     } else if (bonusRef.current && isWaitingStartRef.current) {
       setBonusProgressPercent(100);
-      setBonusRemainSec(8.0);
+      setBonusRemainSec(bonusTypeRef.current === 'GOLD' ? 8.0 : bonusTypeRef.current === 'FROST' ? 3.0 : 2.0);
     }
 
     // 9. 正常移动：蛇头前进，蛇尾留下残留栅栏 (纯 Ref 高速步进，零 React 状态调度开销)
@@ -922,8 +1002,11 @@ export function useSnake(
     bonusRef,
     hasBonus,
     bonusKey,
+    bonusType,
     bonusProgressPercent,
     bonusRemainSec,
+    frostActive,
+    phaseActive,
     dirRef,
     queueRef,
     score,
