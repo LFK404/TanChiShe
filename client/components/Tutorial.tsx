@@ -33,7 +33,7 @@ export default function Tutorial({ isOpen, onClose }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md max-h-[85vh] bg-white rounded-3xl flex flex-col text-[#0F172A] relative border border-slate-200/80 shadow-sm overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md max-h-[85vh] bg-white/90 backdrop-blur-md rounded-3xl flex flex-col text-[#0F172A] relative border border-white/70 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
       >
         {/* 顶部标题栏 (固定吸顶) */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0">
@@ -56,7 +56,7 @@ export default function Tutorial({ isOpen, onClose }: Props) {
 
         {/* 核心规则列表区 (自适应平滑滚动) */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
-          <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-slate-200/80 flex flex-col divide-y divide-slate-200/60">
+          <div className="p-3.5 rounded-2xl bg-white/60 backdrop-blur-xs border border-white/70 flex flex-col divide-y divide-slate-200/60">
             {/* 01 死路固化机制 */}
             <div className="flex items-start gap-3 pb-2.5">
               <NCUNumberBadge num="01" color="#D97706" bg="#FEF3C7" />

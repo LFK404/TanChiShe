@@ -7,10 +7,10 @@ import { Mulberry32 } from '@/utils/prng';
 // 游戏物理网格常量 (25x25 格子，单格 20px)
 export const GRID = 25;
 export const CELL = 20;
-export const BASE_SPEED_MS = 170; // 基础速度 (约 5.9 格/秒，温和从容)
+export const BASE_SPEED_MS = 160; // 基础速度 (约 6.25 格/秒，温和从容)
 export const MIN_SPEED_MS = 68;   // 极速上限 (2.5x 速度，约 14.7 格/秒)
 
-// 0.1x 平滑非线性阶梯算速函数 (基础170ms=1.0x，上限68ms=2.5x，每档+0.1x，得分跨度每档逐次+20)
+// 0.1x 平滑非线性阶梯算速函数 (基础160ms=1.0x，上限68ms=2.5x，每档+0.1x，得分跨度每档逐次+20)
 export function calcSpeedMs(score: number): number {
   if (score >= 3600) return 68; // 2.5x (极限封顶)
   if (score >= 3220) return 71; // 2.4x
@@ -27,7 +27,7 @@ export function calcSpeedMs(score: number): number {
   if (score >= 360)  return 131; // 1.3x
   if (score >= 220)  return 142; // 1.2x
   if (score >= 100)  return 155; // 1.1x
-  return BASE_SPEED_MS;         // 1.0x (0~99分 170ms)
+  return BASE_SPEED_MS;         // 1.0x (0~99分 160ms)
 }
 
 // 特殊果实棋盘存留持续时间 (金8 冰6 虚5)
@@ -483,11 +483,13 @@ export function useSnake(
       isWaitingStartRef.current = false;
       setIsWaitingStart(false);
       stateRef.current.start = Date.now();
-      // 迈出第一步时正式激活金果的物理步数到期点 (消除开局提前倒数)
+      // 迈出第一步时正式激活特殊果实的物理步数到期点 (消除开局提前倒数)
       if (bonusRef.current) {
-        bonusExpireTickRef.current = tickCountRef.current + Math.round(8000 / speedMsRef.current);
+        const curType = bonusTypeRef.current;
+        const durSec = BONUS_DURATIONS[curType] || 8.0;
+        bonusExpireTickRef.current = tickCountRef.current + Math.round((durSec * 1000) / speedMsRef.current);
         setBonusProgressPercent(100);
-        setBonusRemainSec(8.0);
+        setBonusRemainSec(durSec);
       }
     }
 

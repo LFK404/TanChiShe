@@ -8,12 +8,12 @@ import (
 // 网格与物理参数常量
 const (
 	GRID          = 25
-	BASE_SPEED_MS = 170
+	BASE_SPEED_MS = 160
 	MIN_SPEED_MS  = 68
 )
 
 // CalcSpeedMs 计算当前得分对应的单步时间周期 (毫秒)
-// 0.1x 平滑非线性阶梯算速函数 (基础170ms=1.0x，上限68ms=2.5x，每档+0.1x，得分跨度每档逐次+20)
+// 0.1x 平滑非线性阶梯算速函数 (基础160ms=1.0x，上限68ms=2.5x，每档+0.1x，得分跨度每档逐次+20)
 func CalcSpeedMs(score int) int {
 	switch {
 	case score >= 3600:
@@ -47,7 +47,7 @@ func CalcSpeedMs(score int) int {
 	case score >= 100:
 		return 155 // 1.1x
 	default:
-		return BASE_SPEED_MS // 1.0x (0~99分 170ms)
+		return BASE_SPEED_MS // 1.0x (0~99分 160ms)
 	}
 }
 
@@ -340,6 +340,10 @@ func ReplayGame(seed uint32, inputs []InputRecord, totalTicks int) (int, int, in
 		}
 
 		// 9. 特殊幸运果倒计时过期
+		if bonusItem != nil && bonusExpireTick > 0 && tick >= bonusExpireTick {
+			bonusItem = nil
+			bonusExpireTick = 0
+		}
 		// 10. 正常移动：蛇头前进，蛇尾留下栅栏 (吃特殊果实波次重置当步不留栅栏)
 		nextSnake := append([]Point{head}, snake...)
 		tail := nextSnake[len(nextSnake)-1]

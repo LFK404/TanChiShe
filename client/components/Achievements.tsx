@@ -82,7 +82,7 @@ export default function Achievements({ isOpen, onClose, username }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
+        className="w-full max-w-xl bg-white/90 backdrop-blur-md rounded-3xl border border-white/70 shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 select-none"
       >
         {/* 顶部荣耀仪表盘 */}
         <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-gradient-to-b from-[#F8FAFC] to-white relative">

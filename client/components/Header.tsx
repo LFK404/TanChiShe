@@ -81,7 +81,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
     haptics.trigger('ui');
   };
   return (
-    <header className="w-full bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-3xl px-3.5 sm:px-5 py-2.5 flex items-center justify-between shadow-xs sticky top-2 z-40 select-none transition-all">
+    <header className="w-full bg-white/75 backdrop-blur-md border border-white/60 rounded-3xl px-3.5 sm:px-5 py-2.5 flex items-center justify-between shadow-xs sticky top-2 z-40 select-none transition-all">
       {/* 左侧：品牌 Logo 与玩家战绩 */}
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="flex items-center gap-1.5 shrink-0">
@@ -155,7 +155,7 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
 
           {/* NCU HOME 极简风音频分轨调节浮层卡片 */}
           {showAudioPopover && (
-            <div className="absolute right-0 top-full mt-2 w-56 p-3.5 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 top-full mt-2 w-56 p-3.5 bg-white/85 backdrop-blur-md rounded-2xl border border-white/70 shadow-sm z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <span className="font-bold text-[#0F172A] text-xs">声音与触感</span>
                 <button

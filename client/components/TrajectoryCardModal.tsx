@@ -389,7 +389,7 @@ export default function TrajectoryCardModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md max-h-[88vh] bg-white rounded-3xl p-5 sm:p-6 flex flex-col border border-slate-200/80 shadow-sm relative overflow-hidden animate-in zoom-in-95 duration-200 select-none"
+        className="w-full max-w-md max-h-[88vh] bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-6 flex flex-col border border-white/70 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200 select-none"
       >
         {/* 顶部标题与关闭 (极简现代主义，杜绝花哨矢量图标，固定吸顶) */}
         <div className="w-full flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">

@@ -103,10 +103,10 @@ export default function Leaderboard({
     BADGE_STYLES[rank] || 'bg-[#F1F5F9] text-[#64748B]';
 
   return (
-    <div className="bg-white p-5 rounded-3xl flex flex-col select-none border border-slate-200/80 shadow-xs">
+    <div className="bg-white/80 backdrop-blur-md p-5 rounded-3xl flex flex-col select-none border border-white/70 shadow-xs">
       {/* 榜单标题与分类切换胶囊 */}
       <div className="flex justify-between items-center pb-2.5">
-        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono">
+        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100/80 backdrop-blur-xs text-xs font-bold font-mono">
           <button
             onClick={() => setTab('GLOBAL')}
             className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
@@ -244,7 +244,7 @@ export default function Leaderboard({
               {safeLocalHistory.map((rec, i) => (
                 <div
                   key={rec.id}
-                  className="flex items-center justify-between p-2 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-slate-100 text-xs transition-colors"
+                  className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 hover:bg-white/80 border border-white/50 text-xs transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="font-mono font-bold text-slate-400 text-[11px] w-5 shrink-0">

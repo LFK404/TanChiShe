@@ -1544,14 +1544,14 @@ export default function Board({
     {
       label: '得分',
       val: <AnimatedNumber value={score} />,
-      bg: 'bg-rose-50/90',
+      bg: 'bg-rose-50/75 backdrop-blur-xs border border-rose-100/60',
       text: 'text-rose-500',
       valColor: 'text-rose-600',
     },
     {
       label: '长度',
       val: <AnimatedNumber value={length} />,
-      bg: 'bg-emerald-50/90',
+      bg: 'bg-emerald-50/75 backdrop-blur-xs border border-emerald-100/60',
       text: 'text-emerald-600',
       valColor: 'text-emerald-700',
     },
@@ -1562,14 +1562,14 @@ export default function Board({
           <AnimatedNumber value={duration} />s
         </>
       ),
-      bg: 'bg-purple-50/90',
+      bg: 'bg-purple-50/75 backdrop-blur-xs border border-purple-100/60',
       text: 'text-purple-600',
       valColor: 'text-purple-700',
     },
     {
       label: '速度',
       val: `${((BASE_SPEED_MS / speedMs) * (isReplay ? replaySpeedRate : 1)).toFixed(1)}x`,
-      bg: 'bg-[#EBF8FF]',
+      bg: 'bg-[#EBF8FF]/75 backdrop-blur-xs border border-sky-100/60',
       text: 'text-[#0099FF]',
       valColor: 'text-[#0099FF]',
     },
@@ -1581,7 +1581,7 @@ export default function Board({
   };
 
   return (
-    <div className="bg-white p-1 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col items-center select-none border border-slate-200/80 shadow-xs w-full">
+    <div className="bg-white/80 backdrop-blur-md p-1 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col items-center select-none border border-white/70 shadow-xs w-full">
       {/* 观摩回放模式专属横幅 */}
       {isReplay && (
         <div className="w-full mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#EBF8FF] to-[#E0F2FE] border border-[#66CCFF]/40 text-[#0099FF] flex flex-col gap-2 text-xs font-bold animate-in fade-in shadow-2xs">
@@ -1827,7 +1827,7 @@ export default function Board({
 
         {/* 游戏结束/观摩播放结束结算面板 */}
         {isGameOver && (
-          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-[6px] flex flex-col items-center justify-center text-center p-4 sm:p-6 overflow-y-auto max-h-full animate-in fade-in zoom-in-95 duration-200 text-[#0F172A]">
+          <div className="absolute inset-0 z-30 bg-white/90 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 text-[#0F172A] animate-in fade-in zoom-in-95 duration-200">
             {isReplay ? (
               /* 电竞录像专属复盘结算卡片 (消除主客观混淆与玩家授勋割裂感) */
               <div className="w-full flex flex-col items-center my-auto">
@@ -1906,7 +1906,7 @@ export default function Board({
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC] border border-slate-200/80 px-4 py-2.5 rounded-2xl shadow-xs">
+                <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC]/80 backdrop-blur-xs border border-slate-200/60 px-4 py-2.5 rounded-2xl shadow-xs">
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-400">蛇身长度</span>
                     <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length}</strong>
@@ -2010,7 +2010,7 @@ export default function Board({
                 className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-xs touch-manipulation ${
                   isPaused
                     ? 'bg-[#0099FF] text-white shadow-sm ring-2 ring-[#66CCFF]/40'
-                    : 'bg-slate-100 hover:bg-[#EBF8FF] text-slate-700 hover:text-[#0099FF] border border-slate-200/80'
+                    : 'bg-white/75 backdrop-blur-sm hover:bg-[#EBF8FF] text-slate-700 hover:text-[#0099FF] border border-white/60'
                 } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
               >
                 {isPaused ? <Play size={15} /> : <Pause size={15} />}
@@ -2020,7 +2020,7 @@ export default function Board({
               <button
                 onClick={toggleDpadLayout}
                 title="切换经典十字盘或电脑倒T型布局"
-                className="h-10 px-3 rounded-full text-[11px] font-bold bg-[#F1F5F9] hover:bg-[#E2E8F0] text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1 font-mono border border-slate-200/60"
+                className="h-10 px-3 rounded-full text-[11px] font-bold bg-white/75 backdrop-blur-sm hover:bg-white/90 text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1 font-mono border border-white/60"
               >
                 <span>{dpadLayout === 'cross' ? '十字键' : '倒T键'}</span>
               </button>
