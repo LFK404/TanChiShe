@@ -254,6 +254,31 @@ export default function Board({
     }
   }, [score, highScore, isPlaying, isReplay]);
 
+  // 街机连击狂潮专属手绘大字报弹出状态 (3x COMBO / 5x RUSH / MAX ULTRA)
+  const [prevCombo, setPrevCombo] = useState(comboCount);
+  const [comboSplash, setComboSplash] = useState<'3x' | '5x' | 'max' | null>(null);
+
+  if (comboCount !== prevCombo) {
+    setPrevCombo(comboCount);
+    if (isPlaying && !isGameOver && !isReplay && comboCount > prevCombo) {
+      if (comboCount >= 8) {
+        setComboSplash('max');
+      } else if (comboCount >= 5) {
+        setComboSplash('5x');
+      } else if (comboCount >= 3) {
+        setComboSplash('3x');
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!comboSplash) return;
+    const timer = setTimeout(() => {
+      setComboSplash(null);
+    }, 850);
+    return () => clearTimeout(timer);
+  }, [comboSplash]);
+
   // 监听开局与吃果得分，记录食物生成时间用于果冻微弹跳渲染
   const prevSpeedMsRef = useRef(speedMs);
   useEffect(() => {
@@ -1746,19 +1771,34 @@ export default function Board({
           <div className="flex items-center gap-1.5">
             {bonusType === 'FROST' ? (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] shadow-[0_0_6px_#38BDF8] animate-pulse" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/image/fruit_bonus_frost.webp"
+                  alt="冰霜寒果"
+                  className="w-4 h-4 object-contain shrink-0 animate-pulse"
+                />
                 <span className="text-[#0284C7] font-bold text-[11px]">冰霜寒果</span>
                 <span className="text-[10px] text-sky-500/80 font-normal">减速 3s</span>
               </>
             ) : bonusType === 'PHASE' ? (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#A855F7] shadow-[0_0_6px_#A855F7] animate-pulse" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/image/fruit_bonus_phase.webp"
+                  alt="极光虚化果"
+                  className="w-4 h-4 object-contain shrink-0 animate-pulse"
+                />
                 <span className="text-[#7E22CE] font-bold text-[11px]">极光虚化果</span>
                 <span className="text-[10px] text-purple-500/80 font-normal">穿墙 2s</span>
               </>
             ) : (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shadow-[0_0_6px_#F59E0B] animate-pulse" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/image/fruit_bonus_gold.webp"
+                  alt="幸运金果"
+                  className="w-4 h-4 object-contain shrink-0 animate-pulse"
+                />
                 <span className="text-[#D97706] font-bold text-[11px]">幸运金果</span>
                 <span className="text-[10px] text-amber-600/80 font-normal">+30分</span>
               </>
@@ -1815,16 +1855,51 @@ export default function Board({
       >
         <canvas ref={canvasRef} className="block w-full max-w-full h-auto aspect-square bg-white" />
 
+        {/* 方案 A: 极简电竞赛场机能转角切线 (Corner Accents: 4角 9px 极细 L 型微切角，零占屏) */}
+        <div className="absolute top-2 left-2 w-2.5 h-2.5 border-t-1.5 border-l-1.5 border-[#66CCFF]/40 rounded-tl-sm pointer-events-none z-10" />
+        <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t-1.5 border-r-1.5 border-[#66CCFF]/40 rounded-tr-sm pointer-events-none z-10" />
+        <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b-1.5 border-l-1.5 border-[#66CCFF]/40 rounded-bl-sm pointer-events-none z-10" />
+        <div className="absolute bottom-2 right-2 w-2.5 h-2.5 border-b-1.5 border-r-1.5 border-[#66CCFF]/40 rounded-br-sm pointer-events-none z-10" />
+
+        {/* 右上角掌机微型实时运行指示灯 (60FPS 极简翠绿呼吸灯) */}
+        <div className="absolute top-2.5 right-4 z-10 flex items-center gap-1 opacity-70 pointer-events-none select-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34D399]" />
+          <span className="text-[9px] font-mono font-bold text-slate-400 tracking-wider">60FPS</span>
+        </div>
+
+        {/* 街机连击狂潮专属手绘大字报弹出动效 (Combo Splash Art Overlay) */}
+        {comboSplash && isPlaying && !isGameOver && (
+          <div
+            key={`${comboSplash}_${comboCount}`}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-25 pointer-events-none select-none flex flex-col items-center justify-center animate-in zoom-in-50 fade-in duration-150 ease-out"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={
+                comboSplash === 'max'
+                  ? '/image/combo_max.webp'
+                  : comboSplash === '5x'
+                  ? '/image/combo_5x.webp'
+                  : '/image/combo_3x.webp'
+              }
+              alt={comboSplash}
+              className="w-36 sm:w-52 h-auto object-contain drop-shadow-xl filter -rotate-6 animate-pulse"
+            />
+          </div>
+        )}
+
         {/* 专属技能生效浮空指示微徽标 */}
         {frostActive && (
           <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-sky-500/90 text-white text-[11px] font-bold rounded-full backdrop-blur-md shadow-md flex items-center gap-1.5 animate-in fade-in zoom-in-95 pointer-events-none">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/image/fruit_bonus_frost.webp" alt="冰霜" className="w-4 h-4 object-contain animate-pulse shrink-0" />
             <span>寒霜减速 (3s)</span>
           </div>
         )}
         {phaseActive && (
           <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-purple-600/90 text-white text-[11px] font-bold rounded-full backdrop-blur-md shadow-md flex items-center gap-1.5 animate-in fade-in zoom-in-95 pointer-events-none">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/image/fruit_bonus_phase.webp" alt="虚空" className="w-4 h-4 object-contain animate-pulse shrink-0" />
             <span>极光穿墙 (2s)</span>
           </div>
         )}

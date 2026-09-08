@@ -15,7 +15,7 @@ export default function Login({ form, error, setForm, onLogin }: Props) {
       {/* 1. 整张画全画幅艺术底图 (完整呈现手绘绘本画卷) */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
-        style={{ backgroundImage: "url('/image/Gemini_Generated_Image_qplo2tqplo2tqplo.jpg')" }}
+        style={{ backgroundImage: "url('/image/login_card_bg.webp')" }}
       />
       {/* 2. 柔和艺术氛围层 (烘托整幅画作光影细节，同时强化文字可读性) */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-slate-900/25 to-slate-950/65" />
