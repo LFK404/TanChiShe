@@ -596,6 +596,74 @@ class SoundManager {
   playResumeGo() {
     this.playNotes('triangle', [587.33, 880, 1174.66], 0.08, 0.03, 0.26);
   }
+
+  // ==========================================
+  // UI 实体按键物理合成微音效系统
+  // ==========================================
+
+  // 1. 实体 3D 按键清脆机械微动声 (掌机按压触感，双频快速衰减微脉冲)
+  playUiClick() {
+    this.playNotes('triangle', [1046.5, 1760.0], 0.03, 0.012, 0.2);
+  }
+
+  // 2. 实体按键光标悬停温润微触感 (极轻柔正弦滴答)
+  playUiHover() {
+    this.playNotes('sine', [880.0], 0.015, 0, 0.07);
+  }
+
+  // 3. 得分跃动微音效 (高音清脆微鸣)
+  playScoreTick() {
+    this.playNotes('sine', [1318.51], 0.035, 0, 0.16);
+  }
+
+  // 4. 碰撞致命撞墙物理金属顿挫打击音 (配合屏幕震颤，沉稳扎实)
+  playWallCrash() {
+    if (this.muted) return;
+    const effectiveVol = 0.35 * this.sfxVolume;
+    if (effectiveVol <= 0.001) return;
+    this.unlockAudio();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      // 低频冲击下行波
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(32, now + 0.18);
+      gain.gain.setValueAtTime(effectiveVol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(gain);
+      gain.connect(this.sfxMasterGain || this.masterFilter || this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.19);
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch {}
+      };
+
+      // 高频金属破裂微脉冲
+      const clickOsc = this.ctx.createOscillator();
+      const clickGain = this.ctx.createGain();
+      clickOsc.type = 'square';
+      clickOsc.frequency.setValueAtTime(520, now);
+      clickOsc.frequency.exponentialRampToValueAtTime(60, now + 0.06);
+      clickGain.gain.setValueAtTime(effectiveVol * 0.45, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      clickOsc.connect(clickGain);
+      clickGain.connect(this.sfxMasterGain || this.masterFilter || this.ctx.destination);
+      clickOsc.start(now);
+      clickOsc.stop(now + 0.07);
+      clickOsc.onended = () => {
+        try {
+          clickOsc.disconnect();
+          clickGain.disconnect();
+        } catch {}
+      };
+    } catch {}
+  }
 }
 
 export const sound = new SoundManager();

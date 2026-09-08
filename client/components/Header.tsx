@@ -113,7 +113,11 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 relative">
         {onOpenAchievements && (
           <button
-            onClick={onOpenAchievements}
+            onClick={() => {
+              sound.playUiClick();
+              onOpenAchievements();
+            }}
+            onMouseEnter={() => sound.playUiHover()}
             title="成就殿堂"
             className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
           >
@@ -122,7 +126,11 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
         )}
 
         <button
-          onClick={onOpenTutorial}
+          onClick={() => {
+            sound.playUiClick();
+            onOpenTutorial();
+          }}
+          onMouseEnter={() => sound.playUiHover()}
           title="游戏规则与新手指南"
           className="w-7 h-7 rounded-full flex items-center justify-center text-[#64748B] hover:text-[#0099FF] hover:bg-[#EBF8FF] transition-all cursor-pointer"
         >
@@ -132,7 +140,11 @@ export default function Header({ user, onLogout, onOpenTutorial, onOpenAchieveme
         {/* 音频设置微浮层触发器 */}
         <div className="relative" ref={popoverRef}>
           <button
-            onClick={() => setShowAudioPopover(!showAudioPopover)}
+            onClick={() => {
+              sound.playUiClick();
+              setShowAudioPopover(!showAudioPopover);
+            }}
+            onMouseEnter={() => sound.playUiHover()}
             title={isMuted ? '音频已静音 (点击展开分轨调节)' : '音频设置 (点击展开分轨调节)'}
             className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer relative z-50 ${
               showAudioPopover

@@ -279,6 +279,46 @@ export default function Board({
     return () => clearTimeout(timer);
   }, [comboSplash]);
 
+  // 撞墙物理打击与赛场微震颤状态 (Screen Shake & Impact FX)
+  const [prevGameOverState, setPrevGameOverState] = useState(isGameOver);
+  const [isScreenShaking, setIsScreenShaking] = useState(false);
+
+  if (isGameOver !== prevGameOverState) {
+    setPrevGameOverState(isGameOver);
+    if (isGameOver && !prevGameOverState && !isReplay) {
+      setIsScreenShaking(true);
+      sound.playWallCrash();
+    }
+  }
+
+  useEffect(() => {
+    if (!isScreenShaking) return;
+    const timer = setTimeout(() => {
+      setIsScreenShaking(false);
+    }, 240);
+    return () => clearTimeout(timer);
+  }, [isScreenShaking]);
+
+  // 得分跃动与弹性缩放状态 (Score Scale Punch)
+  const [prevScoreVal, setPrevScoreVal] = useState(score);
+  const [isScorePunched, setIsScorePunched] = useState(false);
+
+  if (score !== prevScoreVal) {
+    setPrevScoreVal(score);
+    if (score > prevScoreVal && isPlaying && !isGameOver) {
+      setIsScorePunched(true);
+      sound.playScoreTick();
+    }
+  }
+
+  useEffect(() => {
+    if (!isScorePunched) return;
+    const timer = setTimeout(() => {
+      setIsScorePunched(false);
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [isScorePunched]);
+
   // 监听开局与吃果得分，记录食物生成时间用于果冻微弹跳渲染
   const prevSpeedMsRef = useRef(speedMs);
   useEffect(() => {
@@ -1582,44 +1622,21 @@ export default function Board({
     return () => cancelAnimationFrame(animFrame);
   }, [isPlaying, isPaused, isGameOver, speedMs, isReplay, replaySpeedRate, onTick, render]);
 
-  // 顶部四段式复合胶囊数据配置 (自适应明亮态与深空墨蓝暗态)
-  const statCapsules = [
-    {
-      label: '得分',
-      val: <AnimatedNumber value={score} />,
-      bg: 'bg-rose-50/75 backdrop-blur-xs border border-rose-100/60',
-      text: 'text-rose-500',
-      valColor: 'text-rose-600',
-    },
-    {
-      label: '长度',
-      val: <AnimatedNumber value={length} />,
-      bg: 'bg-emerald-50/75 backdrop-blur-xs border border-emerald-100/60',
-      text: 'text-emerald-600',
-      valColor: 'text-emerald-700',
-    },
-    {
-      label: '用时',
-      val: (
-        <>
-          <AnimatedNumber value={duration} />s
-        </>
-      ),
-      bg: 'bg-purple-50/75 backdrop-blur-xs border border-purple-100/60',
-      text: 'text-purple-600',
-      valColor: 'text-purple-700',
-    },
-    {
-      label: '速度',
-      val: `${((BASE_SPEED_MS / speedMs) * (isReplay ? replaySpeedRate : 1)).toFixed(1)}x`,
-      bg: 'bg-[#EBF8FF]/75 backdrop-blur-xs border border-sky-100/60',
-      text: 'text-[#0099FF]',
-      valColor: 'text-[#0099FF]',
-    },
-  ];
+  // 计算赛场机能环境反应光 (Reactive Arena Ambient Glow: 严格基于 Props 状态机裁决，遵守 React 19 纯函数规范)
+  let arenaGlowClass = 'arena-glow-normal';
+  if (isGameOver) {
+    arenaGlowClass = 'arena-glow-dead';
+  } else if (frostActive) {
+    arenaGlowClass = 'arena-glow-frost';
+  } else if (phaseActive) {
+    arenaGlowClass = 'arena-glow-phase';
+  } else if (hasBonus && bonusType === 'GOLD') {
+    arenaGlowClass = 'arena-glow-gold';
+  }
 
   const handleDirBtn = (d: Direction) => {
     sound.unlockAudio();
+    sound.playUiClick();
     onDirection(d);
   };
 
@@ -1638,8 +1655,11 @@ export default function Board({
                 {([1, 1.5, 2] as const).map((rate) => (
                   <button
                     key={rate}
-                    onClick={() => onSetReplaySpeed?.(rate)}
-                    className={`px-2 py-0.5 text-[10.5px] font-mono font-bold rounded cursor-pointer transition-all ${
+                    onClick={() => {
+                      sound.playUiClick();
+                      onSetReplaySpeed?.(rate);
+                    }}
+                    className={`px-2 py-0.5 text-[10.5px] font-gaming font-bold rounded cursor-pointer transition-all ${
                       replaySpeedRate === rate
                         ? 'bg-[#0099FF] text-white shadow-2xs'
                         : 'text-slate-600 hover:text-[#0099FF]'
@@ -1650,7 +1670,10 @@ export default function Board({
                 ))}
               </div>
               <button
-                onClick={onExitReplay}
+                onClick={() => {
+                  sound.playUiClick();
+                  onExitReplay?.();
+                }}
                 className="text-[11px] px-2 py-1 text-slate-500 hover:text-rose-500 transition-colors cursor-pointer rounded-lg hover:bg-white/60"
               >
                 退出
@@ -1665,6 +1688,7 @@ export default function Board({
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                  sound.playUiClick();
                   onSeekReplay?.(Math.floor(ratio * replayTotalTicks));
                 }}
                 className="relative w-full h-1.5 hover:h-2.5 bg-white/80 rounded-full overflow-hidden cursor-pointer transition-all shadow-inner group"
@@ -1675,7 +1699,7 @@ export default function Board({
                   style={{ width: `${Math.min(100, (replayCurrentTick / replayTotalTicks) * 100)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[9.5px] font-mono font-medium text-slate-500 tabular-nums px-0.5">
+              <div className="flex justify-between text-[9.5px] font-gaming font-medium text-slate-500 tabular-nums px-0.5">
                 <span>步数: {replayCurrentTick}</span>
                 <span>总步数: {replayTotalTicks}</span>
               </div>
@@ -1684,174 +1708,203 @@ export default function Board({
         </div>
       )}
 
-      {/* 顶部四段式状态胶囊栏 */}
-      <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-2 text-center text-xs">
-        {statCapsules.map((st) => (
-          <div
-            key={st.label}
-            className={`${st.bg} py-2 px-1 rounded-2xl relative overflow-hidden transition-all duration-150`}
-          >
-            <span className={`${st.text} text-[11px] font-medium`}>{st.label} </span>
-            <strong className={`${st.valColor} text-sm font-mono font-black tabular-nums tracking-tight`}>{st.val}</strong>
-            {st.label === '得分' && highScore > 0 && isPlaying && !isGameOver && !isReplay && (
-              <span
-                className={`ml-1 text-[9.5px] font-mono font-bold tabular-nums transition-colors duration-200 ${
-                  score > highScore
-                    ? 'text-[#0099FF] animate-pulse'
-                    : highScore - score <= 50
-                    ? 'text-[#D97706]'
-                    : 'text-slate-400/80'
-                }`}
-                title={
-                  score > highScore
-                    ? `已超越历史最佳 (+${score - highScore}分)`
-                    : `距个人最佳还差 ${highScore - score} 分`
-                }
-              >
-                {score > highScore ? `+${score - highScore}` : `-${highScore - score}`}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* 电竞级 Delta 领先指示器与双轨竞速槽 (仅在竞技对决模式下激活) */}
-      {isCompetitiveMode && (
-        <div className="w-full mb-1.5 px-3 py-1.5 rounded-2xl bg-white/70 backdrop-blur-sm border border-white/60 shadow-2xs flex flex-col gap-1 text-xs select-none">
-          <div className="flex items-center justify-between">
-            {/* 左侧：当前挑战玩家实况 */}
+      {/* 一体化机能座舱 HUD (Cockpit HUD: 超椭圆悬浮外壳 + 核心战力仪表 + 赛况三参数 + 内嵌流光导轨) */}
+      <div className="w-full mb-2.5 rounded-2xl sm:rounded-3xl bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-2.5 sm:p-3 flex flex-col gap-2 transition-all">
+        {/* 1. 竞技对决模式顶置 Delta 战术差值指示器 (若非竞技模式则不占位) */}
+        {isCompetitiveMode && (
+          <div className="w-full px-2.5 py-1 rounded-xl bg-slate-50/80 border border-slate-200/50 flex items-center justify-between text-xs select-none">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#0099FF] animate-pulse" />
               <span className="font-bold text-slate-800 text-[11px]">当前挑战</span>
-              <span className="font-mono font-black text-[#0099FF] text-[11px] tabular-nums">{score}分</span>
+              <span className="font-gaming font-black text-[#0099FF] text-[12px] tabular-nums">{score}分</span>
             </div>
 
-            {/* 中间：Delta 动态差值指示胶囊 */}
             <div className="flex items-center">
               {deltaScore > 0 ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/60 font-mono font-black text-[10.5px] tabular-nums flex items-center gap-1 shadow-2xs">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/60 font-gaming font-black text-[10.5px] tabular-nums flex items-center gap-1 shadow-2xs">
                   <span>▲ 领先</span>
                   <span>+{deltaScore}</span>
                 </span>
               ) : deltaScore < 0 ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-500 border border-rose-200/60 font-mono font-black text-[10.5px] tabular-nums flex items-center gap-1 shadow-2xs">
+                <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 border border-rose-200/60 font-gaming font-black text-[10.5px] tabular-nums flex items-center gap-1 shadow-2xs">
                   <span>▼ 落后</span>
                   <span>{deltaScore}</span>
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono font-bold text-[10px] tabular-nums">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-gaming font-bold text-[10px] tabular-nums">
                   ● 并驾齐驱
                 </span>
               )}
             </div>
 
-            {/* 右侧：幽灵目标对手 */}
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] text-slate-400">对手:</span>
-              <strong className="text-slate-700 text-[11px] truncate max-w-[70px]">{ghostUser || '幽灵'}</strong>
-              <span className="font-mono text-purple-600 font-bold text-[11px] tabular-nums">{ghostScore}/{ghostTargetScore}</span>
-              {!isGhostAlive && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-600 font-bold border border-amber-200/60">
-                  已超越
+              <strong className="text-slate-700 text-[11px] truncate max-w-[68px]">{ghostUser || '幽灵'}</strong>
+              <span className="font-gaming text-purple-600 font-bold text-[11px] tabular-nums">{ghostScore}/{ghostTargetScore}</span>
+            </div>
+          </div>
+        )}
+
+        {/* 2. 主座舱双翼仪表区：左翼核心分值 (大号游戏字体 + 弹性缩放) VS 右翼三联机能仪表 (长度/用时/速度) */}
+        <div className="w-full flex items-center justify-between gap-2 px-1">
+          {/* 左翼：主得分核心 */}
+          <div className="flex flex-col items-start min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+              <span className="text-[11px] font-semibold text-slate-500 tracking-wide">当前战绩</span>
+              {highScore > 0 && isPlaying && !isGameOver && !isReplay && (
+                <span
+                  className={`text-[10px] font-gaming font-bold tabular-nums px-1.5 py-0.2 rounded-full transition-all ${
+                    score > highScore
+                      ? 'bg-[#EBF8FF] text-[#0099FF] animate-pulse border border-[#66CCFF]/40'
+                      : highScore - score <= 50
+                      ? 'bg-amber-50 text-amber-600'
+                      : 'text-slate-400 bg-slate-100'
+                  }`}
+                  title={
+                    score > highScore
+                      ? `已超越历史最佳 (+${score - highScore}分)`
+                      : `距个人最佳还差 ${highScore - score} 分`
+                  }
+                >
+                  {score > highScore ? `+${score - highScore}` : `-${highScore - score}`}
                 </span>
               )}
             </div>
+            <div className={`text-2xl sm:text-3xl font-black font-gaming text-slate-900 tracking-tight leading-tight tabular-nums ${isScorePunched ? 'animate-score-punch' : ''}`}>
+              <AnimatedNumber value={score} />
+            </div>
+          </div>
+
+          {/* 右翼：三联机能仪表柱 (长度 / 用时 / 速度) */}
+          <div className="flex items-center bg-slate-50/90 rounded-2xl border border-slate-200/60 p-1 divide-x divide-slate-200/70 text-center">
+            {/* 长度 */}
+            <div className="flex flex-col items-center px-2.5 sm:px-3.5">
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-medium text-slate-400">长度</span>
+              </div>
+              <strong className="font-gaming font-black text-sm text-slate-800 tabular-nums">
+                <AnimatedNumber value={length} />
+              </strong>
+            </div>
+
+            {/* 用时 */}
+            <div className="flex flex-col items-center px-2.5 sm:px-3.5">
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                <span className="text-[10px] font-medium text-slate-400">用时</span>
+              </div>
+              <strong className="font-gaming font-black text-sm text-slate-800 tabular-nums">
+                <AnimatedNumber value={duration} />s
+              </strong>
+            </div>
+
+            {/* 移速 */}
+            <div className="flex flex-col items-center px-2.5 sm:px-3.5">
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0099FF]" />
+                <span className="text-[10px] font-medium text-slate-400">速度</span>
+              </div>
+              <strong className="font-gaming font-black text-sm text-[#0099FF] tabular-nums">
+                {((BASE_SPEED_MS / speedMs) * (isReplay ? replaySpeedRate : 1)).toFixed(1)}x
+              </strong>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* 极简特殊果实流光微导轨与专属形态指示 (绝对零物理位移：高度恒定，绝不推挤棋盘) */}
-      <div className="w-full my-1 flex flex-col gap-0.5 transition-all">
-        {/* 微型专属形态与倒计时标签栏 (固定高度 15px，hasBonus 时淡入) */}
-        <div
-          className={`w-full h-[15px] px-1 flex items-center justify-between text-[11px] font-semibold transition-opacity duration-200 ${
-            hasBonus ? 'opacity-100' : 'opacity-0 pointer-events-none select-none'
-          }`}
-        >
-          <div className="flex items-center gap-1.5">
-            {bonusType === 'FROST' ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/image/fruit_bonus_frost.webp"
-                  alt="冰霜寒果"
-                  className="w-4 h-4 object-contain shrink-0 animate-pulse"
-                />
-                <span className="text-[#0284C7] font-bold text-[11px]">冰霜寒果</span>
-                <span className="text-[10px] text-sky-500/80 font-normal">减速 3s</span>
-              </>
-            ) : bonusType === 'PHASE' ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/image/fruit_bonus_phase.webp"
-                  alt="极光虚化果"
-                  className="w-4 h-4 object-contain shrink-0 animate-pulse"
-                />
-                <span className="text-[#7E22CE] font-bold text-[11px]">极光虚化果</span>
-                <span className="text-[10px] text-purple-500/80 font-normal">穿墙 2s</span>
-              </>
-            ) : (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/image/fruit_bonus_gold.webp"
-                  alt="幸运金果"
-                  className="w-4 h-4 object-contain shrink-0 animate-pulse"
-                />
-                <span className="text-[#D97706] font-bold text-[11px]">幸运金果</span>
-                <span className="text-[10px] text-amber-600/80 font-normal">+30分</span>
-              </>
-            )}
-          </div>
+        {/* 3. 内嵌流光导轨与专属形态指示槽 (一体化收纳于座舱底沿) */}
+        <div className="w-full flex flex-col gap-1 pt-0.5">
+          {/* 倒计时与形态标签 */}
           <div
-            className={`font-mono font-bold text-[10px] tabular-nums ${
-              bonusType === 'FROST'
-                ? 'text-[#0284C7]'
-                : bonusType === 'PHASE'
-                ? 'text-[#7E22CE]'
-                : 'text-[#D97706]'
+            className={`w-full h-4 px-1 flex items-center justify-between text-[11px] font-semibold transition-opacity duration-200 ${
+              hasBonus ? 'opacity-100' : 'opacity-0 pointer-events-none select-none'
             }`}
           >
-            {Math.max(0, bonusRemainSec).toFixed(1)}s / {bonusType === 'FROST' ? '6.0s' : bonusType === 'PHASE' ? '5.0s' : '8.0s'}
+            <div className="flex items-center gap-1.5">
+              {bonusType === 'FROST' ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/image/fruit_bonus_frost.webp"
+                    alt="冰霜寒果"
+                    className="w-3.5 h-3.5 object-contain shrink-0 animate-pulse"
+                  />
+                  <span className="text-[#0284C7] font-bold text-[11px]">冰霜寒果</span>
+                  <span className="text-[10px] text-sky-500 font-normal">减速 3s</span>
+                </>
+              ) : bonusType === 'PHASE' ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/image/fruit_bonus_phase.webp"
+                    alt="极光虚化果"
+                    className="w-3.5 h-3.5 object-contain shrink-0 animate-pulse"
+                  />
+                  <span className="text-[#7E22CE] font-bold text-[11px]">极光虚化果</span>
+                  <span className="text-[10px] text-purple-500 font-normal">穿墙 2s</span>
+                </>
+              ) : (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/image/fruit_bonus_gold.webp"
+                    alt="幸运金果"
+                    className="w-3.5 h-3.5 object-contain shrink-0 animate-pulse"
+                  />
+                  <span className="text-[#D97706] font-bold text-[11px]">幸运金果</span>
+                  <span className="text-[10px] text-amber-600 font-normal">+30分</span>
+                </>
+              )}
+            </div>
+            <div
+              className={`font-gaming font-bold text-[10.5px] tabular-nums ${
+                bonusType === 'FROST'
+                  ? 'text-[#0284C7]'
+                  : bonusType === 'PHASE'
+                  ? 'text-[#7E22CE]'
+                  : 'text-[#D97706]'
+              }`}
+            >
+              {Math.max(0, bonusRemainSec).toFixed(1)}s / {bonusType === 'FROST' ? '6.0s' : bonusType === 'PHASE' ? '5.0s' : '8.0s'}
+            </div>
           </div>
-        </div>
 
-        {/* 专属形态微导轨槽体与流光进度条 (高度 4.5px，三色独享材质、光晕与微晶高光核) */}
-        <div
-          className={`w-full h-[4.5px] rounded-full overflow-hidden transition-all duration-200 ${
-            !hasBonus
-              ? 'bg-slate-100/70 border border-transparent'
-              : bonusType === 'FROST'
-              ? 'bg-sky-100/80 border border-sky-200/60'
-              : bonusType === 'PHASE'
-              ? 'bg-purple-100/80 border border-purple-200/60'
-              : 'bg-amber-100/80 border border-amber-200/60'
-          }`}
-        >
+          {/* 导轨槽体与流光进度条 */}
           <div
-            className={`h-full rounded-full relative transition-all duration-100 ease-linear ${
-              bonusType === 'FROST'
-                ? 'bg-gradient-to-r from-[#0284C7] via-[#38BDF8] to-[#93C5FD] shadow-[0_0_10px_#38BDF8]'
+            className={`w-full h-1 rounded-full overflow-hidden transition-all duration-200 ${
+              !hasBonus
+                ? 'bg-slate-100'
+                : bonusType === 'FROST'
+                ? 'bg-sky-100'
                 : bonusType === 'PHASE'
-                ? 'bg-gradient-to-r from-[#7E22CE] via-[#A855F7] to-[#F472B6] shadow-[0_0_10px_#A855F7]'
-                : 'bg-gradient-to-r from-[#D97706] via-[#F59E0B] to-[#FEF3C7] shadow-[0_0_10px_#F59E0B]'
-            } ${hasBonus ? 'opacity-100' : 'opacity-0'}`}
-            style={{ width: `${Math.max(0, Math.min(100, bonusProgressPercent))}%` }}
+                ? 'bg-purple-100'
+                : 'bg-amber-100'
+            }`}
           >
-            {/* 导轨顶端自发光微晶高光核 */}
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+            <div
+              className={`h-full rounded-full relative transition-all duration-100 ease-linear ${
+                bonusType === 'FROST'
+                  ? 'bg-gradient-to-r from-[#0284C7] via-[#38BDF8] to-[#93C5FD] shadow-[0_0_8px_#38BDF8]'
+                  : bonusType === 'PHASE'
+                  ? 'bg-gradient-to-r from-[#7E22CE] via-[#A855F7] to-[#F472B6] shadow-[0_0_8px_#A855F7]'
+                  : 'bg-gradient-to-r from-[#D97706] via-[#F59E0B] to-[#FEF3C7] shadow-[0_0_8px_#F59E0B]'
+              } ${hasBonus ? 'opacity-100' : 'opacity-0'}`}
+              style={{ width: `${Math.max(0, Math.min(100, bonusProgressPercent))}%` }}
+            >
+              <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Canvas 画布与全屏滑屏手势感应层 (100% 纯净视界，无内贴进度条干扰) */}
+      {/* Canvas 画布与全屏滑屏手势感应层 (接入赛场环境反应光与撞墙高频微震颤) */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
-        className="relative rounded-2xl overflow-hidden bg-white border border-slate-200/70 touch-none w-full max-w-full select-none"
+        className={`relative rounded-2xl overflow-hidden bg-white border border-slate-200/70 touch-none w-full max-w-full select-none transition-all duration-200 ${arenaGlowClass} ${isScreenShaking ? 'animate-screen-shake' : ''}`}
       >
         <canvas ref={canvasRef} className="block w-full max-w-full h-auto aspect-square bg-white" />
 
@@ -1909,7 +1962,11 @@ export default function Board({
           <div className="absolute inset-0 z-30 bg-white/90 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 select-none text-[#0F172A] animate-in fade-in duration-200">
             {/* 模式手绘水彩大图封面展示 */}
             <div
-              onClick={onStart}
+              onClick={() => {
+                sound.playUiClick();
+                onStart();
+              }}
+              onMouseEnter={() => sound.playUiHover()}
               className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-[16/10] rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm cursor-pointer group mb-3 bg-slate-100 transition-all hover:shadow-md active:scale-[0.98]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1928,7 +1985,7 @@ export default function Board({
                       {isCompetitiveMode ? '⚡ 竞技影子对决' : '经典冒险启程'}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono opacity-85 drop-shadow-sm">
+                  <span className="text-[10px] font-gaming opacity-85 drop-shadow-sm">
                     {isCompetitiveMode ? `VS ${ghostUser || '影子'}` : '无尽吃果清屏'}
                   </span>
                 </div>
@@ -1936,15 +1993,17 @@ export default function Board({
             </div>
 
             {/* 极简模式切换：经典模式 VS ⚡ 竞技对决 */}
-            <div className="flex items-center p-0.5 rounded-xl bg-slate-100/90 text-xs font-bold font-mono border border-slate-200/50 mb-2.5">
+            <div className="flex items-center p-1 rounded-2xl bg-slate-100/90 text-xs font-bold font-gaming border border-slate-200/50 mb-3 shadow-inner">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  sound.playUiClick();
                   if (isCompetitiveMode) onToggleCompetitiveMode?.();
                 }}
-                className={`px-3.5 py-1 rounded-lg transition-all cursor-pointer ${
+                onMouseEnter={() => sound.playUiHover()}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                   !isCompetitiveMode
-                    ? 'bg-white text-slate-800 shadow-2xs'
+                    ? 'btn-game-secondary !shadow-[0_2px_0_#CBD5E1] text-slate-800 font-black'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -1953,11 +2012,13 @@ export default function Board({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  sound.playUiClick();
                   if (!isCompetitiveMode) onToggleCompetitiveMode?.();
                 }}
-                className={`px-3.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                onMouseEnter={() => sound.playUiHover()}
+                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
                   isCompetitiveMode
-                    ? 'bg-[#0099FF] text-white shadow-2xs'
+                    ? 'btn-game-primary !shadow-[0_2.5px_0_#0070BA] text-white font-black'
                     : 'text-slate-500 hover:text-[#0099FF]'
                 }`}
               >
@@ -1969,8 +2030,12 @@ export default function Board({
             </div>
 
             <button
-              onClick={onStart}
-              className="px-8 py-2.5 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              onClick={() => {
+                sound.playUiClick();
+                onStart();
+              }}
+              onMouseEnter={() => sound.playUiHover()}
+              className="btn-game-primary px-8 py-3 rounded-full text-sm font-bold flex items-center gap-2 cursor-pointer shadow-md"
             >
               <Play size={16} />
               <span>开始{isCompetitiveMode ? '对决' : '游戏'}</span>
@@ -2066,21 +2131,33 @@ export default function Board({
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleOpenArtModal}
-                    className="px-4 py-2 bg-[#F1F5F9] hover:bg-[#E2E8F0] active:scale-95 text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs transition-all border border-slate-200/60"
+                    onClick={() => {
+                      sound.playUiClick();
+                      handleOpenArtModal();
+                    }}
+                    onMouseEnter={() => sound.playUiHover()}
+                    className="btn-game-secondary px-4 py-2 rounded-full text-xs font-bold shadow-xs border border-slate-200/60"
                   >
                     走位卡片
                   </button>
                   <button
-                    onClick={onRestartReplay || onStart}
-                    className="px-4 py-2 bg-[#0099FF] hover:bg-[#0284C7] active:scale-95 transition-all text-white rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    onClick={() => {
+                      sound.playUiClick();
+                      (onRestartReplay || onStart)();
+                    }}
+                    onMouseEnter={() => sound.playUiHover()}
+                    className="btn-game-primary px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-xs"
                   >
                     <RotateCcw size={13} />
                     <span>重新观摩</span>
                   </button>
                   <button
-                    onClick={onExitReplay}
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all text-slate-700 rounded-full text-xs font-bold cursor-pointer shadow-xs"
+                    onClick={() => {
+                      sound.playUiClick();
+                      onExitReplay?.();
+                    }}
+                    onMouseEnter={() => sound.playUiHover()}
+                    className="btn-game-secondary px-3.5 py-2 rounded-full text-xs font-bold shadow-xs"
                   >
                     <span>退出</span>
                   </button>
@@ -2107,15 +2184,15 @@ export default function Board({
 
                 {/* 战绩核心分值与个人纪录指示 */}
                 <div className="flex flex-col items-center my-1.5">
-                  <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-mono tracking-tight tabular-nums">
+                  <div className="text-3xl sm:text-4xl font-black text-[#0F172A] font-gaming tracking-tight tabular-nums">
                     {score} <span className="text-xs font-normal text-slate-400">分</span>
                   </div>
                   {highScore > 0 && (
                     <div className="text-[11px] font-medium text-slate-400 mt-0.5">
                       {score > highScore ? (
-                        <span className="text-[#0099FF] font-bold">🎉 创下个人最佳新纪录！</span>
+                        <span className="text-[#0099FF] font-bold font-gaming">🎉 创下个人最佳新纪录！</span>
                       ) : (
-                        <span>个人历史最佳: <strong className="text-slate-600 font-mono">{highScore}</strong> 分</span>
+                        <span>个人历史最佳: <strong className="text-slate-600 font-gaming">{highScore}</strong> 分</span>
                       )}
                     </div>
                   )}
@@ -2132,17 +2209,17 @@ export default function Board({
                 <div className="flex items-center gap-3 text-xs text-slate-600 mb-4 bg-[#F8FAFC]/80 backdrop-blur-xs border border-slate-200/60 px-4 py-2.5 rounded-2xl shadow-xs">
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-400">蛇身长度</span>
-                    <strong className="text-[#0099FF] font-mono font-bold text-sm tabular-nums">{length}</strong>
+                    <strong className="text-[#0099FF] font-gaming font-bold text-sm tabular-nums">{length}</strong>
                   </div>
                   <span className="w-px h-6 bg-slate-200" />
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-400">存活用时</span>
-                    <strong className="text-[#8B5CF6] font-mono font-bold text-sm tabular-nums">{duration}s</strong>
+                    <strong className="text-[#8B5CF6] font-gaming font-bold text-sm tabular-nums">{duration}s</strong>
                   </div>
                   <span className="w-px h-6 bg-slate-200" />
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-400">最终移速</span>
-                    <strong className="text-[#10B981] font-mono font-bold text-sm tabular-nums">
+                    <strong className="text-[#10B981] font-gaming font-bold text-sm tabular-nums">
                       {Math.round((BASE_SPEED_MS / speedMs) * 10) / 10}x
                     </strong>
                   </div>
@@ -2150,14 +2227,22 @@ export default function Board({
 
                 <div className="flex items-center gap-2.5 flex-wrap justify-center">
                   <button
-                    onClick={handleOpenArtModal}
-                    className="px-4 py-2.5 bg-[#F8FAFC] hover:bg-[#F1F5F9] active:scale-95 text-slate-700 border border-slate-200/80 rounded-full text-xs sm:text-sm font-bold cursor-pointer shadow-xs transition-all"
+                    onClick={() => {
+                      sound.playUiClick();
+                      handleOpenArtModal();
+                    }}
+                    onMouseEnter={() => sound.playUiHover()}
+                    className="btn-game-secondary px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-xs"
                   >
                     走位卡片
                   </button>
                   <button
-                    onClick={onStart}
-                    className="px-6 py-2.5 bg-[#0099FF] hover:bg-[#0088EE] active:scale-95 transition-all text-white rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    onClick={() => {
+                      sound.playUiClick();
+                      onStart();
+                    }}
+                    onMouseEnter={() => sound.playUiHover()}
+                    className="btn-game-primary px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-xs"
                   >
                     <RotateCcw size={14} />
                     <span>再来一局</span>
@@ -2241,9 +2326,30 @@ export default function Board({
               </button>
 
               <button
-                onClick={toggleDpadLayout}
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playUiClick();
+                  onTogglePause?.();
+                }}
+                disabled={!isPlaying || isGameOver}
+                className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-xs touch-manipulation ${
+                  isPaused
+                    ? 'btn-game-primary ring-2 ring-[#66CCFF]/40'
+                    : 'btn-game-secondary'
+                } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                {isPaused ? <Play size={15} /> : <Pause size={15} />}
+                <span>{isPaused ? '继续游戏' : '暂停'}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  sound.playUiClick();
+                  toggleDpadLayout();
+                }}
+                onMouseEnter={() => sound.playUiHover()}
                 title="切换经典十字盘或电脑倒T型布局"
-                className="h-10 px-3 rounded-full text-[11px] font-bold bg-white/75 backdrop-blur-sm hover:bg-white/90 text-slate-600 transition-all cursor-pointer shadow-2xs flex items-center gap-1 font-mono border border-white/60"
+                className="btn-game-secondary h-10 px-3 rounded-full text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 font-gaming"
               >
                 <span>{dpadLayout === 'cross' ? '十字键' : '倒T键'}</span>
               </button>
@@ -2257,7 +2363,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('UP')}
                   aria-label="向上"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-t-2xl rounded-b-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] text-slate-700 active:text-[#0099FF] rounded-t-2xl rounded-b-md flex items-center justify-center cursor-pointer dpad-key-3d"
                 >
                   <ChevronUp size={26} />
                 </button>
@@ -2266,7 +2372,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('LEFT')}
                   aria-label="向左"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-l-2xl rounded-r-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] text-slate-700 active:text-[#0099FF] rounded-l-2xl rounded-r-md flex items-center justify-center cursor-pointer dpad-key-3d"
                 >
                   <ChevronLeft size={26} />
                 </button>
@@ -2285,7 +2391,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('RIGHT')}
                   aria-label="向右"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-r-2xl rounded-l-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[48px] h-[58px] text-slate-700 active:text-[#0099FF] rounded-r-2xl rounded-l-md flex items-center justify-center cursor-pointer dpad-key-3d"
                 >
                   <ChevronRight size={26} />
                 </button>
@@ -2294,7 +2400,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('DOWN')}
                   aria-label="向下"
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-b-2xl rounded-t-md flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[62px] h-[46px] text-slate-700 active:text-[#0099FF] rounded-b-2xl rounded-t-md flex items-center justify-center cursor-pointer dpad-key-3d"
                 >
                   <ChevronDown size={26} />
                 </button>
@@ -2305,7 +2411,7 @@ export default function Board({
                 <button
                   onClick={() => handleDirBtn('UP')}
                   aria-label="向上"
-                  className="w-[64px] h-[44px] bg-slate-100/95 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                  className="w-[64px] h-[44px] text-slate-700 active:text-[#0099FF] rounded-2xl flex items-center justify-center cursor-pointer dpad-key-3d"
                 >
                   <ChevronUp size={26} />
                 </button>
@@ -2313,21 +2419,21 @@ export default function Board({
                   <button
                     onClick={() => handleDirBtn('LEFT')}
                     aria-label="向左"
-                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                    className="w-[64px] h-[44px] text-slate-700 active:text-[#0099FF] rounded-2xl flex items-center justify-center cursor-pointer dpad-key-3d"
                   >
                     <ChevronLeft size={26} />
                   </button>
                   <button
                     onClick={() => handleDirBtn('DOWN')}
                     aria-label="向下"
-                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                    className="w-[64px] h-[44px] text-slate-700 active:text-[#0099FF] rounded-2xl flex items-center justify-center cursor-pointer dpad-key-3d"
                   >
                     <ChevronDown size={26} />
                   </button>
                   <button
                     onClick={() => handleDirBtn('RIGHT')}
                     aria-label="向右"
-                    className="w-[64px] h-[44px] bg-slate-100 active:bg-[#0099FF] text-slate-700 active:text-white rounded-2xl flex items-center justify-center shadow-xs cursor-pointer dpad-spring-btn"
+                    className="w-[64px] h-[44px] text-slate-700 active:text-[#0099FF] rounded-2xl flex items-center justify-center cursor-pointer dpad-key-3d"
                   >
                     <ChevronRight size={26} />
                   </button>
@@ -2339,16 +2445,20 @@ export default function Board({
           /* 纯净键盘快捷模式 (外接键盘平板/桌面PC专属) */
           <div className="flex flex-col items-center gap-2 py-2">
             <button
-              onClick={onTogglePause}
+              onClick={() => {
+                sound.playUiClick();
+                onTogglePause?.();
+              }}
+              onMouseEnter={() => sound.playUiHover()}
               disabled={!isPlaying || isGameOver}
-              className={`px-5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all ${
-                isPaused ? 'bg-[#0099FF] text-white hover:bg-[#0284C7]' : 'bg-slate-100 hover:bg-[#EBF8FF] text-[#334155] hover:text-[#0099FF]'
-              } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+              className={`px-5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                isPaused ? 'btn-game-primary' : 'btn-game-secondary'
+              } ${!isPlaying || isGameOver ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {isPaused ? <Play size={14} /> : <Pause size={14} />}
               <span>{isPaused ? '继续游戏 (P / 空格)' : '暂停游戏 (P / 空格)'}</span>
             </button>
-            <div className="text-[11px] text-[#94A3B8]">方向键 / WASD 转向 · 空格键开始 · P 键暂停</div>
+            <div className="text-[11px] text-[#94A3B8] font-gaming">方向键 / WASD 转向 · 空格键开始 · P 键暂停</div>
           </div>
         )}
 
@@ -2356,9 +2466,13 @@ export default function Board({
         {!isReplay && (
           <div className="flex items-center justify-center gap-2 text-[11px] text-[#94A3B8] pt-1 select-none">
             <button
-              onClick={toggleDpad}
+              onClick={() => {
+                sound.playUiClick();
+                toggleDpad();
+              }}
+              onMouseEnter={() => sound.playUiHover()}
               title="切换全屏滑屏或虚拟按键模式"
-              className="text-[11px] font-semibold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] px-3 py-0.5 rounded-full transition-all cursor-pointer shadow-2xs"
+              className="text-[11px] font-bold text-[#0099FF] hover:text-[#0284C7] bg-[#EBF8FF] hover:bg-[#E0F2FE] border border-[#66CCFF]/30 px-3.5 py-1 rounded-full transition-all cursor-pointer shadow-2xs"
             >
               {showDpad ? '切为全屏沉浸滑屏' : '展开方向按键'}
             </button>

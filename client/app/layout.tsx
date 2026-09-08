@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import { Outfit } from 'next/font/google';
 import './globals.css';
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
 
 // 页面全局 SEO 元数据与 PWA 应用配置
 export const metadata: Metadata = {
@@ -46,7 +53,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body className="antialiased" suppressHydrationWarning>
+      <body className={`${outfit.variable} font-sans antialiased`} suppressHydrationWarning>
         {children}
         {/* PWA Service Worker 离线缓存自动注册 */}
         <Script id="register-sw" strategy="afterInteractive">
